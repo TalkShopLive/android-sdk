@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "live.talkshop.testapp"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "live.talkshop.testapp"
