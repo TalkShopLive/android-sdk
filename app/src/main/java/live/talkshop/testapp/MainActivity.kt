@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import live.talkshop.sdk.MainActivity.Companion.sendMessage
 import live.talkshop.testapp.ui.theme.TestAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -22,7 +23,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Android")
+                    Message(sendMessage())
                 }
             }
         }
@@ -30,9 +31,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun Message(string: String, modifier: Modifier = Modifier) {
     Text(
-        text = "Hello $name!",
+        text = "$string!",
         modifier = modifier
     )
 }
@@ -41,6 +42,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     TestAppTheme {
-        Greeting("Android")
+        Message("Android")
     }
 }
