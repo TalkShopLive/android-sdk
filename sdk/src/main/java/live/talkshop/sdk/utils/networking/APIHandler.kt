@@ -11,6 +11,16 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 
 /**
+ * Represents HTTP request methods.
+ */
+enum class HTTPMethod(val value: String) {
+    GET("GET"),
+    POST("POST"),
+    PUT("PUT"),
+    DELETE("DELETE")
+}
+
+/**
  * A singleton object that handles HTTP requests (GET, POST, PUT, DELETE) using `HttpURLConnection`.
  * It supports adding custom headers and sending JSON payloads.
  */
@@ -34,7 +44,7 @@ object APIHandler {
      */
     suspend fun makeRequest(
         requestUrl: String,
-        requestMethod: String,
+        requestMethod: HTTPMethod,
         payload: JSONObject? = null,
         headers: Map<String, String> = emptyMap()
     ): String = withContext(Dispatchers.IO) {
@@ -44,11 +54,12 @@ object APIHandler {
             val url = URL(requestUrl)
             connection = connectionFactory.create(url)
             connection.apply {
-                this.requestMethod = requestMethod
+                this.requestMethod = requestMethod.value
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 setRequestProperty("Accept", "application/json")
                 doInput = true
-                doOutput = requestMethod == "POST" || requestMethod == "PUT"
+                doOutput =
+                    requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT
                 connectTimeout = 15000 // Sets the timeout for connecting to the URL (15 seconds).
                 readTimeout = 15000 // Sets the timeout for reading the response (15 seconds).
 

@@ -49,7 +49,7 @@ class APIHandlerTest {
         `when`(mockHttpURLConnection.responseCode).thenReturn(HttpURLConnection.HTTP_OK)
         `when`(mockHttpURLConnection.inputStream).thenReturn(inputStream)
 
-        val response = APIHandler.makeRequest("https://example.com/api", "GET")
+        val response = APIHandler.makeRequest("https://example.com/api", HTTPMethod.GET)
 
         assertEquals(expectedResponseBody, response, "Success")
     }
@@ -71,10 +71,12 @@ class APIHandlerTest {
         `when`(mockHttpURLConnection.inputStream).thenReturn(inputStream)
         `when`(mockHttpURLConnection.outputStream).thenReturn(outputStream)
 
-        val response = APIHandler.makeRequest("https://example.com/api/post", "POST", payload)
+        val response =
+            APIHandler.makeRequest("https://example.com/api/post", HTTPMethod.POST, payload)
 
         assertEquals(expectedResponse, response, "Posted")
-        assertEquals(payload.toString(),
+        assertEquals(
+            payload.toString(),
             withContext(Dispatchers.IO) {
                 outputStream.toString(StandardCharsets.UTF_8.name())
             }, "{\"key\":\"value\"}"
