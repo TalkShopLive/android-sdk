@@ -5,6 +5,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.DataOutputStream
+import java.io.IOException
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
@@ -48,7 +49,6 @@ object APIHandler {
         payload: JSONObject? = null,
         headers: Map<String, String> = emptyMap()
     ): String = withContext(Dispatchers.IO) {
-        // Ensures the network call is made in a background thread.
         var connection: HttpURLConnection? = null
         try {
             val url = URL(requestUrl)
@@ -60,16 +60,14 @@ object APIHandler {
                 doInput = true
                 doOutput =
                     requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT
-                connectTimeout = 15000 // Sets the timeout for connecting to the URL (15 seconds).
-                readTimeout = 15000 // Sets the timeout for reading the response (15 seconds).
+                connectTimeout = 15000
+                readTimeout = 15000
 
-                // Applies each custom header from the map to the connection.
                 headers.forEach { (key, value) ->
                     setRequestProperty(key, value)
                 }
             }
 
-            // Sends the JSON payload if present (for POST and PUT requests).
             payload?.let {
                 DataOutputStream(connection.outputStream).use { os ->
                     os.write(it.toString().toByteArray(StandardCharsets.UTF_8))
@@ -77,8 +75,8 @@ object APIHandler {
                 }
             }
 
-            // Reads the response from the server and returns it as a String.
-            return@withContext if (connection.responseCode in 200..299) {
+            val responseCode = connection.responseCode
+            val responseText = if (responseCode in 200..299) {
                 BufferedReader(
                     InputStreamReader(
                         connection.inputStream,
@@ -94,12 +92,17 @@ object APIHandler {
                         StandardCharsets.UTF_8
                     )
                 ).use { reader ->
-                    "Error: ${reader.readText()}"
+                    reader.readText()
                 }
             }
+
+            if (responseCode !in 200..299) {
+                throw IOException("HTTP request failed with status code $responseCode: $responseText")
+            }
+
+            return@withContext responseText
         } catch (e: Exception) {
-            e.printStackTrace()
-            "Error: ${e.message}"
+            throw IOException("Failed to make HTTP request: ${e.message}", e)
         } finally {
             connection?.disconnect()
         }
