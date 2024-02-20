@@ -1,7 +1,6 @@
-package live.talkshop.sdk
+package live.talkshop.sdk.core.authentication
 
-class MainActivity {
-
+class TalkShopLive {
     companion object {
         fun sendMessage(): String {
             return "Hello from SDK"
