@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "TestApp"
+rootProject.name = "talkshoplive-gson"
 include(":app")
 include(":sdk")
