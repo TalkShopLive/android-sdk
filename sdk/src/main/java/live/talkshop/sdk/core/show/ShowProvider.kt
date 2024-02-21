@@ -3,7 +3,6 @@ package live.talkshop.sdk.core.show
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs
-import live.talkshop.sdk.utils.networking.URLs.PATH_CURRENT_EVENT
 import org.json.JSONObject
 
 /**
@@ -20,7 +19,7 @@ class ShowProvider {
     internal suspend fun fetchShow(productKey: String): JSONObject {
         // Delegate exception handling to the caller (Show class)
         val jsonResponse = APIHandler.makeRequest(
-            "${URLs.SHOW_DETAILS_ENDPOINT_URL}$productKey",
+            "${URLs.URL_SHOW_DETAILS_ENDPOINT}$productKey",
             HTTPMethod.GET
         )
         return JSONObject(jsonResponse)
@@ -36,7 +35,7 @@ class ShowProvider {
     internal suspend fun fetchCurrentEvent(productKey: String): JSONObject {
         // Delegate exception handling to the caller (Show class)
         val jsonResponse = APIHandler.makeRequest(
-            "${URLs.CURRENT_EVENT_ENDPOINT_URL}$productKey/${URLs.PATH_CURRENT_EVENT}",
+            "${URLs.URL_CURRENT_EVENT_ENDPOINT}$productKey/${URLs.PATH_CURRENT_EVENT}",
             HTTPMethod.GET
         )
         return JSONObject(jsonResponse)

@@ -1,5 +1,6 @@
 package live.talkshop.testapp
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,11 +26,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import live.talkshop.sdk.core.authentication.TalkShopLive
 import live.talkshop.sdk.core.show.Show
 import live.talkshop.sdk.core.show.models.ShowObject
 import live.talkshop.testapp.ui.theme.TestAppTheme
@@ -44,7 +45,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ShowDetailsScreen()
+                    ShowDetailsScreen(this)
                 }
             }
         }
@@ -53,8 +54,9 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShowDetailsScreen() {
+fun ShowDetailsScreen(applicationContext: Context) {
     var productKey by remember { mutableStateOf("") }
+    var clientKey by remember { mutableStateOf("") } // New clientKey input field
     var show by remember { mutableStateOf<ShowObject?>(null) }
     var errorText by remember { mutableStateOf<String?>(null) }
 
@@ -63,6 +65,16 @@ fun ShowDetailsScreen() {
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
+        // Text field to input the client key
+        OutlinedTextField(
+            value = clientKey,
+            onValueChange = { clientKey = it },
+            label = { Text("Client Key") }, // Label for client key input
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Text field to input the product key
         OutlinedTextField(
             value = productKey,
@@ -73,29 +85,38 @@ fun ShowDetailsScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Button to trigger the API call
+        // Button to trigger the API call and TalkShopLive initialization
         Button(
             onClick = {
-                // Trigger the API call
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        Show.getDetails(productKey, object : Show.GetDetailsCallback {
-                            override fun onSuccess(showObject: ShowObject) {
-                                // Update the state with the retrieved show object
-                                show = showObject
-                                errorText = null
-                            }
+                // Trigger TalkShopLive initialization
+                TalkShopLive.initialize(
+                    applicationContext,
+                    clientKey,
+                    debugMode = false,
+                    testMode = false,
+                    dnt = false
+                ) {
+                    // Trigger the API call
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            Show.getDetails(productKey, object : Show.GetDetailsCallback {
+                                override fun onSuccess(showObject: ShowObject) {
+                                    // Update the state with the retrieved show object
+                                    show = showObject
+                                    errorText = null
+                                }
 
-                            override fun onError(error: String) {
-                                // Update the state with the error message
-                                errorText = error
-                                show = null
-                            }
-                        })
-                    } catch (e: Exception) {
-                        // Update the state with the error message
-                        errorText = e.message ?: "Unknown error occurred"
-                        show = null
+                                override fun onError(error: String) {
+                                    // Update the state with the error message
+                                    errorText = error
+                                    show = null
+                                }
+                            })
+                        } catch (e: Exception) {
+                            // Update the state with the error message
+                            errorText = e.message ?: "Unknown error occurred"
+                            show = null
+                        }
                     }
                 }
             },
@@ -127,13 +148,5 @@ fun ShowDetails(showObject: ShowObject) {
         Text("Event ID: ${showObject.eventId}")
         Text("CC: ${showObject.cc}")
         // Add more details as needed
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TestAppTheme {
-        ShowDetailsScreen()
     }
 }
