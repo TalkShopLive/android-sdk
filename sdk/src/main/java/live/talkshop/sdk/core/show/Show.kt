@@ -53,13 +53,13 @@ class Show {
         /**
          * Fetches details of a show corresponding to the provided product key.
          *
-         * @param productKey The product key of the show for which details are to be fetched.
+         * @param showId The product key of the show for which details are to be fetched.
          * @param callback The callback object to notify the user about the success or failure of the API call.
          */
-        suspend fun getDetails(productKey: String, callback: GetDetailsCallback) {
+        suspend fun getDetails(showId: String, callback: GetDetailsCallback) {
             try {
                 // Fetch show details JSON using the ShowProvider
-                val showJson = showProvider.fetchShow(productKey)
+                val showJson = showProvider.fetchShow(showId)
 
                 // Parse the JSON response to a ShowObject
                 val showObject = ShowObject.parseFromJson(showJson)
@@ -75,13 +75,13 @@ class Show {
         /**
          * Fetches the status of the current event for the provided product key.
          *
-         * @param productKey The product key of the show for which status is to be fetched.
+         * @param showId The product key of the show for which status is to be fetched.
          * @param callback The callback object to notify the user about the success or failure of the API call.
          */
-        suspend fun getStatus(productKey: String, callback: GetStatusShowCallback) {
+        suspend fun getStatus(showId: String, callback: GetStatusShowCallback) {
             try {
                 // Fetch current event details JSON using the ShowProvider
-                val currentEventJson = showProvider.fetchCurrentEvent(productKey)
+                val currentEventJson = showProvider.fetchCurrentEvent(showId)
 
                 // Extract and return the status from the JSON response
                 val status = currentEventJson.getString(Constants.STATUS_KEY)
