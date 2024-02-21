@@ -1,6 +1,5 @@
 package live.talkshop.sdk.core.show
 
-import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.show.models.ShowObject
 import live.talkshop.sdk.resources.Constants
 
@@ -54,52 +53,44 @@ class Show {
         /**
          * Fetches details of a show corresponding to the provided product key.
          *
-         * @param productKey The product key of the show for which details are to be fetched.
+         * @param showId The product key of the show for which details are to be fetched.
          * @param callback The callback object to notify the user about the success or failure of the API call.
          */
-        suspend fun getDetails(productKey: String, callback: GetDetailsCallback) {
-            if (isAuthenticated) {
-                try {
-                    // Fetch show details JSON using the ShowProvider
-                    val showJson = showProvider.fetchShow(productKey)
+        suspend fun getDetails(showId: String, callback: GetDetailsCallback) {
+            try {
+                // Fetch show details JSON using the ShowProvider
+                val showJson = showProvider.fetchShow(showId)
 
-                    // Parse the JSON response to a ShowObject
-                    val showObject = ShowObject.parseFromJson(showJson)
+                // Parse the JSON response to a ShowObject
+                val showObject = ShowObject.parseFromJson(showJson)
 
-                    // Notify the user about the success
-                    callback.onSuccess(showObject)
-                } catch (e: Exception) {
-                    // Notify the user about the error
-                    callback.onError(e.message ?: "Unknown error occurred")
-                }
-            } else {
-                callback.onError("Authentication invalid")
+                // Notify the user about the success
+                callback.onSuccess(showObject)
+            } catch (e: Exception) {
+                // Notify the user about the error
+                callback.onError(e.message ?: "Unknown error occurred")
             }
         }
 
         /**
          * Fetches the status of the current event for the provided product key.
          *
-         * @param productKey The product key of the show for which status is to be fetched.
+         * @param showId The product key of the show for which status is to be fetched.
          * @param callback The callback object to notify the user about the success or failure of the API call.
          */
-        suspend fun getStatus(productKey: String, callback: GetStatusShowCallback) {
-            if (isAuthenticated) {
-                try {
-                    // Fetch current event details JSON using the ShowProvider
-                    val currentEventJson = showProvider.fetchCurrentEvent(productKey)
+        suspend fun getStatus(showId: String, callback: GetStatusShowCallback) {
+            try {
+                // Fetch current event details JSON using the ShowProvider
+                val currentEventJson = showProvider.fetchCurrentEvent(showId)
 
-                    // Extract and return the status from the JSON response
-                    val status = currentEventJson.getString(Constants.STATUS_KEY)
+                // Extract and return the status from the JSON response
+                val status = currentEventJson.getString(Constants.STATUS_KEY)
 
-                    // Notify the user about the success
-                    callback.onSuccess(status)
-                } catch (e: Exception) {
-                    // Notify the user about the error
-                    callback.onError(e.message ?: "Unknown error occurred")
-                }
-            } else {
-                callback.onError("Authentication invalid")
+                // Notify the user about the success
+                callback.onSuccess(status)
+            } catch (e: Exception) {
+                // Notify the user about the error
+                callback.onError(e.message ?: "Unknown error occurred")
             }
         }
     }
