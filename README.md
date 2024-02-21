@@ -23,10 +23,23 @@ You will need the publish and subscribe keys to authenticate your app. Get your 
 
 ## Set Up Your Project
 
-You have can add TSL to your project by adding the following dependency to your app gradle file.
+1. You have can add TSL to your project by adding the following dependency to your app gradle file.
 
 ```groovy
 implementation 'live.talkshop.sdk:talkshoplive-gson:1+'
+```
+
+2. Initialize the SDK using clientKey:
+
+- Parameters:
+       - `context`: Application context.
+       - `clientKey`: Given secured client key.
+       - `debugMode`: Print console logs if true.
+       - `testMode`: Switch to staging if true.
+       - `dnt`: Switch to do not track.
+       - `callback`: Optional callback when the authentication is successful or not.
+```kotlin
+ TalkShopLive.initialize(context: Context, clientKey: String, debugMode: Boolean, testMode: Boolean, dnt: Boolean)
 ```
 
 ## Shows

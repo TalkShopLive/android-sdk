@@ -1,5 +1,6 @@
 package live.talkshop.sdk.core.show
 
+import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.show.models.ShowObject
 import live.talkshop.sdk.resources.Constants
 
@@ -57,18 +58,22 @@ class Show {
          * @param callback The callback object to notify the user about the success or failure of the API call.
          */
         suspend fun getDetails(showId: String, callback: GetDetailsCallback) {
-            try {
-                // Fetch show details JSON using the ShowProvider
-                val showJson = showProvider.fetchShow(showId)
+            if (isAuthenticated) {
+                try {
+                    // Fetch show details JSON using the ShowProvider
+                    val showJson = showProvider.fetchShow(showId)
 
-                // Parse the JSON response to a ShowObject
-                val showObject = ShowObject.parseFromJson(showJson)
+                    // Parse the JSON response to a ShowObject
+                    val showObject = ShowObject.parseFromJson(showJson)
 
-                // Notify the user about the success
-                callback.onSuccess(showObject)
-            } catch (e: Exception) {
-                // Notify the user about the error
-                callback.onError(e.message ?: "Unknown error occurred")
+                    // Notify the user about the success
+                    callback.onSuccess(showObject)
+                } catch (e: Exception) {
+                    // Notify the user about the error
+                    callback.onError(e.message ?: "Unknown error occurred")
+                }
+            } else {
+                callback.onError("Authentication invalid")
             }
         }
 
@@ -79,18 +84,22 @@ class Show {
          * @param callback The callback object to notify the user about the success or failure of the API call.
          */
         suspend fun getStatus(showId: String, callback: GetStatusShowCallback) {
-            try {
-                // Fetch current event details JSON using the ShowProvider
-                val currentEventJson = showProvider.fetchCurrentEvent(showId)
+            if (isAuthenticated) {
+                try {
+                    // Fetch current event details JSON using the ShowProvider
+                    val currentEventJson = showProvider.fetchCurrentEvent(showId)
 
-                // Extract and return the status from the JSON response
-                val status = currentEventJson.getString(Constants.STATUS_KEY)
+                    // Extract and return the status from the JSON response
+                    val status = currentEventJson.getString(Constants.STATUS_KEY)
 
-                // Notify the user about the success
-                callback.onSuccess(status)
-            } catch (e: Exception) {
-                // Notify the user about the error
-                callback.onError(e.message ?: "Unknown error occurred")
+                    // Notify the user about the success
+                    callback.onSuccess(status)
+                } catch (e: Exception) {
+                    // Notify the user about the error
+                    callback.onError(e.message ?: "Unknown error occurred")
+                }
+            } else {
+                callback.onError("Authentication invalid")
             }
         }
     }
