@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("maven-publish")
 }
 
 android {
@@ -30,6 +31,14 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    publishing {
+        publishing {
+            multipleVariants {
+                allVariants()
+                withJavadocJar()
+            }
+        }
+    }
 }
 
 dependencies {
@@ -46,4 +55,23 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2")
     testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
     testImplementation("org.mockito:mockito-core:3.11.2")
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "live.talkshop.sdk"
+            artifactId = "talkshoplive-gson"
+            version = "0.1.1-alpha"
+            artifact("$buildDir/outputs/aar/sdk-release.aar")
+        }
+    }
+
+    repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/TalkShopLive/android-sdk")
+            credentials.username = System.getenv("RELEASE_USERNAME")
+            credentials.password = System.getenv("RELEASE_TOKEN")
+        }
+    }
 }
