@@ -48,13 +48,13 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
     testImplementation("org.mockito:mockito-core:5.10.0")
 }
-afterEvaluate{
+afterEvaluate {
     publishing {
         publications {
             register<MavenPublication>("release") {
                 groupId = "com.github.TalkShopLive"
-                artifactId = "android-sdk"
-                version = "0.1.2-alpha"
+                artifactId = "talkshoplive-gson"
+                version = "0.1.3-alpha"
             }
         }
     }
