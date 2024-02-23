@@ -23,10 +23,22 @@ You will need the publish and subscribe keys to authenticate your app. Get your 
 
 ## Set Up Your Project
 
-1. You have can add TSL to your project by adding the following dependency to your app gradle file.
+1. You have can include Jitpack to your project by adding the following to the root build.gradle
 
 ```groovy
-implementation 'live.talkshop.sdk:talkshoplive-gson:1+'
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+2. Add TSL to your project by including the following dependency to your app gradle file.
+
+```groovy
+implementation "com.github.TalkShopLive:android-sdk:versionTag"
 ```
 
 2. Initialize the SDK using clientKey:
