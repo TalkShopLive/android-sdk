@@ -24,10 +24,6 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
     kotlinOptions {
         jvmTarget = "1.8"
     }
@@ -54,15 +50,16 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.10.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2")
     testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
-    testImplementation("org.mockito:mockito-core:3.11.2")
+    testImplementation("org.mockito:mockito-core:5.10.0")
 }
-
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            groupId = "com.github.TalkShopLive"
-            artifactId = "android-sdk"
-            version = "0.1.2-alpha"
+afterEvaluate{
+    publishing {
+        publications {
+            register<MavenPublication>("release") {
+                groupId = "com.github.TalkShopLive"
+                artifactId = "android-sdk"
+                version = "0.1.2-alpha"
+            }
         }
     }
 }
