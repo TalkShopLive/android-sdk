@@ -60,18 +60,9 @@ dependencies {
 publishing {
     publications {
         register<MavenPublication>("release") {
-            groupId = "live.talkshop.sdk"
-            artifactId = "talkshoplive-gson"
-            version = "0.1.1-alpha"
-            artifact("$buildDir/outputs/aar/sdk-release.aar")
-        }
-    }
-
-    repositories {
-        maven {
-            url = uri("https://maven.pkg.github.com/TalkShopLive/android-sdk")
-            credentials.username = System.getenv("RELEASE_USERNAME")
-            credentials.password = System.getenv("RELEASE_TOKEN")
+            groupId = "com.github.TalkShopLive"
+            artifactId = "android-sdk"
+            version = "0.1.2-alpha"
         }
     }
 }
