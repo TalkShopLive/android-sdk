@@ -8,4 +8,5 @@ object Constants {
     const val SHARED_PREFS_NAME ="TalkShopLivePrefs"
     const val KEY_AUTHENTICATED = "authenticated"
     const val KEY_VALID = "valid_key"
+    const val KEY_MP4_EXTENSION = ".mp4"
 }

@@ -4,8 +4,9 @@ import android.annotation.SuppressLint
 import com.google.gson.annotations.SerializedName
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.utils.networking.URLs.createCCUrl
-import org.json.JSONException
+import live.talkshop.sdk.utils.networking.URLs.createHSLUrl
 import org.json.JSONObject
+import java.lang.Integer.parseInt
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -45,7 +46,10 @@ data class ShowObject(
     val eventId: String?,
 
     @SerializedName("cc")
-    val cc: String?
+    val cc: String?,
+
+    @SerializedName("duration")
+    val duration: Int?
 ) {
     companion object {
         @SuppressLint("ConstantLocale")
@@ -53,24 +57,66 @@ data class ShowObject(
 
         fun parseFromJson(json: JSONObject): ShowObject {
             val productJson = json.getJSONObject("product")
+            val streamContentJson = productJson.getJSONObject("streaming_content")
             return ShowObject(
                 productJson.optInt("id", 0),
                 productJson.optString("product_key", ""),
                 productJson.optString("name", ""),
                 productJson.optString("description", ""),
-                productJson.optString("status", ""),
-                productJson.optString("hls_playback_url", ""),
-                productJson.optString("hls_url", ""),
-                productJson.optString("trailer_url", ""),
-                parseDate(productJson.optString("air_date", "")),
+                parseEventsArray(productJson, "status"),
+                parseEventsArray(productJson, "hls_playback_url"),
+                createHSLUrl(parseEventsArray(productJson, "filename")),
+                parseTrailerUrl(streamContentJson),
+                parseDate(parseAirDates(productJson, "date")),
                 parseDate(productJson.optString("ended_at", "")),
-                productJson.optString("event_id", ""),
-                createCCUrl(productJson.optString("cc", ""))
+                parseAirDates(productJson, "event_id"),
+                createCCUrl(parseEventsArray(productJson, "filename")),
+                parseInt(parseEventsArray(productJson, "duration"))
             )
         }
 
         private fun parseDate(dateString: String): Date? {
             return if (dateString.isNotEmpty()) dateFormatter.parse(dateString) else null
+        }
+
+        private fun parseTrailerUrl(streamContentJson: JSONObject): String {
+            try {
+                val trailersArray = streamContentJson.optJSONArray("trailers")
+                if (trailersArray != null && trailersArray.length() > 0) {
+                    val firstTrailer = trailersArray.getJSONObject(0)
+                    return firstTrailer.optString("video", "")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return ""
+        }
+
+        private fun parseEventsArray(productJson: JSONObject, name: String): String {
+            try {
+                val eventsArray = productJson.getJSONArray("events")
+                if (eventsArray.length() > 0) {
+                    val firstStatus = eventsArray.getJSONObject(0)
+                    return firstStatus.optString(name, "")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return ""
+        }
+
+        private fun parseAirDates(productJson: JSONObject, name: String): String {
+            try {
+                val airDatesArray =
+                    productJson.getJSONObject("streaming_content").getJSONArray("air_dates")
+                if (airDatesArray.length() > 0) {
+                    val firstAirDate = airDatesArray.getJSONObject(0)
+                    return firstAirDate.optString(name, "")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return ""
         }
     }
 }

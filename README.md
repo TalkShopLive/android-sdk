@@ -41,7 +41,7 @@ dependencyResolutionManagement {
 implementation "com.github.TalkShopLive:android-sdk:versionTag"
 ```
 
-2. Initialize the SDK using clientKey:
+3. Initialize the SDK using clientKey:
 
 - Parameters:
        - `context`: Application context.
