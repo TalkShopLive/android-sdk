@@ -147,6 +147,7 @@ fun ShowDetails(showObject: ShowObject) {
         Text("End At: ${showObject.endedAt}")
         Text("Event ID: ${showObject.eventId}")
         Text("CC: ${showObject.cc}")
+        Text("Duration: ${showObject.duration}")
         // Add more details as needed
     }
 }

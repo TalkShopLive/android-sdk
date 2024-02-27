@@ -1,5 +1,6 @@
 package live.talkshop.sdk.utils.networking
 
+import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CC_FILENAME_END
 
 object URLs {
@@ -11,8 +12,26 @@ object URLs {
     private const val PATH_SHOWS = "api/shows/"
     const val PATH_CURRENT_EVENT = "streams/current/"
 
-    fun createCCUrl(videoFilename: String): String {
-        return "${URL_CC_BASE}${videoFilename}${CC_FILENAME_END}"
+    fun createHSLUrl(videoFilename: String): String? {
+        return if (videoFilename.isNullOrEmpty()) {
+            "${URL_CC_BASE}${videoFilename}"
+        } else {
+            null
+        }
+    }
+
+    fun createCCUrl(videoFilename: String): String? {
+        return if (videoFilename.isNullOrEmpty()) {
+            "${URL_CC_BASE}${
+                videoFilename.replace(
+                    Constants.KEY_MP4_EXTENSION,
+                    CC_FILENAME_END,
+                    true
+                )
+            }"
+        } else {
+            null
+        }
     }
 
     const val URL_SHOW_DETAILS_ENDPOINT = "${URL_BASE}${PATH_SHOW_DETAILS}"

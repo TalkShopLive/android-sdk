@@ -2,7 +2,7 @@ package live.talkshop.sdk.core.show
 
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.show.models.ShowObject
-import live.talkshop.sdk.resources.Constants
+import live.talkshop.sdk.core.show.models.ShowStatusObject
 
 /**
  * Represents a class responsible for fetching details and status of a show.
@@ -34,9 +34,9 @@ class Show {
         /**
          * Invoked when current event status is successfully retrieved.
          *
-         * @param status A string representing the status of the current event.
+         * @param showStatusObject A string representing the status of the current event.
          */
-        fun onSuccess(status: String)
+        fun onSuccess(showStatusObject: ShowStatusObject)
 
         /**
          * Invoked when an error occurs during current event status retrieval.
@@ -89,11 +89,11 @@ class Show {
                     // Fetch current event details JSON using the ShowProvider
                     val currentEventJson = showProvider.fetchCurrentEvent(showId)
 
-                    // Extract and return the status from the JSON response
-                    val status = currentEventJson.getString(Constants.STATUS_KEY)
+                    /// Parse the JSON response to a ShowStatusObject
+                    val showStatusObject = ShowStatusObject.parseFromJson(currentEventJson)
 
                     // Notify the user about the success
-                    callback.onSuccess(status)
+                    callback.onSuccess(showStatusObject)
                 } catch (e: Exception) {
                     // Notify the user about the error
                     callback.onError(e.message ?: "Unknown error occurred")
