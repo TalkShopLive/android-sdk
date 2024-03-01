@@ -54,7 +54,7 @@ afterEvaluate {
         publishing.publications.create<MavenPublication>(variant.name) {
             groupId = "com.github.TalkShopLive"
             artifactId = "android-sdk"
-            version = "0.1.4-alpha"
+            version = "0.1.5-alpha"
         }
     }
 }

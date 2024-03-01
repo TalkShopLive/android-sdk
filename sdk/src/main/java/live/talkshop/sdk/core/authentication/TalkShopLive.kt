@@ -1,16 +1,20 @@
 package live.talkshop.sdk.core.authentication
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import live.talkshop.sdk.resources.Constants.AUTH_HEADER
+import live.talkshop.sdk.core.user.models.UserTokenModel
+import live.talkshop.sdk.resources.Constants
+import live.talkshop.sdk.resources.Constants.SDK_KEY
 import live.talkshop.sdk.resources.Constants.KEY_AUTHENTICATED
 import live.talkshop.sdk.resources.Constants.KEY_VALID
 import live.talkshop.sdk.resources.Constants.SHARED_PREFS_NAME
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
+import live.talkshop.sdk.utils.networking.URLs
 import live.talkshop.sdk.utils.networking.URLs.URL_AUTH_ENDPOINT
 import org.json.JSONObject
 import java.lang.ref.WeakReference
@@ -30,33 +34,14 @@ class TalkShopLive private constructor(private val context: Context) {
         private var instance: WeakReference<TalkShopLive>? = null
 
         /**
-         * Initializes TalkShopLive with the provided parameters and without a callback.
+         * Initializes TalkShopLive with the provided parameters. The callback is optional.
          *
          * @param context The application context.
          * @param clientKey The client key for authentication.
          * @param debugMode Indicates whether debug mode is enabled.
          * @param testMode Indicates whether test mode is enabled.
          * @param dnt Indicates whether Do Not Track (DNT) is enabled.
-         */
-        fun initialize(
-            context: Context,
-            clientKey: String,
-            debugMode: Boolean = false,
-            testMode: Boolean = false,
-            dnt: Boolean = false
-        ) {
-            getInstance(context).initializeInternal(clientKey, debugMode, testMode, dnt, null)
-        }
-
-        /**
-         * Initializes TalkShopLive with the provided parameters and a callback for completion.
-         *
-         * @param context The application context.
-         * @param clientKey The client key for authentication.
-         * @param debugMode Indicates whether debug mode is enabled.
-         * @param testMode Indicates whether test mode is enabled.
-         * @param dnt Indicates whether Do Not Track (DNT) is enabled.
-         * @param callback A callback function to be invoked upon initialization completion.
+         * @param callback An optional callback function to be invoked upon initialization completion.
          */
         fun initialize(
             context: Context,
@@ -64,9 +49,44 @@ class TalkShopLive private constructor(private val context: Context) {
             debugMode: Boolean = false,
             testMode: Boolean = false,
             dnt: Boolean = false,
-            callback: (Boolean) -> Unit
+            callback: ((Boolean) -> Unit)? = null // Make callback optional
         ) {
             getInstance(context).initializeInternal(clientKey, debugMode, testMode, dnt, callback)
+        }
+
+        /**
+         * Initiates chat functionality with an optional callback that returns an error message if the operation fails.
+         *
+         * @param context The application context.
+         * @param jwt The JWT token for authentication.
+         * @param isGuest Indicates whether the user is a guest.
+         * @param callback An optional callback function to be invoked upon completion.
+         */
+        fun Chat(
+            context: Context,
+            jwt: String,
+            isGuest: Boolean,
+            callback: ((String?, UserTokenModel?) -> Unit)? = null
+        ) {
+            val talkShopLive = getInstance(context)
+            if (isAuthenticated) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val response = talkShopLive.fetchUserToken(jwt, isGuest)
+                        val userTokenModel = UserTokenModel.fromJsonString(response)
+                        callback?.invoke(null, userTokenModel)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        callback?.invoke(
+                            e.message ?: "An error occurred during the chat initialization.", null
+                        )
+                    }
+                }
+            } else {
+                callback?.invoke(
+                    "Authentication invalid", null
+                )
+            }
         }
 
         private fun getInstance(context: Context): TalkShopLive {
@@ -99,13 +119,14 @@ class TalkShopLive private constructor(private val context: Context) {
         // Launch a coroutine to perform the initialization
         GlobalScope.launch(Dispatchers.IO) {
             val success = authenticateWithAPI(clientKey)
-            isAuthenticated = success // Update isAuthenticated based on authentication result
+            isAuthenticated = success
+            storedClientKey = clientKey
             callback?.invoke(success)
         }
     }
 
     private suspend fun authenticateWithAPI(clientKey: String): Boolean {
-        val headers = mapOf(AUTH_HEADER to clientKey)
+        val headers = mapOf(SDK_KEY to clientKey)
 
         return try {
             val response =
@@ -129,5 +150,24 @@ class TalkShopLive private constructor(private val context: Context) {
      */
     private fun setAuthenticated(authenticated: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_AUTHENTICATED, authenticated).apply()
+    }
+
+    /**
+     * Fetches a user token from the server.
+     *
+     * This method asynchronously retrieves a token for either a federated user or a guest, based on the provided parameters. It constructs the appropriate API request, handles the response, and returns the raw JSON string containing token information.
+     *
+     * @param jwt The JWT token for authentication (required for federated users).
+     * @param isGuest A boolean flag indicating whether the token request is for a guest (true) or a federated user (false).
+     * @return A JSON string containing the token response from the server. The response structure varies depending on the user type (federated or guest).
+     * @throws Exception if there's an error during the API request or response handling.
+     */
+    private suspend fun fetchUserToken(jwt: String, isGuest: Boolean): String {
+        val url = if (isGuest) URLs.URL_GUEST_TOKEN else URLs.URL_FED_TOKEN
+        val headers = mutableMapOf(
+            SDK_KEY to storedClientKey,
+            Constants.AUTH_KEY to "${Constants.BEARER_KEY} $jwt"
+        )
+        return APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
     }
 }
