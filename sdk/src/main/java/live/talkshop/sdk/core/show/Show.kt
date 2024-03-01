@@ -1,8 +1,8 @@
 package live.talkshop.sdk.core.show
 
 import live.talkshop.sdk.core.authentication.isAuthenticated
-import live.talkshop.sdk.core.show.models.ShowObject
-import live.talkshop.sdk.core.show.models.ShowStatusObject
+import live.talkshop.sdk.core.show.models.ShowModel
+import live.talkshop.sdk.core.show.models.ShowStatusModel
 
 /**
  * Represents a class responsible for fetching details and status of a show.
@@ -15,9 +15,9 @@ class Show {
         /**
          * Invoked when show details are successfully retrieved.
          *
-         * @param showObject The object containing the details of the show.
+         * @param showModel The object containing the details of the show.
          */
-        fun onSuccess(showObject: ShowObject)
+        fun onSuccess(showModel: ShowModel)
 
         /**
          * Invoked when an error occurs during show details retrieval.
@@ -34,9 +34,9 @@ class Show {
         /**
          * Invoked when current event status is successfully retrieved.
          *
-         * @param showStatusObject A string representing the status of the current event.
+         * @param showStatusModel A string representing the status of the current event.
          */
-        fun onSuccess(showStatusObject: ShowStatusObject)
+        fun onSuccess(showStatusModel: ShowStatusModel)
 
         /**
          * Invoked when an error occurs during current event status retrieval.
@@ -64,10 +64,10 @@ class Show {
                     val showJson = showProvider.fetchShow(showId)
 
                     // Parse the JSON response to a ShowObject
-                    val showObject = ShowObject.parseFromJson(showJson)
+                    val showModel = ShowModel.parseFromJson(showJson)
 
                     // Notify the user about the success
-                    callback.onSuccess(showObject)
+                    callback.onSuccess(showModel)
                 } catch (e: Exception) {
                     // Notify the user about the error
                     callback.onError(e.message ?: "Unknown error occurred")
@@ -90,10 +90,10 @@ class Show {
                     val currentEventJson = showProvider.fetchCurrentEvent(showId)
 
                     /// Parse the JSON response to a ShowStatusObject
-                    val showStatusObject = ShowStatusObject.parseFromJson(currentEventJson)
+                    val showStatusModel = ShowStatusModel.parseFromJson(currentEventJson)
 
                     // Notify the user about the success
-                    callback.onSuccess(showStatusObject)
+                    callback.onSuccess(showStatusModel)
                 } catch (e: Exception) {
                     // Notify the user about the error
                     callback.onError(e.message ?: "Unknown error occurred")

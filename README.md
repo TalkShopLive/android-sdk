@@ -41,7 +41,7 @@ dependencyResolutionManagement {
 implementation "com.github.TalkShopLive:android-sdk:versionTag"
 ```
 
-3. Initialize the SDK using clientKey:
+3. Initialize the SDK using clientKey.
 
 - Parameters:
        - `context`: Application context.
@@ -90,6 +90,28 @@ Show.getStatus(productKey, object : Show.GetStatusShowCallback {
     override fun onSuccess(status: String) {}
     override fun onError(error: String) {}
 })
+```
+
+## Chat
+
+### Overview
+
+The TSL Android SDK provides methods for fetching user and chat details of a specific show, enabling you to chat as a guest or as a registered user in your app.
+
+### Methods
+
+#### `TalkShopLive.Chat(context: Context, jwt: String, isGuest: Boolean, callback: ((String?, UserTokenModel?) -> Unit)`
+
+Initialize the Chat feature.
+
+- Parameters:
+    - `context`: The application context.
+    - `jwt`: The JWT token for authentication.
+    - `isGuest`: Indicates whether the user is a guest.
+    - `callback`: An optional callback function to be invoked upon completion.
+
+```kotlin
+TalkShopLive.Chat(context, jwt, isGuest) { errorMessage, userTokenModel }
 ```
 
 ## Support

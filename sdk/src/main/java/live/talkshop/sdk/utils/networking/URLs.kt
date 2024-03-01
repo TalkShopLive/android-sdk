@@ -12,6 +12,10 @@ object URLs {
     private const val PATH_SHOWS = "api/shows/"
     const val PATH_CURRENT_EVENT = "streams/current/"
 
+    private const val PATH_GUEST_TOKEN = "chat/guest_token/"
+    private const val PATH_FED_TOKEN = "chat/federated_user_token/"
+
+
     fun createHSLUrl(videoFilename: String): String? {
         return if (videoFilename.isNullOrEmpty()) {
             "${URL_CC_BASE}${videoFilename}"
@@ -37,4 +41,7 @@ object URLs {
     const val URL_SHOW_DETAILS_ENDPOINT = "${URL_BASE}${PATH_SHOW_DETAILS}"
     const val URL_CURRENT_EVENT_ENDPOINT = "${URL_BASE}${PATH_SHOWS}"
     const val URL_AUTH_ENDPOINT = "${URL_BASE}${PATH_AUTH}"
+
+    const val URL_GUEST_TOKEN = "${URL_AUTH_ENDPOINT}${PATH_GUEST_TOKEN}"
+    const val URL_FED_TOKEN = "${URL_AUTH_ENDPOINT}${PATH_FED_TOKEN}"
 }
