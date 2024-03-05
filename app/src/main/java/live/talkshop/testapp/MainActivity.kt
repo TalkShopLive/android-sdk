@@ -13,12 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.authentication.TalkShopLive
+import live.talkshop.sdk.core.chat.Chat
 import live.talkshop.sdk.core.show.Show
-import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.testapp.ui.theme.TestAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -47,14 +45,14 @@ fun MainScreen(context: Context) {
     ) {
         ClientKeyInputSection(context)
         ShowIdInputSection()
-        CreateUserInputSection(context)
+        CreateUserInputSection()
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientKeyInputSection(context: Context) {
-    var clientKey by remember { mutableStateOf("") }
+    var clientKey by remember { mutableStateOf("sdk_2ea21de19cc8bc5e8640c7b227fef2f3") }
     var initializationResult by remember { mutableStateOf<String?>(null) }
 
     OutlinedTextField(
@@ -100,9 +98,10 @@ fun ClientKeyInputSection(context: Context) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowIdInputSection() {
-    var showId by remember { mutableStateOf("") }
-    var showDetails by remember { mutableStateOf<ShowModel?>(null) }
+    var showId by remember { mutableStateOf("6ArYqYgJf8fz") }
+    var showDetails by remember { mutableStateOf<String?>(null) }
     var errorText by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     OutlinedTextField(
         value = showId,
@@ -113,32 +112,60 @@ fun ShowIdInputSection() {
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    Button(
-        onClick = {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    Show.getDetails(showId, object : Show.GetDetailsCallback {
-                        override fun onSuccess(showModel: ShowModel) {
-                            showDetails = showModel
+    Row {
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    Show.getDetails(showId) { error, show ->
+                        if (error == null && show != null) {
+                            showDetails =
+                                "ID: ${show.id}, " +
+                                        "\nName: ${show.name}, " +
+                                        "\nDescription: ${show.description}, " +
+                                        "\nStatus: ${show.status}, " +
+                                        "\nTrailer URL: ${show.trailerUrl}, " +
+                                        "\nHLS URL: ${show.hlsUrl}, " +
+                                        "\nHLS Playback URL: ${show.hlsPlaybackUrl}"
                             errorText = null
-                        }
-
-                        override fun onError(error: String) {
+                        } else {
                             errorText = error
                             showDetails = null
                         }
-                    })
-                } catch (e: Exception) {
-                    errorText = e.message ?: "Unknown error occurred"
-                    showDetails = null
-                }
-            }
-        },
-        modifier = Modifier.wrapContentWidth(Alignment.End)
-    ) {
-        Text("Fetch Show Details")
-    }
 
+                    }
+                }
+            },
+            modifier = Modifier.wrapContentWidth(Alignment.End)
+        ) {
+            Text("Fetch Show Details")
+        }
+
+        Spacer(modifier = Modifier.width(5.dp))
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    Show.getStatus(showId) { error, show ->
+                        if (error == null && show != null) {
+                            showDetails = "Show Key: ${show.showKey}, " +
+                                    "\nShow Status: ${show.status}," +
+                                    "\nHLS Playback URL: ${show.hlsPlaybackUrl}," +
+                                    "\nHLS URL: ${show.hlsUrl}"
+                            errorText = null
+                        } else {
+                            errorText = error
+                            showDetails = null
+                        }
+
+                    }
+                }
+            },
+            modifier = Modifier.wrapContentWidth(Alignment.End)
+        ) {
+            Text("Fetch Show Status")
+        }
+
+    }
     Spacer(modifier = Modifier.height(8.dp))
 
     showDetails?.let { ShowDetails(it) }
@@ -146,18 +173,15 @@ fun ShowIdInputSection() {
 }
 
 @Composable
-fun ShowDetails(showModel: ShowModel) {
+fun ShowDetails(showDetails: String) {
     Column {
-        Text("id: ${showModel.id}")
-        Text("Name: ${showModel.name}")
-        Text("Description: ${showModel.description}")
-        Text("Status: ${showModel.status}")
+        Text(showDetails)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateUserInputSection(context: Context) {
+fun CreateUserInputSection() {
     var jwt by remember { mutableStateOf("") }
     var isGuest by remember { mutableStateOf(false) }
     var apiResult by remember { mutableStateOf<String?>(null) }
@@ -185,7 +209,7 @@ fun CreateUserInputSection(context: Context) {
     Button(
         onClick = {
             apiResult = null
-            TalkShopLive.Chat(context, jwt, isGuest) { errorMessage, userTokenModel ->
+            Chat(jwt, isGuest) { errorMessage, userTokenModel ->
                 apiResult = errorMessage ?: "Great success! UserId: ${userTokenModel?.userId}"
             }
         },

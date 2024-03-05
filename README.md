@@ -68,13 +68,10 @@ Get detailed information about a specific show.
 
 - Parameters:
     - `showId`: The unique identifier of the show.
-    - `GetDetailsCallback`: A callback that will be called once the show details are fetched or an error is thrown.
+    - `callback`: A callback that will be called once the show details are fetched or an error is thrown.
 
 ```kotlin
-Show.getDetails(productKey, object : Show.GetDetailsCallback {
-    override fun onSuccess(showObject: ShowObject) {}
-    override fun onError(error: String) {}
-})
+Show.getDetails(showId) { error, show -> }
 ```
 
 #### `getStatus(showId:String, callback: GetStatusShowCallback)`
@@ -83,13 +80,10 @@ Get the current event of a show.
 
 - Parameters:
     - `showId`: The unique identifier of the show.
-    - `GetStatusShowCallback`: A callback that will be called once the show status is fetched or an error is thrown.
+    - `callback`: A callback that will be called once the show status is fetched or an error is thrown.
 
 ```kotlin
-Show.getStatus(productKey, object : Show.GetStatusShowCallback {
-    override fun onSuccess(status: String) {}
-    override fun onError(error: String) {}
-})
+Show.getStatus(showId) { error, show -> }
 ```
 
 ## Chat
@@ -100,7 +94,7 @@ The TSL Android SDK provides methods for fetching user and chat details of a spe
 
 ### Methods
 
-#### `TalkShopLive.Chat(context: Context, jwt: String, isGuest: Boolean, callback: ((String?, UserTokenModel?) -> Unit)`
+#### `Chat(jwt: String, isGuest: Boolean, callback: ((String?, UserTokenModel?) -> Unit)`
 
 Initialize the Chat feature.
 
@@ -111,7 +105,7 @@ Initialize the Chat feature.
     - `callback`: An optional callback function to be invoked upon completion.
 
 ```kotlin
-TalkShopLive.Chat(context, jwt, isGuest) { errorMessage, userTokenModel }
+Chat(jwt, isGuest) { errorMessage, userTokenModel }
 ```
 
 ## Support

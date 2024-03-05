@@ -1,4 +1,28 @@
 package live.talkshop.sdk.resources
 
-class Keys {
+object Keys {
+    const val PRODUCT = "product"
+    const val STREAMING_CONTENT = "streaming_content"
+    const val PRODUCT_KEY = "product_key"
+    const val ID = "id"
+    const val NAME = "name"
+    const val DESCRIPTION = "description"
+    const val STATUS = "status"
+    const val HLS_PLAYBACK_URL = "hls_playback_url"
+    const val FILENAME = "filename"
+    const val AIR_DATES = "air_dates"
+    const val DATE = "date"
+    const val ENDED_AT = "ended_at"
+    const val EVENT_ID = "event_id"
+    const val DURATION = "duration"
+    const val TRAILERS = "trailers"
+    const val VIDEO = "video"
+    const val EVENTS = "events"
+    const val STREAM_KEY = "stream_key"
+    const val TRAILERS_URL = "trailer_url"
+    const val PUBLISH_KEY = "publish_key"
+    const val SUBSCRIBE_KEY = "subscribe_key"
+    const val TOKEN = "token"
+    const val USER_ID = "user_id"
+    const val VALID_KEY = "valid_key"
 }
