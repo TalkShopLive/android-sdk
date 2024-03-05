@@ -2,6 +2,7 @@ package live.talkshop.sdk.utils.networking
 
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CC_FILENAME_END
+import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 
 object URLs {
     private const val URL_BASE = "https://staging.cms.talkshop.live/"
@@ -17,7 +18,7 @@ object URLs {
 
 
     fun createHSLUrl(videoFilename: String): String? {
-        return if (videoFilename.isNullOrEmpty()) {
+        return if (isNotEmptyOrNull(videoFilename)) {
             "${URL_CC_BASE}${videoFilename}"
         } else {
             null
@@ -25,7 +26,7 @@ object URLs {
     }
 
     fun createCCUrl(videoFilename: String): String? {
-        return if (videoFilename.isNullOrEmpty()) {
+        return if (isNotEmptyOrNull(videoFilename)) {
             "${URL_CC_BASE}${
                 videoFilename.replace(
                     Constants.KEY_MP4_EXTENSION,

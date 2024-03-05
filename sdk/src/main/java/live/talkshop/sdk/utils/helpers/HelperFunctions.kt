@@ -8,4 +8,8 @@ object HelperFunctions {
             null
         }
     }
+
+    fun isNotEmptyOrNull(string: String): Boolean {
+        return !string.isNullOrEmpty() && !string.equals("null")
+    }
 }

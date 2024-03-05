@@ -8,8 +8,6 @@ import org.json.JSONObject
 /**
  * Represents the status model of a show, encapsulating various details related to the stream.
  *
- * This data class holds information about a show's streaming status.
- *
  * @property showKey The unique identifier for the show.
  * @property status The current status of the show.
  * @property hlsPlaybackUrl The URL for HLS playback of the show.
@@ -39,26 +37,4 @@ data class ShowStatusModel(
 
     @SerializedName("duration")
     val duration: Int?
-) {
-    companion object {
-        /**
-         * Parses a JSON object into a ShowStatusModel instance.
-         *
-         * This method extracts show status-related information from a JSON object.
-         *
-         * @param statusJson The JSONObject containing show status information.
-         * @return A ShowStatusModel instance populated with data from the provided JSON object.
-         */
-        fun parseFromJson(statusJson: JSONObject): ShowStatusModel {
-            return ShowStatusModel(
-                statusJson.optString("stream_key", ""),
-                statusJson.optString("status", ""),
-                statusJson.optString("hls_playback_url", ""),
-                createHSLUrl(statusJson.optString("filename", "")),
-                statusJson.optString("trailer_url", ""),
-                statusJson.optInt("id", 0),
-                parseInt(statusJson.optString("duration", ""))
-            )
-        }
-    }
-}
+)
