@@ -7,8 +7,8 @@ import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 object URLs {
     private const val URL_BASE = "https://staging.cms.talkshop.live/"
     private const val URL_CC_BASE = "https://assets.talkshop.live/events/"
-    private const val URL_ASSET_BASE_PROD = "https://assets-dev.talkshop.live/"
-    private const val URL_ASSET_BASE_STAGING = "https://assets.talkshop.live/"
+    private const val URL_ASSET_BASE_PROD = "https://assets.talkshop.live/"
+    private const val URL_ASSET_BASE_STAGING = "https://assets-dev.talkshop.live/"
 
     private const val PATH_AUTH = "/api2/v1/sdk/"
     private const val PATH_SHOW_DETAILS = "api/products/digital/streaming_content/"
