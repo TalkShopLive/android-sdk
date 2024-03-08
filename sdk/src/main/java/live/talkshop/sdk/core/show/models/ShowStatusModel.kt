@@ -17,24 +17,27 @@ import org.json.JSONObject
  * @property duration The duration of the show in seconds. It can be null if the duration is not specified.
  */
 data class ShowStatusModel(
-    @SerializedName("show_key")
+    @SerializedName("showKey")
     val showKey: String,
 
     @SerializedName("status")
     val status: String,
 
-    @SerializedName("hls_playback_url")
+    @SerializedName("hlsPlaybackUrl")
     val hlsPlaybackUrl: String,
 
-    @SerializedName("hls_url")
+    @SerializedName("hlsUrl")
     val hlsUrl: String?,
 
-    @SerializedName("trailer_url")
+    @SerializedName("trailerUrl")
     val trailerUrl: String,
 
-    @SerializedName("event_id")
-    val eventId: Int?,
+    @SerializedName("eventId")
+    val eventId: String,
 
     @SerializedName("duration")
-    val duration: Int?
+    val duration: Int?,
+
+    @SerializedName("streamInCloud")
+    val streamInCloud: Boolean?
 )

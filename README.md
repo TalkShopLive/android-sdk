@@ -62,25 +62,25 @@ The TSL Android SDK provides methods for fetching details of a specific show and
 
 ### Methods
 
-#### `getDetails(showId:String, callback: GetDetailsCallback)`
+#### `getDetails(showId: String, callback: GetDetailsCallback)`
 
 Get detailed information about a specific show.
 
 - Parameters:
     - `showId`: The unique identifier of the show.
-    - `callback`: A callback that will be called once the show details are fetched or an error is thrown.
+    - `callback`: An optional callback that will be called once the show details are fetched or an error is thrown.
 
 ```kotlin
 Show.getDetails(showId) { error, show -> }
 ```
 
-#### `getStatus(showId:String, callback: GetStatusShowCallback)`
+#### `getStatus(showId: String, callback: GetStatusShowCallback)`
 
 Get the current event of a show.
 
 - Parameters:
     - `showId`: The unique identifier of the show.
-    - `callback`: A callback that will be called once the show status is fetched or an error is thrown.
+    - `callback`: A optional callback that will be called once the show status is fetched or an error is thrown.
 
 ```kotlin
 Show.getStatus(showId) { error, show -> }
@@ -94,7 +94,7 @@ The TSL Android SDK provides methods for fetching user and chat details of a spe
 
 ### Methods
 
-#### `Chat(jwt: String, isGuest: Boolean, callback: ((String?, UserTokenModel?) -> Unit)`
+#### `Chat(jwt: String, isGuest: Boolean, callback: ((String?, UserTokenModel?))`
 
 Initialize the Chat feature.
 
@@ -102,10 +102,23 @@ Initialize the Chat feature.
     - `context`: The application context.
     - `jwt`: The JWT token for authentication.
     - `isGuest`: Indicates whether the user is a guest.
+    - `showId`: The unique identifier of the show.
     - `callback`: An optional callback function to be invoked upon completion.
 
 ```kotlin
-Chat(jwt, isGuest) { errorMessage, userTokenModel }
+Chat(jwt, isGuest, showId) { errorMessage, userTokenModel -> }
+```
+
+#### `publish(message: String, callback: ((String?, String?)))`
+
+Publish a message to chat.
+
+- Parameters:
+    - `message`: The message that the user wants to send.
+    - `callback`: A optional callback that will be called once the message is sent or an error is thrown.
+
+```kotlin
+ Chat.publish(message) { error, timetoken -> }
 ```
 
 ## Support

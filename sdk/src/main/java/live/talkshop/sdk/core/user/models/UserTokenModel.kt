@@ -11,15 +11,15 @@ import com.google.gson.annotations.SerializedName
  * @property userId The optional user ID, which may not be present in all responses.
  */
 data class UserTokenModel(
-    @SerializedName("publish_key")
+    @SerializedName("publishKey")
     val publishKey: String,
 
-    @SerializedName("subscribe_key")
+    @SerializedName("subscribeKey")
     val subscribeKey: String,
 
     @SerializedName("token")
     val token: String,
 
-    @SerializedName("user_id")
-    val userId: String? = null
+    @SerializedName("userId")
+    val userId: String
 )

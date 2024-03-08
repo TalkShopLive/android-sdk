@@ -3,7 +3,7 @@ package live.talkshop.sdk.core.show
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
-import live.talkshop.sdk.resources.Constants.ERROR_AUTH_MESSAGE
+import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_AUTH
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs
@@ -27,7 +27,7 @@ internal class ShowProvider {
         callback: ((String?, ShowModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
-            callback?.invoke(ERROR_AUTH_MESSAGE, null)
+            callback?.invoke(MESSAGE_ERROR_AUTH, null)
             return
         }
 
@@ -53,13 +53,13 @@ internal class ShowProvider {
         callback: ((String?, ShowStatusModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
-            callback?.invoke(ERROR_AUTH_MESSAGE, null)
+            callback?.invoke(MESSAGE_ERROR_AUTH, null)
             return
         }
 
         try {
             val jsonResponse = APIHandler.makeRequest(
-                "${URLs.URL_CURRENT_EVENT_ENDPOINT}$showId/${URLs.PATH_CURRENT_EVENT}",
+                "${URLs.URL_CURRENT_EVENT_ENDPOINT}$showId/${URLs.PATH_STREAMS_CURRENT}",
                 HTTPMethod.GET
             )
             val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse))

@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import live.talkshop.sdk.resources.Constants.SDK_KEY
 import live.talkshop.sdk.resources.Constants.KEY_AUTHENTICATED
 import live.talkshop.sdk.resources.Constants.SHARED_PREFS_NAME
-import live.talkshop.sdk.resources.Keys.VALID_KEY
+import live.talkshop.sdk.resources.Keys.KEY_VALID_KEY
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs.URL_AUTH_ENDPOINT
@@ -93,7 +93,7 @@ class TalkShopLive private constructor(private val context: Context) {
             val response =
                 APIHandler.makeRequest(URL_AUTH_ENDPOINT, HTTPMethod.GET, headers = headers)
             val jsonResponse = JSONObject(response)
-            val validKey = jsonResponse.optBoolean(VALID_KEY, false)
+            val validKey = jsonResponse.optBoolean(KEY_VALID_KEY, false)
 
             setAuthenticated(validKey)
             validKey

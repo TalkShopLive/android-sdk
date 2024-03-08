@@ -38,7 +38,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
 
-    implementation("com.pubnub:pubnub-gson:6.4.5")
+    implementation("com.pubnub:pubnub-kotlin:8.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.test.ext:junit-ktx:1.1.5")
@@ -54,7 +54,7 @@ afterEvaluate {
         publishing.publications.create<MavenPublication>(variant.name) {
             groupId = "com.github.TalkShopLive"
             artifactId = "android-sdk"
-            version = "0.1.6-alpha"
+            version = "0.1.7-alpha"
         }
     }
 }
