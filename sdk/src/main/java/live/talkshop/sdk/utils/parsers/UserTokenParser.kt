@@ -1,10 +1,10 @@
 package live.talkshop.sdk.utils.parsers
 
 import live.talkshop.sdk.core.user.models.UserTokenModel
-import live.talkshop.sdk.resources.Keys.PUBLISH_KEY
-import live.talkshop.sdk.resources.Keys.SUBSCRIBE_KEY
-import live.talkshop.sdk.resources.Keys.TOKEN
-import live.talkshop.sdk.resources.Keys.USER_ID
+import live.talkshop.sdk.resources.Keys.KEY_PUBLISH_KEY
+import live.talkshop.sdk.resources.Keys.KEY_SUBSCRIBE_KEY
+import live.talkshop.sdk.resources.Keys.KEY_TOKEN
+import live.talkshop.sdk.resources.Keys.KEY_USER_ID
 import org.json.JSONObject
 
 internal object UserTokenParser {
@@ -17,10 +17,10 @@ internal object UserTokenParser {
         return try {
             val jsonResponse = JSONObject(jsonString)
             UserTokenModel(
-                publishKey = jsonResponse.getString(PUBLISH_KEY),
-                subscribeKey = jsonResponse.getString(SUBSCRIBE_KEY),
-                token = jsonResponse.getString(TOKEN),
-                userId = jsonResponse.getString(USER_ID)
+                publishKey = jsonResponse.getString(KEY_PUBLISH_KEY),
+                subscribeKey = jsonResponse.getString(KEY_SUBSCRIBE_KEY),
+                token = jsonResponse.getString(KEY_TOKEN),
+                userId = jsonResponse.getString(KEY_USER_ID)
             )
         } catch (e: Exception) {
             e.printStackTrace()

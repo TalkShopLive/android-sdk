@@ -7,11 +7,14 @@ import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 object URLs {
     private const val URL_BASE = "https://staging.cms.talkshop.live/"
     private const val URL_CC_BASE = "https://assets.talkshop.live/events/"
+    private const val URL_ASSET_BASE_PROD = "https://assets.talkshop.live/"
+    private const val URL_ASSET_BASE_STAGING = "https://assets-dev.talkshop.live/"
 
     private const val PATH_AUTH = "/api2/v1/sdk/"
     private const val PATH_SHOW_DETAILS = "api/products/digital/streaming_content/"
     private const val PATH_SHOWS = "api/shows/"
-    const val PATH_CURRENT_EVENT = "streams/current/"
+    const val PATH_STREAMS_CURRENT = "streams/current/"
+    const val PATH_EVENTS = "events/"
 
     private const val PATH_GUEST_TOKEN = "chat/guest_token/"
     private const val PATH_FED_TOKEN = "chat/federated_user_token/"
@@ -19,7 +22,7 @@ object URLs {
 
     fun createHSLUrl(videoFilename: String): String? {
         return if (isNotEmptyOrNull(videoFilename)) {
-            "${URL_CC_BASE}${videoFilename}"
+            "${URL_ASSET_BASE}${videoFilename}"
         } else {
             null
         }
@@ -42,7 +45,7 @@ object URLs {
     const val URL_SHOW_DETAILS_ENDPOINT = "${URL_BASE}${PATH_SHOW_DETAILS}"
     const val URL_CURRENT_EVENT_ENDPOINT = "${URL_BASE}${PATH_SHOWS}"
     const val URL_AUTH_ENDPOINT = "${URL_BASE}${PATH_AUTH}"
-
     const val URL_GUEST_TOKEN = "${URL_AUTH_ENDPOINT}${PATH_GUEST_TOKEN}"
     const val URL_FED_TOKEN = "${URL_AUTH_ENDPOINT}${PATH_FED_TOKEN}"
+    const val URL_ASSET_BASE = "${URL_ASSET_BASE_STAGING}${PATH_EVENTS}"
 }

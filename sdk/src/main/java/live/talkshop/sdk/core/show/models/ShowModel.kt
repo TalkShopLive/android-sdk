@@ -19,12 +19,16 @@ import java.util.Date
  * @property eventId The event ID associated with the show.
  * @property cc Closed captioning information or URL.
  * @property duration The duration of the show in minutes.
+ * @property trailerDuration The duration of the trailer in minutes.
+ * @property videoThumbnailUrl The url of the show's thumbnail.
+ * @property channelLogo The logo of the channel.
+ * @property channelName The name of the channel.
  */
 data class ShowModel(
     @SerializedName("id")
     val id: Int?,
 
-    @SerializedName("product_key")
+    @SerializedName("showKey")
     val showKey: String?,
 
     @SerializedName("name")
@@ -36,27 +40,39 @@ data class ShowModel(
     @SerializedName("status")
     val status: String?,
 
-    @SerializedName("hls_playback_url")
+    @SerializedName("hlsPlaybackUrl")
     val hlsPlaybackUrl: String?,
 
-    @SerializedName("hls_url")
+    @SerializedName("hlsUrl")
     val hlsUrl: String?,
 
-    @SerializedName("trailer_url")
+    @SerializedName("trailerUrl")
     val trailerUrl: String?,
 
-    @SerializedName("air_date")
+    @SerializedName("airDate")
     val airDate: Date?,
 
-    @SerializedName("ended_at")
+    @SerializedName("endedAt")
     val endedAt: Date?,
 
-    @SerializedName("event_id")
+    @SerializedName("eventId")
     val eventId: String?,
 
     @SerializedName("cc")
     val cc: String?,
 
     @SerializedName("duration")
-    val duration: Int?
+    val duration: Int?,
+
+    @SerializedName("trailerDuration")
+    val trailerDuration: Int?,
+
+    @SerializedName("videoThumbnailUrl")
+    val videoThumbnailUrl: String,
+
+    @SerializedName("channelLogo")
+    val channelLogo: String,
+
+    @SerializedName("channelName")
+    val channelName: String
 )

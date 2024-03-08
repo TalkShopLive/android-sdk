@@ -3,23 +3,30 @@ package live.talkshop.sdk.utils.parsers
 import android.annotation.SuppressLint
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.resources.Constants
-import live.talkshop.sdk.resources.Keys.AIR_DATES
-import live.talkshop.sdk.resources.Keys.DATE
-import live.talkshop.sdk.resources.Keys.DESCRIPTION
-import live.talkshop.sdk.resources.Keys.DURATION
-import live.talkshop.sdk.resources.Keys.ENDED_AT
-import live.talkshop.sdk.resources.Keys.EVENTS
-import live.talkshop.sdk.resources.Keys.EVENT_ID
-import live.talkshop.sdk.resources.Keys.FILENAME
-import live.talkshop.sdk.resources.Keys.HLS_PLAYBACK_URL
-import live.talkshop.sdk.resources.Keys.ID
-import live.talkshop.sdk.resources.Keys.NAME
-import live.talkshop.sdk.resources.Keys.PRODUCT
-import live.talkshop.sdk.resources.Keys.PRODUCT_KEY
-import live.talkshop.sdk.resources.Keys.STATUS
-import live.talkshop.sdk.resources.Keys.STREAMING_CONTENT
-import live.talkshop.sdk.resources.Keys.TRAILERS
-import live.talkshop.sdk.resources.Keys.VIDEO
+import live.talkshop.sdk.resources.Keys.KEY_AIR_DATES
+import live.talkshop.sdk.resources.Keys.KEY_ATTACHMENT
+import live.talkshop.sdk.resources.Keys.KEY_BRAND_NAME
+import live.talkshop.sdk.resources.Keys.KEY_DATE
+import live.talkshop.sdk.resources.Keys.KEY_DESCRIPTION
+import live.talkshop.sdk.resources.Keys.KEY_DURATION
+import live.talkshop.sdk.resources.Keys.KEY_ENDED_AT
+import live.talkshop.sdk.resources.Keys.KEY_EVENTS
+import live.talkshop.sdk.resources.Keys.KEY_EVENT_ID
+import live.talkshop.sdk.resources.Keys.KEY_FILENAME
+import live.talkshop.sdk.resources.Keys.KEY_HLS_PLAYBACK_URL
+import live.talkshop.sdk.resources.Keys.KEY_ID
+import live.talkshop.sdk.resources.Keys.KEY_IMAGE
+import live.talkshop.sdk.resources.Keys.KEY_IMAGES
+import live.talkshop.sdk.resources.Keys.KEY_LARGE
+import live.talkshop.sdk.resources.Keys.KEY_MASTER
+import live.talkshop.sdk.resources.Keys.KEY_NAME
+import live.talkshop.sdk.resources.Keys.KEY_OWNING_STORE
+import live.talkshop.sdk.resources.Keys.KEY_PRODUCT
+import live.talkshop.sdk.resources.Keys.KEY_PRODUCT_KEY
+import live.talkshop.sdk.resources.Keys.KEY_STATUS
+import live.talkshop.sdk.resources.Keys.KEY_STREAMING_CONTENT
+import live.talkshop.sdk.resources.Keys.KEY_TRAILERS
+import live.talkshop.sdk.resources.Keys.KEY_VIDEO
 import live.talkshop.sdk.utils.helpers.HelperFunctions
 import live.talkshop.sdk.utils.networking.URLs
 import org.json.JSONObject
@@ -42,22 +49,26 @@ internal object ShowParser {
      * @return A ShowModel instance populated with data from the JSON object.
      */
     fun parseFromJson(json: JSONObject): ShowModel {
-        val productJson = json.getJSONObject(PRODUCT)
-        val streamContentJson = productJson.getJSONObject(STREAMING_CONTENT)
+        val productJson = json.getJSONObject(KEY_PRODUCT)
+        val streamContentJson = productJson.getJSONObject(KEY_STREAMING_CONTENT)
         return ShowModel(
-            productJson.optInt(ID, 0),
-            productJson.optString(PRODUCT_KEY, ""),
-            productJson.optString(NAME, ""),
-            productJson.optString(DESCRIPTION, ""),
-            parseEventsArray(productJson, STATUS),
-            parseEventsArray(productJson, HLS_PLAYBACK_URL),
-            URLs.createHSLUrl(parseEventsArray(productJson, FILENAME)),
-            parseTrailerUrl(streamContentJson),
-            parseDate(parseAirDates(productJson, DATE)),
-            parseDate(productJson.optString(ENDED_AT, "")),
-            parseAirDates(productJson, EVENT_ID),
-            URLs.createCCUrl(parseEventsArray(productJson, FILENAME)),
-            HelperFunctions.parseInt(parseEventsArray(productJson, DURATION))
+            productJson.optInt(KEY_ID, 0),
+            productJson.optString(KEY_PRODUCT_KEY, ""),
+            productJson.optString(KEY_NAME, ""),
+            productJson.optString(KEY_DESCRIPTION, ""),
+            parseEventsArray(productJson, KEY_STATUS),
+            parseEventsArray(productJson, KEY_HLS_PLAYBACK_URL),
+            URLs.createHSLUrl(parseEventsArray(productJson, KEY_FILENAME)),
+            parseTrailerUrl(streamContentJson, KEY_VIDEO),
+            parseDate(parseAirDates(productJson, KEY_DATE)),
+            parseDate(productJson.optString(KEY_ENDED_AT, "")),
+            parseAirDates(productJson, KEY_EVENT_ID),
+            URLs.createCCUrl(parseEventsArray(productJson, KEY_FILENAME)),
+            HelperFunctions.parseInt(parseEventsArray(productJson, KEY_DURATION)),
+            HelperFunctions.parseInt(parseTrailerUrl(streamContentJson, KEY_DURATION)),
+            parseVideoThumbnailUrl(productJson),
+            parseChannelLogo(productJson),
+            productJson.optString(KEY_BRAND_NAME, "")
         )
     }
 
@@ -81,14 +92,19 @@ internal object ShowParser {
      * the first trailer URL. If no trailer is found, it returns an empty string.
      *
      * @param streamContentJson The JSON object containing streaming content details.
+     * @param name The name of the field to retrieve from the trailers array.
      * @return The trailer URL or an empty string if not found.
      */
-    private fun parseTrailerUrl(streamContentJson: JSONObject): String {
+    private fun parseTrailerUrl(streamContentJson: JSONObject, name: String): String {
         try {
-            val trailersArray = streamContentJson.optJSONArray(TRAILERS)
+            val trailersArray = streamContentJson.optJSONArray(KEY_TRAILERS)
             if (trailersArray != null && trailersArray.length() > 0) {
                 val firstTrailer = trailersArray.getJSONObject(0)
-                return firstTrailer.optString(VIDEO, "")
+                return if (name == KEY_DURATION) {
+                    firstTrailer.optInt(name).toString()
+                } else {
+                    firstTrailer.optString(name, "")
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -109,7 +125,7 @@ internal object ShowParser {
      */
     private fun parseEventsArray(productJson: JSONObject, name: String): String {
         try {
-            val eventsArray = productJson.getJSONArray(EVENTS)
+            val eventsArray = productJson.getJSONArray(KEY_EVENTS)
             if (eventsArray.length() > 0) {
                 val firstStatus = eventsArray.getJSONObject(0)
                 return firstStatus.optString(name, "")
@@ -133,7 +149,7 @@ internal object ShowParser {
     private fun parseAirDates(productJson: JSONObject, name: String): String {
         try {
             val airDatesArray =
-                productJson.getJSONObject(STREAMING_CONTENT).getJSONArray(AIR_DATES)
+                productJson.getJSONObject(KEY_STREAMING_CONTENT).getJSONArray(KEY_AIR_DATES)
             if (airDatesArray.length() > 0) {
                 val firstAirDate = airDatesArray.getJSONObject(0)
                 return firstAirDate.optString(name, "")
@@ -142,5 +158,39 @@ internal object ShowParser {
             e.printStackTrace()
         }
         return ""
+    }
+
+    /**
+     * Parses the product JSON object to extract the video thumbnail URL.
+     * It navigates through the nested JSON structure to find the thumbnail URL.
+     * If any part of the structure is missing or there is an exception, it returns an empty string.
+     *
+     * @param productJson The JSON object containing the product details.
+     * @return The extracted video thumbnail URL or an empty string if not found or in case of an error.
+     */
+    private fun parseVideoThumbnailUrl(productJson: JSONObject): String {
+        return try {
+            productJson.getJSONObject(KEY_MASTER).getJSONArray(KEY_IMAGES).getJSONObject(0)
+                .getJSONObject(KEY_ATTACHMENT).optString(KEY_LARGE, "")
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    /**
+     * Parses the product JSON object to extract the channel logo URL.
+     * It navigates through the nested JSON structure to find the channel logo URL.
+     * If any part of the structure is missing or there is an exception, it returns an empty string.
+     *
+     * @param productJson The JSON object containing the product details.
+     * @return The extracted channel logo URL or an empty string if not found or in case of an error.
+     */
+    private fun parseChannelLogo(productJson: JSONObject): String {
+        return try {
+            productJson.getJSONObject(KEY_OWNING_STORE).getJSONObject(KEY_IMAGE)
+                .getJSONObject(KEY_ATTACHMENT).optString(KEY_LARGE, "")
+        } catch (e: Exception) {
+            ""
+        }
     }
 }
