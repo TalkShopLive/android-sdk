@@ -18,12 +18,12 @@ internal class ShowProvider {
     /**
      * Fetches show details for the specified product key, handling the network request and authentication check.
      *
-     * @param showId The product key for which show details are to be fetched.
+     * @param showKey The product key for which show details are to be fetched.
      * @param callback An optional callback that is invoked upon completion of the request.
      * It provides an error message if something goes wrong, or the ShowModel if successful.
      */
     internal suspend fun fetchShow(
-        showId: String,
+        showKey: String,
         callback: ((String?, ShowModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
@@ -33,7 +33,7 @@ internal class ShowProvider {
 
         try {
             val jsonResponse =
-                APIHandler.makeRequest("${URLs.URL_SHOW_DETAILS_ENDPOINT}$showId", HTTPMethod.GET)
+                APIHandler.makeRequest("${URLs.URL_SHOW_DETAILS_ENDPOINT}$showKey", HTTPMethod.GET)
             val showModel = ShowParser.parseFromJson(JSONObject(jsonResponse))
             callback?.invoke(null, showModel)
         } catch (e: Exception) {
@@ -44,12 +44,12 @@ internal class ShowProvider {
     /**
      * Fetches current event details for the specified product key, handling the network request and authentication check.
      *
-     * @param showId The product key for which current event status is to be fetched.
+     * @param showKey The product key for which current event status is to be fetched.
      * @param callback An optional callback that is invoked upon completion of the request.
      * It provides an error message if something goes wrong, or the ShowStatusModel if successful.
      */
     internal suspend fun fetchCurrentEvent(
-        showId: String,
+        showKey: String,
         callback: ((String?, ShowStatusModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
@@ -59,7 +59,7 @@ internal class ShowProvider {
 
         try {
             val jsonResponse = APIHandler.makeRequest(
-                "${URLs.URL_CURRENT_EVENT_ENDPOINT}$showId/${URLs.PATH_STREAMS_CURRENT}",
+                "${URLs.URL_CURRENT_EVENT_ENDPOINT}$showKey/${URLs.PATH_STREAMS_CURRENT}",
                 HTTPMethod.GET
             )
             val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse))

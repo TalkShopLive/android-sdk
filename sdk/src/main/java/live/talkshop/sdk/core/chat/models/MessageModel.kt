@@ -16,7 +16,7 @@ import live.talkshop.sdk.resources.Constants.ENUM_MESSAGE_TYPE_QUESTION
 data class MessageModel(
     val id: Int?,
     val createdAt: String?,
-    val sender: String?,
+    val sender: SenderModel?,
     val text: String?,
     val type: MessageType,
     val platform: String?

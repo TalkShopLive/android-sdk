@@ -1,6 +1,7 @@
 package live.talkshop.sdk.utils.parsers
 
 import live.talkshop.sdk.core.user.models.UserTokenModel
+import live.talkshop.sdk.resources.Keys.KEY_NAME
 import live.talkshop.sdk.resources.Keys.KEY_PUBLISH_KEY
 import live.talkshop.sdk.resources.Keys.KEY_SUBSCRIBE_KEY
 import live.talkshop.sdk.resources.Keys.KEY_TOKEN
@@ -20,7 +21,12 @@ internal object UserTokenParser {
                 publishKey = jsonResponse.getString(KEY_PUBLISH_KEY),
                 subscribeKey = jsonResponse.getString(KEY_SUBSCRIBE_KEY),
                 token = jsonResponse.getString(KEY_TOKEN),
-                userId = jsonResponse.getString(KEY_USER_ID)
+                userId = jsonResponse.getString(KEY_USER_ID),
+                name = if (jsonResponse.has(KEY_NAME)) {
+                    jsonResponse.getString(KEY_NAME)
+                } else {
+                    jsonResponse.getString(KEY_USER_ID)
+                }
             )
         } catch (e: Exception) {
             e.printStackTrace()

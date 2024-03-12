@@ -62,28 +62,28 @@ The TSL Android SDK provides methods for fetching details of a specific show and
 
 ### Methods
 
-#### `getDetails(showId: String, callback: GetDetailsCallback)`
+#### `getDetails(showKey: String, callback: GetDetailsCallback)`
 
 Get detailed information about a specific show.
 
 - Parameters:
-    - `showId`: The unique identifier of the show.
+    - `showKey`: The unique identifier of the show.
     - `callback`: An optional callback that will be called once the show details are fetched or an error is thrown.
 
 ```kotlin
-Show.getDetails(showId) { error, show -> }
+Show.getDetails(showKey) { error, show -> }
 ```
 
-#### `getStatus(showId: String, callback: GetStatusShowCallback)`
+#### `getStatus(showKey: String, callback: GetStatusShowCallback)`
 
 Get the current event of a show.
 
 - Parameters:
-    - `showId`: The unique identifier of the show.
+    - `showKey`: The unique identifier of the show.
     - `callback`: A optional callback that will be called once the show status is fetched or an error is thrown.
 
 ```kotlin
-Show.getStatus(showId) { error, show -> }
+Show.getStatus(showKey) { error, show -> }
 ```
 
 ## Chat
@@ -102,11 +102,11 @@ Initialize the Chat feature.
     - `context`: The application context.
     - `jwt`: The JWT token for authentication.
     - `isGuest`: Indicates whether the user is a guest.
-    - `showId`: The unique identifier of the show.
+    - `showKey`: The unique identifier of the show.
     - `callback`: An optional callback function to be invoked upon completion.
 
 ```kotlin
-Chat(jwt, isGuest, showId) { errorMessage, userTokenModel -> }
+Chat(jwt, isGuest, showKey) { errorMessage, userTokenModel -> }
 ```
 
 #### `publish(message: String, callback: ((String?, String?)))`
@@ -119,6 +119,32 @@ Publish a message to chat.
 
 ```kotlin
  Chat.publish(message) { error, timetoken -> }
+```
+
+#### `subscribe(callback: ChatCallback)`
+
+Subscribe to a chat to get notfied when there are changes
+
+- Parameters:
+    - `callback`: A callback that will be called once there's a change.
+
+```kotlin
+ Chat.subscribe(object : Chat.ChatCallback {
+    override fun onMessageReceived(message: MessageModel) {}
+})
+```
+
+#### `getChatMessages(count: Int, start: Long?, callback: (List<MessageModel>?, Long?, String?))`
+
+Get the chat history
+
+- Parameters:
+    - `count`: The number of messages to fetch. Defaults to 25.
+    - `start`: The starting time token for fetching messages. Used for pagination.
+    - `callback`: A callback to return messages, the next start token, or an error.
+
+```kotlin
+Chat.getChatMessages { messageList, nextStartToken, error -> }
 ```
 
 ## Support
