@@ -16,7 +16,7 @@ import live.talkshop.sdk.resources.Constants.ENUM_MESSAGE_TYPE_QUESTION
 data class MessageModel(
     val id: Int?,
     val createdAt: String?,
-    val sender: MessageSender?,
+    val sender: SenderModel?,
     val text: String?,
     val type: MessageType,
     val platform: String?
@@ -43,12 +43,4 @@ data class MessageModel(
             }
         }
     }
-}
-
-/**
- * Sealed class to represent the sender of a message, which can be either a SenderModel or a String.
- */
-sealed class MessageSender {
-    data class Model(val senderModel: SenderModel?) : MessageSender()
-    data class StringSender(val senderString: String) : MessageSender()
 }

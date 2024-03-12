@@ -20,7 +20,7 @@ import com.pubnub.api.models.consumer.pubsub.objects.PNSetUUIDMetadataEventMessa
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.storedClientKey
 import live.talkshop.sdk.core.chat.models.MessageModel
-import live.talkshop.sdk.core.chat.models.MessageSender
+import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.core.user.models.UserTokenModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
@@ -269,7 +269,7 @@ class ChatProvider {
             val messageObject = MessageModel(
                 id = System.currentTimeMillis().toInt(),
                 createdAt = Date().toString(),
-                sender = MessageSender.StringSender(userTokenModel.userId),
+                sender = SenderModel(id = userTokenModel.userId, name = userTokenModel.name),
                 text = message,
                 type = messageType,
                 platform = PLATFORM_TYPE

@@ -44,9 +44,9 @@ fun MainScreen(context: Context) {
             .padding(16.dp)
             .verticalScroll(scrollState)
     ) {
-        ClientKeyInputSection(context)
-        ShowIdInputSection()
-        InitializeChat()
+        ClientKeyInputSection(context, "")
+        ShowIdInputSection("")
+        InitializeChat("", "")
         PublishMessage()
         ChatHistory()
     }
@@ -54,8 +54,8 @@ fun MainScreen(context: Context) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClientKeyInputSection(context: Context) {
-    var clientKey by remember { mutableStateOf("") }
+fun ClientKeyInputSection(context: Context, clientKeyString: String) {
+    var clientKey by remember { mutableStateOf(clientKeyString) }
     var initializationResult by remember { mutableStateOf<String?>(null) }
 
     OutlinedTextField(
@@ -100,8 +100,8 @@ fun ClientKeyInputSection(context: Context) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShowIdInputSection() {
-    var showKey by remember { mutableStateOf("") }
+fun ShowIdInputSection(showKeyString: String) {
+    var showKey by remember { mutableStateOf(showKeyString) }
     var showDetails by remember { mutableStateOf<String?>(null) }
     var errorText by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
@@ -184,10 +184,10 @@ fun ShowDetails(showDetails: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InitializeChat() {
-    var jwt by remember { mutableStateOf("") }
+fun InitializeChat(jwtString: String, showKeyString: String) {
+    var jwt by remember { mutableStateOf(jwtString) }
     var isGuest by remember { mutableStateOf(false) }
-    var showKey by remember { mutableStateOf("8WtAFFgRO1K0") }  // Mutable state for showId
+    var showKey by remember { mutableStateOf(showKeyString) }
     var apiResult by remember { mutableStateOf<String?>(null) }
 
     OutlinedTextField(

@@ -4,7 +4,6 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult
 import live.talkshop.sdk.core.chat.models.MessageModel
-import live.talkshop.sdk.core.chat.models.MessageSender
 import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.resources.Constants.ENUM_MESSAGE_TYPE_COMMENT
 import live.talkshop.sdk.resources.Keys.KEY_CHANNEL_CODE
@@ -34,7 +33,7 @@ object MessageParser {
             val typeString = message.get(KEY_TYPE)?.asString ?: ENUM_MESSAGE_TYPE_COMMENT
             val type = MessageModel.MessageType.fromString(typeString)
             val platform = message.get(KEY_PLATFORM)?.asString
-            MessageModel(id, createdAt, MessageSender.Model(sender), text, type, platform)
+            MessageModel(id, createdAt, sender, text, type, platform)
         } catch (e: Exception) {
             e.printStackTrace()
             null
