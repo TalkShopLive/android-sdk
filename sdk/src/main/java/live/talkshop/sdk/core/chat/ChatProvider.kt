@@ -20,13 +20,14 @@ import com.pubnub.api.models.consumer.pubsub.objects.PNSetUUIDMetadataEventMessa
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.storedClientKey
 import live.talkshop.sdk.core.chat.models.MessageModel
+import live.talkshop.sdk.core.chat.models.MessageSender
 import live.talkshop.sdk.core.user.models.UserTokenModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
 import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
 import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_AUTH
 import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_MESSAGE_MAX_LENGTH
-import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE_SDK
+import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs
@@ -69,13 +70,13 @@ class ChatProvider {
     /**
      * Initiates the chat by fetching a user token and setting up PubNub.
      *
-     * @param showId The unique identifier for the chat session or show.
+     * @param showKey The unique identifier for the chat session or show.
      * @param jwt The JWT token used for authentication.
      * @param isGuest Indicates whether the user is a guest.
      * @param callback A callback invoked upon the completion of the chat initiation process.
      */
     internal suspend fun initiateChat(
-        showId: String,
+        showKey: String,
         jwt: String,
         isGuest: Boolean,
         callback: ((String?, UserTokenModel?) -> Unit)?
@@ -90,7 +91,7 @@ class ChatProvider {
 
                 val response = APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
                 userTokenModel = UserTokenParser.fromJsonString(response)!!
-                initializePubNub(showId)
+                initializePubNub(showKey)
                 callback?.invoke(null, userTokenModel)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -104,9 +105,9 @@ class ChatProvider {
     /**
      * Initializes the PubNub configuration and subscribes to the necessary channels.
      *
-     * @param showId The unique identifier for the chat session or show.
+     * @param showKey The unique identifier for the chat session or show.
      */
-    private suspend fun initializePubNub(showId: String) {
+    private suspend fun initializePubNub(showKey: String) {
         val pnConfig = PNConfiguration(UserId(userTokenModel.userId)).apply {
             subscribeKey = userTokenModel.subscribeKey
             publishKey = userTokenModel.publishKey
@@ -115,18 +116,18 @@ class ChatProvider {
         }
 
         pubnub = PubNub(pnConfig)
-        subscribeChannels(showId)
+        subscribeChannels(showKey)
 
     }
 
     /**
      * Subscribes to the chat and events channels.
      *
-     * @param showId The unique identifier for the chat session or show.
+     * @param showKey The unique identifier for the chat session or show.
      */
-    private suspend fun subscribeChannels(showId: String) {
+    private suspend fun subscribeChannels(showKey: String) {
         val jsonResponse = APIHandler.makeRequest(
-            "${URLs.URL_CURRENT_EVENT_ENDPOINT}$showId/${URLs.PATH_STREAMS_CURRENT}",
+            "${URLs.URL_CURRENT_EVENT_ENDPOINT}$showKey/${URLs.PATH_STREAMS_CURRENT}",
             HTTPMethod.GET
         )
         val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse))
@@ -148,7 +149,8 @@ class ChatProvider {
             override fun message(pubnub: PubNub, pnMessageResult: PNMessageResult) {
                 when (pnMessageResult.channel) {
                     publishChannel -> {
-                        val messageData: MessageModel? = MessageParser.parse(pnMessageResult)
+                        val messageData: MessageModel? =
+                            MessageParser.parse(pnMessageResult.message.asJsonObject)
                         if (messageData != null) {
                             println("Received message on publish channel: $messageData")
                             callback?.onMessageReceived(messageData)
@@ -267,10 +269,10 @@ class ChatProvider {
             val messageObject = MessageModel(
                 id = System.currentTimeMillis().toInt(),
                 createdAt = Date().toString(),
-                sender = userTokenModel.userId,
+                sender = MessageSender.StringSender(userTokenModel.userId),
                 text = message,
                 type = messageType,
-                platform = PLATFORM_TYPE_SDK
+                platform = PLATFORM_TYPE
             )
 
             pubnub?.publish(publishChannel, messageObject)?.async { result, status ->
@@ -285,6 +287,49 @@ class ChatProvider {
         } catch (error: Exception) {
             error.printStackTrace()
             callback?.invoke(error.message, null)
+        }
+    }
+
+    /**
+     * Fetches past chat messages.
+     *
+     * @param count The number of messages to fetch. Defaults to 25.
+     * @param start The starting point in time for fetching messages. If null, fetches the latest messages.
+     * @param includeMeta Whether to include message metadata.
+     * @param callback Callback to return the result or error.
+     */
+    internal fun fetchPastMessages(
+        count: Int = 25,
+        start: Long? = null,
+        includeMeta: Boolean = true,
+        callback: (List<MessageModel>?, Long?, String?) -> Unit
+    ) {
+        if (!isAuthenticated) {
+            callback(null, null, MESSAGE_ERROR_AUTH)
+            return
+        }
+
+        try {
+            pubnub?.history(
+                channel = publishChannel,
+                start = start,
+                count = count,
+                includeMeta = includeMeta
+            )?.async { result, status ->
+                if (!status.error && result != null) {
+                    val messages = result.messages.mapNotNull { messageDetail ->
+                        MessageParser.parse(messageDetail.entry.asJsonObject)
+                    }
+
+                    val nextStart = result.messages.lastOrNull()?.timetoken
+
+                    callback(messages, nextStart, null)
+                } else {
+                    callback(null, null, status.exception?.message)
+                }
+            }
+        } catch (error: Exception) {
+            callback(null, null, error.message)
         }
     }
 }

@@ -20,5 +20,5 @@ object Constants {
     const val CHANNEL_CHAT_PREFIX = "chat."
     const val CHANNEL_EVENTS_PREFIX = "events."
 
-    const val PLATFORM_TYPE_SDK = "sdk"
+    const val PLATFORM_TYPE = "mobile"
 }

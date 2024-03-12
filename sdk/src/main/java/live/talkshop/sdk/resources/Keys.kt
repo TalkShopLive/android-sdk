@@ -38,4 +38,7 @@ object Keys {
     const val KEY_OWNING_STORE = "owningStore"
     const val KEY_BRAND_NAME = "brand_name"
     const val KEY_STREAM_IN_CLOUD = "stream_in_cloud"
+    const val KEY_PROFILE_URL = "profileUrl"
+    const val KEY_CHANNEL_CODE = "channelCode"
+    const val KEY_IS_VERIFIED = "isVerified"
 }
