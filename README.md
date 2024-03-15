@@ -141,10 +141,23 @@ Get the chat history
 - Parameters:
     - `count`: The number of messages to fetch. Defaults to 25.
     - `start`: The starting time token for fetching messages. Used for pagination.
-    - `callback`: A callback to return messages, the next start token, or an error.
+    - `callback`: An optional callback to return messages, the next start token, or an error.
 
 ```kotlin
 Chat.getChatMessages { messageList, nextStartToken, error -> }
+```
+
+#### `updateUser(newJwt: String, isGuest: Boolean, callback: ((String?, UserTokenModel?))`
+
+Update the current user
+
+- Parameters:
+    - `count`: The new JWT token
+    - `isGuest`: Indicates whether the user is a guest.
+    - `callback`: An optional callback function to be invoked upon completion.
+
+```kotlin
+Chat.updateUser(jwt, isGuest) { errorMessage, userTokenModel -> }
 ```
 
 ## Support

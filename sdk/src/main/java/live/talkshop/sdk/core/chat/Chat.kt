@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.chat.models.MessageModel
-import live.talkshop.sdk.core.user.models.UserTokenModel
+import live.talkshop.sdk.core.chat.models.UserTokenModel
 
 /**
  * Represents a chat session, encapsulating the logic to initiate and manage chat functionalities.
@@ -46,14 +46,14 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
          * @param message The message to be published.
          * @param callback An optional callback to be invoked with the result of the publish operation.
          */
-        fun publish(message: String, callback: ((String?, String?) -> Unit)? = null) {
+        suspend fun publish(message: String, callback: ((String?, String?) -> Unit)? = null) {
             provider.publish(message, callback)
         }
 
         /**
          * Subscribes to the chat channels to receive messages and other events.
          */
-        fun subscribe(callback: ChatCallback) {
+        suspend fun subscribe(callback: ChatCallback) {
             provider.setCallback(object : ChatProviderCallback {
                 override fun onMessageReceived(message: MessageModel) {
                     callback.onMessageReceived(message)
@@ -69,8 +69,27 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
          * @param start The starting time token for fetching messages. Used for pagination.
          * @param callback Callback to return messages, the next start token, or an error.
          */
-        fun getChatMessages(count: Int = 25, start: Long? = null, callback: (List<MessageModel>?, Long?, String?) -> Unit) {
+        suspend fun getChatMessages(
+            count: Int = 25,
+            start: Long? = null,
+            callback: (List<MessageModel>?, Long?, String?) -> Unit
+        ) {
             provider.fetchPastMessages(count = count, start = start, callback = callback)
         }
+    }
+
+    /**
+     * Updates the user's authentication state and re-initiates the chat session if necessary.
+     *
+     * @param newJwt The new JWT for the user authentication.
+     * @param isGuest Indicates if the user is in guest mode.
+     * @param callback A callback to be invoked with the operation result.
+     */
+    suspend fun updateUser(
+        newJwt: String,
+        isGuest: Boolean,
+        callback: ((String?, UserTokenModel?) -> Unit)?
+    ) {
+        provider.editUser(newJwt, isGuest, callback)
     }
 }

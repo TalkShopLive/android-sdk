@@ -17,11 +17,12 @@ import com.pubnub.api.models.consumer.pubsub.objects.PNObjectEventResult
 import com.pubnub.api.models.consumer.pubsub.objects.PNSetChannelMetadataEventMessage
 import com.pubnub.api.models.consumer.pubsub.objects.PNSetMembershipEventMessage
 import com.pubnub.api.models.consumer.pubsub.objects.PNSetUUIDMetadataEventMessage
+import live.talkshop.sdk.core.authentication.globalShowKey
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.storedClientKey
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.SenderModel
-import live.talkshop.sdk.core.user.models.UserTokenModel
+import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
 import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
@@ -30,7 +31,8 @@ import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_MESSAGE_MAX_LENGTH
 import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
-import live.talkshop.sdk.utils.networking.URLs
+import live.talkshop.sdk.utils.networking.URLs.getCurrentStreamUrl
+import live.talkshop.sdk.utils.networking.URLs.getUserTokenUrl
 import live.talkshop.sdk.utils.parsers.MessageParser
 import live.talkshop.sdk.utils.parsers.ShowStatusParser
 import live.talkshop.sdk.utils.parsers.UserTokenParser
@@ -49,6 +51,7 @@ import java.util.Date
  * @property publishChannel The primary channel for publishing messages.
  * @property eventsChannel The channel used for subscribing to events.
  * @property callback An optional callback for handling received messages.
+ * @property currentShowKey The current show's key.
  */
 class ChatProvider {
     private lateinit var userTokenModel: UserTokenModel
@@ -57,13 +60,15 @@ class ChatProvider {
     private lateinit var publishChannel: String
     private var eventsChannel: String? = null
     private var callback: ChatProviderCallback? = null
+    private lateinit var currentShowKey: String
 
     /**
      * Sets the callback for handling chat events and messages.
      *
      * @param callback The callback to be invoked on chat events.
      */
-    internal fun setCallback(callback: ChatProviderCallback) {
+    internal suspend fun setCallback(callback: ChatProviderCallback) {
+        handleShowKeyChange()
         this.callback = callback
     }
 
@@ -83,15 +88,16 @@ class ChatProvider {
     ) {
         if (isAuthenticated) {
             try {
-                val url = if (isGuest) URLs.URL_GUEST_TOKEN else URLs.URL_FED_TOKEN
+                currentShowKey = showKey
+                globalShowKey = showKey
+                val url = getUserTokenUrl(isGuest)
                 val headers = mutableMapOf(
                     Constants.SDK_KEY to storedClientKey,
                     Constants.AUTH_KEY to "${Constants.BEARER_KEY} $jwt"
                 )
-
                 val response = APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
                 userTokenModel = UserTokenParser.fromJsonString(response)!!
-                initializePubNub(showKey)
+                initializePubNub()
                 callback?.invoke(null, userTokenModel)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -104,10 +110,8 @@ class ChatProvider {
 
     /**
      * Initializes the PubNub configuration and subscribes to the necessary channels.
-     *
-     * @param showKey The unique identifier for the chat session or show.
      */
-    private suspend fun initializePubNub(showKey: String) {
+    private suspend fun initializePubNub() {
         val pnConfig = PNConfiguration(UserId(userTokenModel.userId)).apply {
             subscribeKey = userTokenModel.subscribeKey
             publishKey = userTokenModel.publishKey
@@ -116,18 +120,15 @@ class ChatProvider {
         }
 
         pubnub = PubNub(pnConfig)
-        subscribeChannels(showKey)
-
+        subscribeChannels()
     }
 
     /**
      * Subscribes to the chat and events channels.
-     *
-     * @param showKey The unique identifier for the chat session or show.
      */
-    private suspend fun subscribeChannels(showKey: String) {
+    private suspend fun subscribeChannels() {
         val jsonResponse = APIHandler.makeRequest(
-            "${URLs.URL_CURRENT_EVENT_ENDPOINT}$showKey/${URLs.PATH_STREAMS_CURRENT}",
+            getCurrentStreamUrl(currentShowKey),
             HTTPMethod.GET
         )
         val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse))
@@ -140,11 +141,12 @@ class ChatProvider {
     /**
      * Subscribes to the channels and sets up listeners for handling chat events.
      */
-    internal fun subscribe() {
+    internal suspend fun subscribe() {
         if (!isAuthenticated) {
             println(MESSAGE_ERROR_AUTH)
             return
         }
+        handleShowKeyChange()
         val listener = object : SubscribeCallback() {
             override fun message(pubnub: PubNub, pnMessageResult: PNMessageResult) {
                 when (pnMessageResult.channel) {
@@ -247,12 +249,13 @@ class ChatProvider {
      * @param message The message to be published.
      * @param callback An optional callback invoked with the result of the publish operation.
      */
-    internal fun publish(message: String, callback: ((String?, String?) -> Unit)? = null) {
+    internal suspend fun publish(message: String, callback: ((String?, String?) -> Unit)? = null) {
         if (!isAuthenticated) {
             callback?.invoke(MESSAGE_ERROR_AUTH, null)
             return
         }
         try {
+            handleShowKeyChange()
             if (message.length > 200) {
                 callback?.invoke(
                     MESSAGE_ERROR_MESSAGE_MAX_LENGTH,
@@ -279,13 +282,12 @@ class ChatProvider {
                 if (!status.error) {
                     callback?.invoke(null, result!!.timetoken.toString())
                 } else {
-                    println(status.exception)
-                    status.exception?.printStackTrace()
+                    Logging.print(status.exception?.message.toString())
                     callback?.invoke(status.exception?.message, null)
                 }
             }
         } catch (error: Exception) {
-            error.printStackTrace()
+            Logging.print(error)
             callback?.invoke(error.message, null)
         }
     }
@@ -298,7 +300,7 @@ class ChatProvider {
      * @param includeMeta Whether to include message metadata.
      * @param callback Callback to return the result or error.
      */
-    internal fun fetchPastMessages(
+    internal suspend fun fetchPastMessages(
         count: Int = 25,
         start: Long? = null,
         includeMeta: Boolean = true,
@@ -310,6 +312,7 @@ class ChatProvider {
         }
 
         try {
+            handleShowKeyChange()
             pubnub?.history(
                 channel = publishChannel,
                 start = start,
@@ -325,11 +328,53 @@ class ChatProvider {
 
                     callback(messages, nextStart, null)
                 } else {
+                    status.exception?.message?.let { Logging.print(it) }
                     callback(null, null, status.exception?.message)
                 }
             }
         } catch (error: Exception) {
+            Logging.print(error)
             callback(null, null, error.message)
         }
+    }
+
+    /**
+     * Attempts to update the user token model and re-initiate chat if the JWT has changed.
+     *
+     * @param newJwt The new JWT to be set for the user.
+     * @param isGuest A flag indicating if the current user is a guest.
+     * @param callback A callback to be invoked after the update attempt with any resulting message and the updated UserTokenModel.
+     */
+    internal suspend fun editUser(
+        newJwt: String,
+        isGuest: Boolean,
+        callback: ((String?, UserTokenModel?) -> Unit)?
+    ) {
+        if (userTokenModel.token != newJwt) {
+            deInitialize()
+            initiateChat(currentShowKey, newJwt, isGuest, callback)
+        } else {
+            callback?.invoke(null, userTokenModel)
+        }
+    }
+
+    /**
+     * Checks if the current show key has changed and re-initializes the PubNub instance if necessary.
+     */
+    private suspend fun handleShowKeyChange() {
+        if (currentShowKey != globalShowKey) {
+            currentShowKey = globalShowKey
+            deInitialize()
+            initializePubNub()
+        }
+    }
+
+    /**
+     * Cleans up the current PubNub instance and prepares for re-initialization or shutdown.
+     */
+    private fun deInitialize() {
+        pubnub?.unsubscribeAll()
+        pubnub?.destroy()
+        pubnub = null
     }
 }
