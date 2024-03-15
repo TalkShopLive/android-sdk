@@ -54,7 +54,17 @@ afterEvaluate {
         publishing.publications.create<MavenPublication>(variant.name) {
             groupId = "com.github.TalkShopLive"
             artifactId = "android-sdk"
-            version = "0.1.8-alpha"
+            version = "1.0.0-beta"
+
+            pom.withXml {
+                asNode().appendNode("dependencies").apply {
+                    appendNode("dependency").apply {
+                        appendNode("groupId", "com.pubnub")
+                        appendNode("artifactId", "pubnub-kotlin")
+                        appendNode("version", "8.0.0")
+                    }
+                }
+            }
         }
     }
 }

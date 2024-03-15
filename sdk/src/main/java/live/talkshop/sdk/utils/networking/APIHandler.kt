@@ -2,6 +2,7 @@ package live.talkshop.sdk.utils.networking
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import live.talkshop.sdk.core.chat.Logging
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.DataOutputStream
@@ -97,11 +98,12 @@ object APIHandler {
             }
 
             if (responseCode !in 200..299) {
-                throw IOException("HTTP request failed with status code $responseCode: $responseText")
+                Logging.print("HTTP request failed with status code $responseCode: $responseText")
             }
 
             return@withContext responseText
         } catch (e: Exception) {
+            Logging.print(e)
             throw IOException("Failed to make HTTP request: ${e.message}", e)
         } finally {
             connection?.disconnect()

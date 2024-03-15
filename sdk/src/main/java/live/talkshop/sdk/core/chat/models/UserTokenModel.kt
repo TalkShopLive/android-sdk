@@ -1,6 +1,4 @@
-package live.talkshop.sdk.core.user.models
-
-import com.google.gson.annotations.SerializedName
+package live.talkshop.sdk.core.chat.models
 
 /**
  * Represents a model for user token data retrieved from an API.

@@ -1,12 +1,14 @@
 package live.talkshop.sdk.core.show
 
 import live.talkshop.sdk.core.authentication.isAuthenticated
+import live.talkshop.sdk.core.chat.Logging
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
 import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_AUTH
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs
+import live.talkshop.sdk.utils.networking.URLs.getShowDetailsUrl
 import live.talkshop.sdk.utils.parsers.ShowParser
 import live.talkshop.sdk.utils.parsers.ShowStatusParser
 import org.json.JSONObject
@@ -33,10 +35,11 @@ internal class ShowProvider {
 
         try {
             val jsonResponse =
-                APIHandler.makeRequest("${URLs.URL_SHOW_DETAILS_ENDPOINT}$showKey", HTTPMethod.GET)
+                APIHandler.makeRequest(getShowDetailsUrl(showKey), HTTPMethod.GET)
             val showModel = ShowParser.parseFromJson(JSONObject(jsonResponse))
             callback?.invoke(null, showModel)
         } catch (e: Exception) {
+            Logging.print(e)
             callback?.invoke(e.message, null)
         }
     }
@@ -59,12 +62,13 @@ internal class ShowProvider {
 
         try {
             val jsonResponse = APIHandler.makeRequest(
-                "${URLs.URL_CURRENT_EVENT_ENDPOINT}$showKey/${URLs.PATH_STREAMS_CURRENT}",
+                URLs.getCurrentStreamUrl(showKey),
                 HTTPMethod.GET
             )
             val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse))
             callback?.invoke(null, showStatusModel)
         } catch (e: Exception) {
+            Logging.print(e)
             callback?.invoke(e.message, null)
         }
     }

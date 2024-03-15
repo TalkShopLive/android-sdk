@@ -1,6 +1,7 @@
 package live.talkshop.sdk.utils.parsers
 
 import android.annotation.SuppressLint
+import live.talkshop.sdk.core.chat.Logging
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Keys.KEY_AIR_DATES
@@ -107,7 +108,7 @@ internal object ShowParser {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Logging.print(e)
         }
         return ""
     }
@@ -131,7 +132,7 @@ internal object ShowParser {
                 return firstStatus.optString(name, "")
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Logging.print(e)
         }
         return ""
     }
@@ -155,7 +156,7 @@ internal object ShowParser {
                 return firstAirDate.optString(name, "")
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Logging.print(e)
         }
         return ""
     }
@@ -173,6 +174,7 @@ internal object ShowParser {
             productJson.getJSONObject(KEY_MASTER).getJSONArray(KEY_IMAGES).getJSONObject(0)
                 .getJSONObject(KEY_ATTACHMENT).optString(KEY_LARGE, "")
         } catch (e: Exception) {
+            Logging.print(e)
             ""
         }
     }
@@ -190,6 +192,7 @@ internal object ShowParser {
             productJson.getJSONObject(KEY_OWNING_STORE).getJSONObject(KEY_IMAGE)
                 .getJSONObject(KEY_ATTACHMENT).optString(KEY_LARGE, "")
         } catch (e: Exception) {
+            Logging.print(e)
             ""
         }
     }

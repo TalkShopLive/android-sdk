@@ -1,9 +1,6 @@
 package live.talkshop.sdk.core.show.models
 
 import com.google.gson.annotations.SerializedName
-import live.talkshop.sdk.utils.helpers.HelperFunctions.parseInt
-import live.talkshop.sdk.utils.networking.URLs.createHSLUrl
-import org.json.JSONObject
 
 /**
  * Represents the status model of a show, encapsulating various details related to the stream.

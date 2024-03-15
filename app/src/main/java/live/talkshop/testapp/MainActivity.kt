@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.authentication.TalkShopLive
 import live.talkshop.sdk.core.chat.Chat
@@ -36,6 +38,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+//Update these values to test scanarios
+private const val clientKey = "sdk_2ea21de19cc8bc5e8640c7b227fef2f3"
+private const val globalShowKey = "8WtAFFgRO1K0"
+private const val jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZGtfMmVhMjFkZTE5Y2M4YmM1ZTg2NDBjN2IyMjdmZWYyZjMiLCJleHAiOjE3OTkyNjc3NDYsImp0aSI6InRXaEJBd1NUbVhVNnp5UUsxNUV1eXk9PSIsInVzZXIiOnsiaWQiOiIxMjMiLCJuYW1lIjoiTWF5dXJpIn19.cUwgqLmLQJ_JV0vNzdUFNdPcBHk6XTf5GqGSArJSnms"
+
 @Composable
 fun MainScreen(context: Context) {
     val scrollState = rememberScrollState()
@@ -44,9 +51,9 @@ fun MainScreen(context: Context) {
             .padding(16.dp)
             .verticalScroll(scrollState)
     ) {
-        ClientKeyInputSection(context, "")
-        ShowIdInputSection("")
-        InitializeChat("", "")
+        ClientKeyInputSection(context)
+        ShowIdInputSection()
+        InitializeChat()
         PublishMessage()
         ChatHistory()
     }
@@ -54,8 +61,8 @@ fun MainScreen(context: Context) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClientKeyInputSection(context: Context, clientKeyString: String) {
-    var clientKey by remember { mutableStateOf(clientKeyString) }
+fun ClientKeyInputSection(context: Context) {
+    var clientKey by remember { mutableStateOf(clientKey) }
     var initializationResult by remember { mutableStateOf<String?>(null) }
 
     OutlinedTextField(
@@ -72,8 +79,8 @@ fun ClientKeyInputSection(context: Context, clientKeyString: String) {
             TalkShopLive.initialize(
                 context,
                 clientKey,
-                debugMode = false,
-                testMode = false,
+                debugMode = true,
+                testMode = true,
                 dnt = false
             ) {
                 initializationResult = if (it) {
@@ -100,8 +107,8 @@ fun ClientKeyInputSection(context: Context, clientKeyString: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShowIdInputSection(showKeyString: String) {
-    var showKey by remember { mutableStateOf(showKeyString) }
+fun ShowIdInputSection() {
+    var showKey by remember { mutableStateOf(globalShowKey) }
     var showDetails by remember { mutableStateOf<String?>(null) }
     var errorText by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
@@ -184,25 +191,15 @@ fun ShowDetails(showDetails: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InitializeChat(jwtString: String, showKeyString: String) {
-    var jwt by remember { mutableStateOf(jwtString) }
+fun InitializeChat() {
+    var jwt by remember { mutableStateOf(jwt) }
     var isGuest by remember { mutableStateOf(false) }
-    var showKey by remember { mutableStateOf(showKeyString) }
     var apiResult by remember { mutableStateOf<String?>(null) }
 
     OutlinedTextField(
         value = jwt,
         onValueChange = { jwt = it },
         label = { Text("JWT Token") },
-        modifier = Modifier.fillMaxWidth()
-    )
-
-    Spacer(modifier = Modifier.height(16.dp))
-
-    OutlinedTextField(
-        value = showKey,
-        onValueChange = { showKey = it },
-        label = { Text("Show ID") },
         modifier = Modifier.fillMaxWidth()
     )
 
@@ -222,7 +219,7 @@ fun InitializeChat(jwtString: String, showKeyString: String) {
     Button(
         onClick = {
             apiResult = null
-            Chat(showKey, jwt, isGuest) { errorMessage, userTokenModel ->
+            Chat(globalShowKey, jwt, isGuest) { errorMessage, userTokenModel ->
                 apiResult = errorMessage ?: "Great success! UserId: ${userTokenModel?.userId}"
             }
         },
@@ -238,7 +235,7 @@ fun InitializeChat(jwtString: String, showKeyString: String) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PublishMessage() {
     var message by remember { mutableStateOf("") }
@@ -257,11 +254,13 @@ fun PublishMessage() {
     ) {
         Button(
             onClick = {
-                Chat.subscribe(object : Chat.ChatCallback {
-                    override fun onMessageReceived(message: MessageModel) {
-                        subscriptionResult = "Received message: ${message.text}"
-                    }
-                })
+                GlobalScope.launch {
+                    Chat.subscribe(object : Chat.ChatCallback {
+                        override fun onMessageReceived(message: MessageModel) {
+                            subscriptionResult = "Received message: ${message.text}"
+                        }
+                    })
+                }
             }
         ) {
             Text("Subscribe")
@@ -269,11 +268,13 @@ fun PublishMessage() {
         Spacer(modifier = Modifier.width(5.dp))
         Button(
             onClick = {
-                Chat.publish(message) { error, timetoken ->
-                    apiResult = if (error == null) {
-                        "Message sent, timetoken: $timetoken"
-                    } else {
-                        "Failed to send message: $error"
+                GlobalScope.launch {
+                    Chat.publish(message) { error, timetoken ->
+                        apiResult = if (error == null) {
+                            "Message sent, timetoken: $timetoken"
+                        } else {
+                            "Failed to send message: $error"
+                        }
                     }
                 }
             }
@@ -293,6 +294,7 @@ fun PublishMessage() {
     }
 }
 
+@OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun ChatHistory() {
     var messages by remember { mutableStateOf<List<MessageModel>?>(null) }
@@ -301,13 +303,15 @@ fun ChatHistory() {
 
     Button(
         onClick = {
-            Chat.getChatMessages { messageList, _, error ->
-                if (error == null) {
-                    messages = messageList
-                } else {
-                    errorMessage = error
+            GlobalScope.launch {
+                Chat.getChatMessages { messageList, _, error ->
+                    if (error == null) {
+                        messages = messageList
+                    } else {
+                        errorMessage = error
+                    }
+                    showPopup = true
                 }
-                showPopup = true
             }
         }
     ) {

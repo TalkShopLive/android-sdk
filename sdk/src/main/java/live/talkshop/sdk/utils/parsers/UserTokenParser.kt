@@ -1,6 +1,7 @@
 package live.talkshop.sdk.utils.parsers
 
-import live.talkshop.sdk.core.user.models.UserTokenModel
+import live.talkshop.sdk.core.chat.Logging
+import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.Keys.KEY_NAME
 import live.talkshop.sdk.resources.Keys.KEY_PUBLISH_KEY
 import live.talkshop.sdk.resources.Keys.KEY_SUBSCRIBE_KEY
@@ -29,7 +30,7 @@ internal object UserTokenParser {
                 }
             )
         } catch (e: Exception) {
-            e.printStackTrace()
+            Logging.print(e)
             null
         }
     }
