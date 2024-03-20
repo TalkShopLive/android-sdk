@@ -41,4 +41,5 @@ object Keys {
     const val KEY_PROFILE_URL = "profileUrl"
     const val KEY_CHANNEL_CODE = "channelCode"
     const val KEY_IS_VERIFIED = "isVerified"
+    const val KEY_TOTAL_VIEWS = "total_viewes"
 }

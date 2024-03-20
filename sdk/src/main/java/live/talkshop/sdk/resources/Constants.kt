@@ -4,7 +4,7 @@ object Constants {
     const val MESSAGE_ERROR_AUTH = "Authentication invalid"
     const val MESSAGE_ERROR_MESSAGE_MAX_LENGTH = "Publishing Error: Message exceeds maximum length of 200 characters."
 
-    const val CC_FILENAME_END = "_transcoded.transcript.vtt"
+    const val CC_FILENAME_END = ".transcript.vtt"
     const val DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss"
     const val SDK_KEY = "x-tsl-sdk-key"
     const val AUTH_KEY = "Authorization"

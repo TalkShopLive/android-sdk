@@ -49,7 +49,7 @@ object APIHandler {
         requestMethod: HTTPMethod,
         payload: JSONObject? = null,
         headers: Map<String, String> = emptyMap()
-    ): String = withContext(Dispatchers.IO) {
+    ): ApiResponse = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
             val url = URL(requestUrl)
@@ -59,8 +59,7 @@ object APIHandler {
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 setRequestProperty("Accept", "application/json")
                 doInput = true
-                doOutput =
-                    requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT
+                doOutput = requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT
                 connectTimeout = 15000
                 readTimeout = 15000
 
@@ -101,7 +100,7 @@ object APIHandler {
                 Logging.print("HTTP request failed with status code $responseCode: $responseText")
             }
 
-            return@withContext responseText
+            return@withContext ApiResponse(responseText, responseCode)
         } catch (e: Exception) {
             Logging.print(e)
             throw IOException("Failed to make HTTP request: ${e.message}", e)
