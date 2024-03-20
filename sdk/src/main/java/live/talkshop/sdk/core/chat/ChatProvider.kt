@@ -1,6 +1,5 @@
 package live.talkshop.sdk.core.chat
 
-import android.util.Log
 import com.pubnub.api.PNConfiguration
 import com.pubnub.api.PubNub
 import com.pubnub.api.UserId
@@ -424,10 +423,8 @@ class ChatProvider {
                 headers = headers
             )
             if (response.statusCode >= 200) {
-                Log.e("MEOW", "GREAT SUCCESSS")
                 callback?.let { it(true, null) }
             } else {
-                Log.e("MEOW", "GREAT FAIL")
                 callback?.let { it(false, null) }
                 println(response.body)
                 Logging.print(response.body)
