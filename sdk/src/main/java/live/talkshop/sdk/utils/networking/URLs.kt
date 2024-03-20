@@ -18,6 +18,7 @@ object URLs {
     private const val PATH_EVENTS = "events/"
     private const val PATH_GUEST_TOKEN = "chat/guest_token/"
     private const val PATH_FED_TOKEN = "chat/federated_user_token/"
+    private const val PATH_MESSAGES = "chat/messages/"
 
     fun createHSLUrl(videoFilename: String): String? {
         return if (isNotEmptyOrNull(videoFilename)) {
@@ -76,6 +77,14 @@ object URLs {
             "${URL_BASE_STAGING}${PATH_AUTH}"
         } else {
             "${URL_BASE_PROD}${PATH_AUTH}"
+        }
+    }
+
+    fun getMessagesUrl(eventId: String, timeToken: String): String {
+        return if (isTestMode) {
+            "${URL_BASE_STAGING}${PATH_AUTH}${PATH_MESSAGES}$eventId/$timeToken"
+        } else {
+            "${URL_BASE_PROD}${PATH_AUTH}${PATH_MESSAGES}$eventId/$timeToken"
         }
     }
 

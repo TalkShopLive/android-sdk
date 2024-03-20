@@ -36,7 +36,7 @@ internal class ShowProvider {
         try {
             val jsonResponse =
                 APIHandler.makeRequest(getShowDetailsUrl(showKey), HTTPMethod.GET)
-            val showModel = ShowParser.parseFromJson(JSONObject(jsonResponse))
+            val showModel = ShowParser.parseFromJson(JSONObject(jsonResponse.body))
             callback?.invoke(null, showModel)
         } catch (e: Exception) {
             Logging.print(e)
@@ -65,7 +65,7 @@ internal class ShowProvider {
                 URLs.getCurrentStreamUrl(showKey),
                 HTTPMethod.GET
             )
-            val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse))
+            val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse.body))
             callback?.invoke(null, showStatusModel)
         } catch (e: Exception) {
             Logging.print(e)

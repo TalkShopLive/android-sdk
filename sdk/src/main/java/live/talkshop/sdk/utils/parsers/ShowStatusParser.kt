@@ -8,6 +8,7 @@ import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_STATUS
 import live.talkshop.sdk.resources.Keys.KEY_STREAM_IN_CLOUD
 import live.talkshop.sdk.resources.Keys.KEY_STREAM_KEY
+import live.talkshop.sdk.resources.Keys.KEY_TOTAL_VIEWS
 import live.talkshop.sdk.resources.Keys.KEY_TRAILERS_URL
 import live.talkshop.sdk.utils.helpers.HelperFunctions
 import live.talkshop.sdk.utils.networking.URLs
@@ -31,7 +32,8 @@ internal object ShowStatusParser {
             statusJson.optString(KEY_TRAILERS_URL, ""),
             statusJson.optString(KEY_ID, ""),
             HelperFunctions.parseInt(statusJson.optString(KEY_DURATION, "")),
-            statusJson.getBoolean(KEY_STREAM_IN_CLOUD)
+            statusJson.getBoolean(KEY_STREAM_IN_CLOUD),
+            statusJson.optInt(KEY_TOTAL_VIEWS, 0)
         )
     }
 }

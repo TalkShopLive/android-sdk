@@ -1,5 +1,6 @@
 package live.talkshop.sdk.core.chat
 
+import android.util.Log
 import com.pubnub.api.PNConfiguration
 import com.pubnub.api.PubNub
 import com.pubnub.api.UserId
@@ -32,12 +33,15 @@ import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs.getCurrentStreamUrl
+import live.talkshop.sdk.utils.networking.URLs.getMessagesUrl
 import live.talkshop.sdk.utils.networking.URLs.getUserTokenUrl
 import live.talkshop.sdk.utils.parsers.MessageParser
 import live.talkshop.sdk.utils.parsers.ShowStatusParser
 import live.talkshop.sdk.utils.parsers.UserTokenParser
 import org.json.JSONObject
+import java.util.Calendar
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
 /**
  * The ChatProvider class is responsible for handling chat functionalities,
@@ -52,6 +56,7 @@ import java.util.Date
  * @property eventsChannel The channel used for subscribing to events.
  * @property callback An optional callback for handling received messages.
  * @property currentShowKey The current show's key.
+ * @property eventId The id of the current event..
  */
 class ChatProvider {
     private lateinit var userTokenModel: UserTokenModel
@@ -61,6 +66,7 @@ class ChatProvider {
     private var eventsChannel: String? = null
     private var callback: ChatProviderCallback? = null
     private lateinit var currentShowKey: String
+    private lateinit var eventId: String
 
     /**
      * Sets the callback for handling chat events and messages.
@@ -96,7 +102,7 @@ class ChatProvider {
                     Constants.AUTH_KEY to "${Constants.BEARER_KEY} $jwt"
                 )
                 val response = APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
-                userTokenModel = UserTokenParser.fromJsonString(response)!!
+                userTokenModel = UserTokenParser.fromJsonString(response.body)!!
                 initializePubNub()
                 callback?.invoke(null, userTokenModel)
             } catch (e: Exception) {
@@ -131,7 +137,8 @@ class ChatProvider {
             getCurrentStreamUrl(currentShowKey),
             HTTPMethod.GET
         )
-        val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse))
+        val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse.body))
+        eventId = showStatusModel.eventId
         publishChannel = CHANNEL_CHAT_PREFIX + showStatusModel.eventId
         eventsChannel = CHANNEL_EVENTS_PREFIX + showStatusModel.eventId
         channels = listOfNotNull(publishChannel, eventsChannel)
@@ -156,7 +163,6 @@ class ChatProvider {
                         if (messageData != null) {
                             println("Received message on publish channel: $messageData")
                             callback?.onMessageReceived(messageData)
-
                         } else {
                             println("messageData is null")
                         }
@@ -321,7 +327,11 @@ class ChatProvider {
             )?.async { result, status ->
                 if (!status.error && result != null) {
                     val messages = result.messages.mapNotNull { messageDetail ->
-                        MessageParser.parse(messageDetail.entry.asJsonObject)
+                        if (messageDetail.entry.isJsonObject) {
+                            MessageParser.parse(messageDetail.entry.asJsonObject)
+                        } else {
+                            null
+                        }
                     }
 
                     val nextStart = result.messages.lastOrNull()?.timetoken
@@ -343,7 +353,8 @@ class ChatProvider {
      *
      * @param newJwt The new JWT to be set for the user.
      * @param isGuest A flag indicating if the current user is a guest.
-     * @param callback A callback to be invoked after the update attempt with any resulting message and the updated UserTokenModel.
+     * @param callback A callback to be invoked after the update attempt with any resulting message
+     * and the updated UserTokenModel.
      */
     internal suspend fun editUser(
         newJwt: String,
@@ -351,11 +362,20 @@ class ChatProvider {
         callback: ((String?, UserTokenModel?) -> Unit)?
     ) {
         if (userTokenModel.token != newJwt) {
-            deInitialize()
+            clearConnection()
             initiateChat(currentShowKey, newJwt, isGuest, callback)
         } else {
             callback?.invoke(null, userTokenModel)
         }
+    }
+
+    /**
+     * Cleans up the current PubNub instance and prepares for re-initialization or shutdown.
+     */
+    internal fun clearConnection() {
+        pubnub?.unsubscribeAll()
+        pubnub?.destroy()
+        pubnub = null
     }
 
     /**
@@ -364,17 +384,57 @@ class ChatProvider {
     private suspend fun handleShowKeyChange() {
         if (currentShowKey != globalShowKey) {
             currentShowKey = globalShowKey
-            deInitialize()
+            clearConnection()
             initializePubNub()
         }
     }
 
     /**
-     * Cleans up the current PubNub instance and prepares for re-initialization or shutdown.
+     * Counts the unread messages in the provided channels.
+     *
+     * @param callback Callback to return the count of unread messages based on the
+     * name of the channel
      */
-    private fun deInitialize() {
-        pubnub?.unsubscribeAll()
-        pubnub?.destroy()
-        pubnub = null
+    internal fun countUnreadMessages(callback: (Map<String, Long>?) -> Unit) {
+        val lastHourTimeToken =
+            (Calendar.getInstance().timeInMillis - TimeUnit.HOURS.toMillis(1)) * 10000L
+        pubnub?.messageCounts(channels, listOf(lastHourTimeToken))?.async { result, status ->
+            if (!status.error && result != null) {
+                callback(result.channels)
+            } else {
+                status.exception?.errorMessage?.let { Logging.print(it) }
+                callback(null)
+            }
+        }
+    }
+
+    internal suspend fun unPublishMessage(
+        timeToken: String,
+        callback: ((Boolean, String?) -> Unit)?
+    ) {
+        val headers = mutableMapOf(
+            Constants.SDK_KEY to storedClientKey,
+            Constants.AUTH_KEY to "${Constants.BEARER_KEY} ${userTokenModel.token}"
+        )
+
+        try {
+            val response = APIHandler.makeRequest(
+                getMessagesUrl(eventId, timeToken),
+                HTTPMethod.DELETE,
+                headers = headers
+            )
+            if (response.statusCode >= 200) {
+                Log.e("MEOW", "GREAT SUCCESSS")
+                callback?.let { it(true, null) }
+            } else {
+                Log.e("MEOW", "GREAT FAIL")
+                callback?.let { it(false, null) }
+                println(response.body)
+                Logging.print(response.body)
+            }
+        } catch (e: Exception) {
+            Logging.print(e)
+            callback?.let { it(false, e.message) }
+        }
     }
 }

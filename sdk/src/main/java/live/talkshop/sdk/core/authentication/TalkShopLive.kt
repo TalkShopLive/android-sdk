@@ -89,7 +89,7 @@ class TalkShopLive private constructor(private val context: Context) {
         return try {
             val response =
                 APIHandler.makeRequest(getAuthUrl(), HTTPMethod.GET, headers = headers)
-            val jsonResponse = JSONObject(response)
+            val jsonResponse = JSONObject(response.body)
             val validKey = jsonResponse.optBoolean(KEY_VALID_KEY, false)
 
             setAuthenticated(validKey)

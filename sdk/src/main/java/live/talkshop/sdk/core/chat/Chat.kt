@@ -76,20 +76,40 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
         ) {
             provider.fetchPastMessages(count = count, start = start, callback = callback)
         }
-    }
 
-    /**
-     * Updates the user's authentication state and re-initiates the chat session if necessary.
-     *
-     * @param newJwt The new JWT for the user authentication.
-     * @param isGuest Indicates if the user is in guest mode.
-     * @param callback A callback to be invoked with the operation result.
-     */
-    suspend fun updateUser(
-        newJwt: String,
-        isGuest: Boolean,
-        callback: ((String?, UserTokenModel?) -> Unit)?
-    ) {
-        provider.editUser(newJwt, isGuest, callback)
+        /**
+         * Updates the user's authentication state and re-initiates the chat session if necessary.
+         *
+         * @param newJwt The new JWT for the user authentication.
+         * @param isGuest Indicates if the user is in guest mode.
+         * @param callback A callback to be invoked with the operation result.
+         */
+        suspend fun updateUser(
+            newJwt: String,
+            isGuest: Boolean,
+            callback: ((String?, UserTokenModel?) -> Unit)?
+        ) {
+            provider.editUser(newJwt, isGuest, callback)
+        }
+
+        /**
+         * Unsubscribes from all the channels and chat connections
+         */
+        fun clean() {
+            provider.clearConnection()
+        }
+
+        /**
+         * Public method to count unread messages.
+         *
+         * @param callback Callback to return the count of unread messages.
+         */
+        fun countMessages(callback: (Map<String, Long>?) -> Unit) {
+            provider.countUnreadMessages(callback)
+        }
+
+        suspend fun deleteMessage(timeToken: String, callback: ((Boolean, String?) -> Unit)? = null) {
+            provider.unPublishMessage(timeToken, callback)
+        }
     }
 }

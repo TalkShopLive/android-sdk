@@ -36,5 +36,8 @@ data class ShowStatusModel(
     val duration: Int?,
 
     @SerializedName("streamInCloud")
-    val streamInCloud: Boolean?
+    val streamInCloud: Boolean?,
+
+    @SerializedName("totalViews")
+    val totalViews: Int
 )
