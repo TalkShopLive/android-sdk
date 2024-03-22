@@ -2,7 +2,6 @@ package live.talkshop.testapp
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -57,6 +56,7 @@ fun MainScreen(context: Context) {
         InitializeChat()
         PublishMessage()
         ChatHistory()
+        DeleteMessageSection()
     }
 }
 
@@ -276,7 +276,6 @@ fun PublishMessage() {
                         } else {
                             "Failed to send message: $error"
                         }
-                        Log.e("MEOW", "timetoken: " + timetoken)
                     }
                 }
             }
@@ -342,4 +341,46 @@ fun ChatHistory() {
             }
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
+@Composable
+fun DeleteMessageSection() {
+    var timeToken by remember { mutableStateOf("17111319277303308") }
+    var results by remember { mutableStateOf<String?>(null) }
+
+    OutlinedTextField(
+        value = timeToken,
+        onValueChange = { timeToken = it },
+        label = { Text("Time Token") },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Button(
+        onClick = {
+            GlobalScope.launch {
+                Chat.deleteMessage(timeToken) { success, errorMessage ->
+                    results = if (success) {
+                        "Success"
+                    } else {
+                        errorMessage
+                    }
+                }
+            }
+        },
+        modifier = Modifier.wrapContentWidth(Alignment.End)
+
+    ) {
+        Text("Delete Message")
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    results?.let {
+        Text(it, color = if (it == "Success") Color.Green else Color.Red)
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
 }

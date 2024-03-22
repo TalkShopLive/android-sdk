@@ -29,6 +29,7 @@ import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
 import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_AUTH
 import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_MESSAGE_MAX_LENGTH
 import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
+import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs.getCurrentStreamUrl
@@ -66,6 +67,9 @@ class ChatProvider {
     private var callback: ChatProviderCallback? = null
     private lateinit var currentShowKey: String
     private lateinit var eventId: String
+    private lateinit var userId: String
+    private lateinit var currentJwt: String
+    private var fromUpdateUser: Boolean = false
 
     /**
      * Sets the callback for handling chat events and messages.
@@ -104,6 +108,7 @@ class ChatProvider {
                 userTokenModel = UserTokenParser.fromJsonString(response.body)!!
                 initializePubNub()
                 callback?.invoke(null, userTokenModel)
+                currentJwt = jwt
             } catch (e: Exception) {
                 e.printStackTrace()
                 callback?.invoke(e.message, null)
@@ -123,8 +128,9 @@ class ChatProvider {
             authKey = userTokenModel.token
             secure = true
         }
-
+        userId = userTokenModel.userId
         pubnub = PubNub(pnConfig)
+
         subscribeChannels()
     }
 
@@ -137,11 +143,28 @@ class ChatProvider {
             HTTPMethod.GET
         )
         val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse.body))
-        eventId = showStatusModel.eventId
         publishChannel = CHANNEL_CHAT_PREFIX + showStatusModel.eventId
         eventsChannel = CHANNEL_EVENTS_PREFIX + showStatusModel.eventId
         channels = listOfNotNull(publishChannel, eventsChannel)
+        eventId = publishChannel
         subscribe()
+
+        val action: String
+        if (fromUpdateUser) {
+            action = Constants.COLLECTOR_ACTION_UPDATE_USER
+        } else {
+            action = Constants.COLLECTOR_ACTION_SELECT_VIEW_CHAT
+            fromUpdateUser = true
+        }
+        Collector.collect(
+            action = action,
+            category = Constants.COLLECTOR_CAT_INTERACTION,
+            eventID = showStatusModel.eventId,
+            showKey = currentShowKey,
+            showStatus = showStatusModel.status,
+            duration = showStatusModel.duration,
+            userId = userId
+        )
     }
 
     /**
@@ -270,9 +293,10 @@ class ChatProvider {
             }
 
             val messageType = when {
-                message.trim().contains("?") -> MessageModel.MessageType.QUESTION
-                else -> MessageModel.MessageType.COMMENT
+                message.trim().contains("?") -> Constants.MESSAGE_TYPE_QUESTION
+                else -> Constants.MESSAGE_TYPE_COMMENT
             }
+
 
             val messageObject = MessageModel(
                 id = System.currentTimeMillis().toInt(),
@@ -411,21 +435,22 @@ class ChatProvider {
         timeToken: String,
         callback: ((Boolean, String?) -> Unit)?
     ) {
+
         val headers = mutableMapOf(
             Constants.SDK_KEY to storedClientKey,
-            Constants.AUTH_KEY to "${Constants.BEARER_KEY} ${userTokenModel.token}"
+            Constants.AUTH_KEY to "${Constants.BEARER_KEY} $currentJwt"
         )
 
         try {
             val response = APIHandler.makeRequest(
-                getMessagesUrl(eventId, timeToken),
-                HTTPMethod.DELETE,
+                requestUrl = getMessagesUrl(eventId, timeToken),
+                requestMethod = HTTPMethod.DELETE,
                 headers = headers
             )
-            if (response.statusCode >= 200) {
+            if (response.statusCode in 200..299) {
                 callback?.let { it(true, null) }
             } else {
-                callback?.let { it(false, null) }
+                callback?.let { it(false, response.body) }
                 println(response.body)
                 Logging.print(response.body)
             }

@@ -1,8 +1,5 @@
 package live.talkshop.sdk.core.chat.models
 
-import live.talkshop.sdk.resources.Constants.ENUM_MESSAGE_TYPE_GIPHY
-import live.talkshop.sdk.resources.Constants.ENUM_MESSAGE_TYPE_QUESTION
-
 /**
  * Represents a message model in the chat system.
  *
@@ -18,29 +15,6 @@ data class MessageModel(
     val createdAt: String?,
     val sender: SenderModel?,
     val text: String?,
-    val type: MessageType,
+    val type: String,
     val platform: String?
-) {
-    /**
-     * Enum for identifying the type of the message.
-     */
-    enum class MessageType {
-        COMMENT,
-        QUESTION,
-        GIPHY;
-
-        companion object {
-            /**
-             * Converts a string value to its corresponding [MessageType] enum.
-             *
-             * @param type The string representation of the message type.
-             * @return The corresponding [MessageType] enum.
-             */
-            fun fromString(type: String): MessageType = when (type.lowercase()) {
-                ENUM_MESSAGE_TYPE_QUESTION -> QUESTION
-                ENUM_MESSAGE_TYPE_GIPHY -> GIPHY
-                else -> COMMENT
-            }
-        }
-    }
-}
+)

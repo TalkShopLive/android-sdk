@@ -48,7 +48,8 @@ object APIHandler {
         requestUrl: String,
         requestMethod: HTTPMethod,
         payload: JSONObject? = null,
-        headers: Map<String, String> = emptyMap()
+        headers: Map<String, String> = emptyMap(),
+        body: String? = null
     ): ApiResponse = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
@@ -59,7 +60,7 @@ object APIHandler {
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 setRequestProperty("Accept", "application/json")
                 doInput = true
-                doOutput = requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT
+                doOutput = (requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT || (requestMethod == HTTPMethod.DELETE && body != null))
                 connectTimeout = 15000
                 readTimeout = 15000
 
@@ -68,9 +69,9 @@ object APIHandler {
                 }
             }
 
-            payload?.let {
+            if (body != null && (requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT || requestMethod == HTTPMethod.DELETE)) {
                 DataOutputStream(connection.outputStream).use { os ->
-                    os.write(it.toString().toByteArray(StandardCharsets.UTF_8))
+                    os.write(body.toByteArray(Charsets.UTF_8))
                     os.flush()
                 }
             }

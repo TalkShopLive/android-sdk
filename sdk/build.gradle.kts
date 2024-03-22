@@ -10,11 +10,13 @@ android {
 
     defaultConfig {
         minSdk = 24
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -54,7 +56,7 @@ afterEvaluate {
         publishing.publications.create<MavenPublication>(variant.name) {
             groupId = "com.github.TalkShopLive"
             artifactId = "android-sdk"
-            version = "1.0.0-beta"
+            version = "1.0.1-beta"
 
             pom.withXml {
                 asNode().appendNode("dependencies").apply {
