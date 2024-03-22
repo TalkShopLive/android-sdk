@@ -46,7 +46,7 @@ class Collector private constructor(context: Context) {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.0.0-beta")
+            put("version", "1.0.1-beta")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {

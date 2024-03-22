@@ -89,6 +89,14 @@ internal class ShowProvider {
                 if (!incrementViewCalledMap.containsKey(showKey) || !incrementViewCalledMap[showKey]!!) {
                     incrementView(showStatusModel.eventId!!)
                     incrementViewCalledMap[showKey] = true
+                    Collector.collect(
+                        action = Constants.COLLECTOR_ACTION_VIEW_COUNT,
+                        category = Constants.COLLECTOR_CAT_INTERACTION,
+                        eventID = showStatusModel.eventId,
+                        showKey = showKey,
+                        showStatus = showStatusModel.status,
+                        duration = showStatusModel.duration,
+                    )
                 }
             }
 
