@@ -13,6 +13,9 @@ object URLs {
     private const val URL_BASE_COLLECTOR_STAGING = "https://staging.collector.talkshop.live/"
     private const val URL_BASE_COLLECTOR_PROD = "https://collector.talkshop.live/"
 
+    private const val URL_BASE_EVENTS_STAGING = "https://staging.events-api.talkshop.live/"
+    private const val URL_BASE_EVENTS_PROD = "https://events-api.talkshop.live/"
+
     private const val PATH_AUTH = "api2/v1/sdk/"
     private const val PATH_SHOW_DETAILS = "api/products/digital/streaming_content/"
     private const val PATH_SHOWS = "api/shows/"
@@ -103,9 +106,9 @@ object URLs {
 
     fun getIncrementViewUrl(eventId: String): String {
         return if (isTestMode) {
-            "${URL_BASE_STAGING}${PATH_EVENT}$eventId/$PATH_INCREMENT"
+            "${URL_BASE_EVENTS_STAGING}${PATH_EVENT}$eventId/$PATH_INCREMENT"
         } else {
-            "${URL_BASE_PROD}${PATH_EVENT}$eventId/$PATH_INCREMENT"
+            "${URL_BASE_EVENTS_PROD}${PATH_EVENT}$eventId/$PATH_INCREMENT"
         }
     }
 
