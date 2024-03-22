@@ -10,15 +10,20 @@ object URLs {
     private const val URL_BASE_PROD = "https://cms.talkshop.live/"
     private const val URL_ASSET_BASE_STAGING = "https://assets-dev.talkshop.live/"
     private const val URL_ASSET_BASE_PROD = "https://assets.talkshop.live/"
+    private const val URL_BASE_COLLECTOR_STAGING = "https://staging.collector.talkshop.live/"
+    private const val URL_BASE_COLLECTOR_PROD = "https://collector.talkshop.live/"
 
     private const val PATH_AUTH = "api2/v1/sdk/"
     private const val PATH_SHOW_DETAILS = "api/products/digital/streaming_content/"
     private const val PATH_SHOWS = "api/shows/"
     private const val PATH_STREAMS_CURRENT = "streams/current/"
     private const val PATH_EVENTS = "events/"
+    private const val PATH_EVENT = "event/"
+    private const val PATH_INCREMENT = "increment/"
     private const val PATH_GUEST_TOKEN = "chat/guest_token/"
     private const val PATH_FED_TOKEN = "chat/federated_user_token/"
     private const val PATH_MESSAGES = "chat/messages/"
+    private const val PATH_COLLECT = "collect"
 
     fun createHSLUrl(videoFilename: String): String? {
         return if (isNotEmptyOrNull(videoFilename)) {
@@ -93,6 +98,22 @@ object URLs {
             if (isGuest) "${URL_BASE_STAGING}${PATH_AUTH}${PATH_GUEST_TOKEN}" else "${URL_BASE_STAGING}${PATH_AUTH}${PATH_FED_TOKEN}"
         } else {
             if (isGuest) "${URL_BASE_PROD}${PATH_AUTH}${PATH_GUEST_TOKEN}" else "${URL_BASE_PROD}${PATH_AUTH}${PATH_FED_TOKEN}"
+        }
+    }
+
+    fun getIncrementViewUrl(eventId: String): String {
+        return if (isTestMode) {
+            "${URL_BASE_STAGING}${PATH_EVENT}$eventId/$PATH_INCREMENT"
+        } else {
+            "${URL_BASE_PROD}${PATH_EVENT}$eventId/$PATH_INCREMENT"
+        }
+    }
+
+    fun getCollectorUrl(): String {
+        return if (isTestMode) {
+            "${URL_BASE_COLLECTOR_STAGING}${PATH_COLLECT}"
+        } else {
+            "${URL_BASE_COLLECTOR_PROD}${PATH_COLLECT}"
         }
     }
 }

@@ -15,29 +15,29 @@ import com.google.gson.annotations.SerializedName
  */
 data class ShowStatusModel(
     @SerializedName("showKey")
-    val showKey: String,
+    val showKey: String? = null,
 
     @SerializedName("status")
-    val status: String,
+    val status: String? = "created",
 
     @SerializedName("hlsPlaybackUrl")
-    val hlsPlaybackUrl: String,
+    val hlsPlaybackUrl: String? = null,
 
     @SerializedName("hlsUrl")
-    val hlsUrl: String?,
+    val hlsUrl: String?? = null,
 
     @SerializedName("trailerUrl")
-    val trailerUrl: String,
+    val trailerUrl: String? = null,
 
     @SerializedName("eventId")
-    val eventId: String,
+    val eventId: String? = null,
 
     @SerializedName("duration")
-    val duration: Int?,
+    val duration: Int? = 0,
 
     @SerializedName("streamInCloud")
-    val streamInCloud: Boolean?,
+    val streamInCloud: Boolean? = false,
 
     @SerializedName("totalViews")
-    val totalViews: Int
+    val totalViews: Int? = 0
 )
