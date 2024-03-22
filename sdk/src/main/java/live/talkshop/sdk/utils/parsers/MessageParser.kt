@@ -6,7 +6,7 @@ import com.pubnub.api.models.consumer.pubsub.PNMessageResult
 import live.talkshop.sdk.core.chat.Logging
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.SenderModel
-import live.talkshop.sdk.resources.Constants.ENUM_MESSAGE_TYPE_COMMENT
+import live.talkshop.sdk.resources.Constants.MESSAGE_TYPE_COMMENT
 import live.talkshop.sdk.resources.Keys.KEY_CHANNEL_CODE
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_CREATED_AT
@@ -31,8 +31,7 @@ object MessageParser {
             val createdAt = message.get(KEY_CREATED_AT)?.asString
             val sender = parseSender(message.get(KEY_SENDER))
             val text = message.get(KEY_TEXT)?.asString
-            val typeString = message.get(KEY_TYPE)?.asString ?: ENUM_MESSAGE_TYPE_COMMENT
-            val type = MessageModel.MessageType.fromString(typeString)
+            val type = message.get(KEY_TYPE)?.asString ?: MESSAGE_TYPE_COMMENT
             val platform = message.get(KEY_PLATFORM)?.asString
             MessageModel(id, createdAt, sender, text, type, platform)
         } catch (e: Exception) {

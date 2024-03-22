@@ -13,12 +13,20 @@ object Constants {
     const val KEY_AUTHENTICATED = "authenticated"
     const val KEY_MP4_EXTENSION = ".mp4"
 
-    const val ENUM_MESSAGE_TYPE_GIPHY = "giphy"
-    const val ENUM_MESSAGE_TYPE_QUESTION = "question"
-    const val ENUM_MESSAGE_TYPE_COMMENT = "comment"
+    const val MESSAGE_TYPE_GIPHY = "giphy"
+    const val MESSAGE_TYPE_QUESTION = "question"
+    const val MESSAGE_TYPE_COMMENT = "comment"
 
     const val CHANNEL_CHAT_PREFIX = "chat."
     const val CHANNEL_EVENTS_PREFIX = "events."
 
     const val PLATFORM_TYPE = "mobile"
+    const val STATUS_LIVE = "live"
+
+    const val COLLECTOR_ACTION_SDK_INITIALIZED = "SDK_INITIALIZED"
+    const val COLLECTOR_ACTION_SELECT_VIEW_SHOW_DETAILS = "SELECT_VIEW_SHOW_DETAILS"
+    const val COLLECTOR_ACTION_SELECT_VIEW_CHAT = "SELECT_VIEW_CHAT"
+    const val COLLECTOR_ACTION_UPDATE_USER = "UPDATE_USER"
+
+    const val COLLECTOR_CAT_INTERACTION = "INTERACTION"
 }
