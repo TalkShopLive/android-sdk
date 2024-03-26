@@ -33,38 +33,40 @@ class Collector private constructor(context: Context) {
     private suspend fun collect(
         action: String,
         category: String,
-        userId: String? = null,
-        eventID: String? = null,
-        showKey: String? = null,
-        storeId: Int? = null,
-        videoKey: String? = null,
-        showStatus: String? = null,
-        duration: Int? = null
+        userId: String? = "NOT_SET",
+        eventID: String? = "NOT_SET",
+        showKey: String? = "NOT_SET",
+        storeId: String? = "NOT_SET",
+        videoKey: String? = "NOT_SET",
+        showStatus: String? = "NOT_SET",
+        duration: String? = "NOT_SET"
     ) {
         val timestamp = System.currentTimeMillis()
         val payload = JSONObject().apply {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.0.1-beta")
+            put("version", "1.0.0")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
                 put("external", true)
-                if (eventID != null)
-                    put("event_id", eventID)
-                if (showKey != null)
-                    put("streaming_content_key", showKey)
-                if (storeId != null)
-                    put("store_id", storeId)
-                if (videoKey != null)
-                    put("video_key", videoKey)
-                if (showStatus != null)
-                    put("video_status", showStatus)
-                if (duration != null)
-                    put("video_time", duration)
+                put("event_id", eventID)
+                put("streaming_content_key", showKey)
+                put("store_id", storeId)
+                put("video_key", videoKey)
+                put("video_status", showStatus)
+                put("video_time", duration)
+            })
+            put("utm", JSONObject().apply {
+                put("source", "NOT_SET")
+                put("campaign", "NOT_SET")
+                put("medium", "NOT_SET")
+                put("term", "NOT_SET")
+                put("content", "NOT_SET")
             })
             put("aspect", JSONObject().apply {
+                put("browser_resolution", "NOT_SET")
                 put("screen_resolution", deviceScreenResolution)
             })
         }
@@ -101,10 +103,10 @@ class Collector private constructor(context: Context) {
             userId: String? = null,
             eventID: String? = null,
             showKey: String? = null,
-            storeId: Int? = null,
+            storeId: String? = null,
             videoKey: String? = null,
             showStatus: String? = null,
-            duration: Int? = null
+            duration: String? = null
         ) {
             if (isDNT) {
                 return

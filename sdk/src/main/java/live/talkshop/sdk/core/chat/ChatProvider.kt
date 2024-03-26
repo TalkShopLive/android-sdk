@@ -162,7 +162,7 @@ class ChatProvider {
             eventID = showStatusModel.eventId,
             showKey = currentShowKey,
             showStatus = showStatusModel.status,
-            duration = showStatusModel.duration,
+            duration = showStatusModel.duration.toString(),
             userId = userId
         )
     }
