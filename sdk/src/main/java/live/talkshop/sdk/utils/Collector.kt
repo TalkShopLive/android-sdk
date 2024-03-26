@@ -3,7 +3,6 @@ package live.talkshop.sdk.utils
 import android.content.Context
 import android.os.Build
 import android.util.DisplayMetrics
-import android.util.Log
 import android.view.WindowManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +46,7 @@ class Collector private constructor(context: Context) {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.0.1-beta")
+            put("version", "1.0.0")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
