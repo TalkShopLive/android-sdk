@@ -4,6 +4,7 @@ object ErrorCodes {
     // Init module
     const val AUTHENTICATION_FAILED = "Failed to authenticate"
     const val AUTHENTICATION_EXCEPTION = "Exception during authentication"
+    const val USER_ALREADY_AUTHENTICATED = "User already authenticated"
 
     // Show module
     const val SHOW_NOT_FOUND = "Wrong Show key"

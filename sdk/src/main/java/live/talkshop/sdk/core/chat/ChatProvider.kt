@@ -29,12 +29,14 @@ import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
 import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_MESSAGE_MAX_LENGTH
 import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.resources.ErrorCodes
+import live.talkshop.sdk.resources.ErrorCodes.AUTHENTICATION_EXCEPTION
 import live.talkshop.sdk.resources.ErrorCodes.AUTHENTICATION_FAILED
 import live.talkshop.sdk.resources.ErrorCodes.CHANNEL_SUBSCRIPTION_FAILED
 import live.talkshop.sdk.resources.ErrorCodes.INVALID_USER_TOKEN
 import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_LIST_FAILED
 import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_SENDING_FAILED
 import live.talkshop.sdk.resources.ErrorCodes.UNKNOWN_EXCEPTION
+import live.talkshop.sdk.resources.ErrorCodes.USER_ALREADY_AUTHENTICATED
 import live.talkshop.sdk.resources.ErrorCodes.USER_TOKEN_EXCEPTION
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.Logging
@@ -407,7 +409,8 @@ class ChatProvider {
             clearConnection()
             initiateChat(currentShowKey, newJwt, isGuest, callback)
         } else {
-            callback?.invoke(null, userTokenModel)
+            Logging.print(USER_ALREADY_AUTHENTICATED)
+            callback?.invoke(USER_ALREADY_AUTHENTICATED, null)
         }
     }
 
