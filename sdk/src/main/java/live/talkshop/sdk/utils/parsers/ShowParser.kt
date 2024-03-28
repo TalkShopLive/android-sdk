@@ -1,8 +1,7 @@
 package live.talkshop.sdk.utils.parsers
 
 import android.annotation.SuppressLint
-import android.util.Log
-import live.talkshop.sdk.core.chat.Logging
+import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Keys.KEY_AIR_DATES

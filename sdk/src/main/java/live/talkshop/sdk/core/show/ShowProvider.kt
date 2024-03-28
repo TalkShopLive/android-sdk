@@ -1,12 +1,16 @@
 package live.talkshop.sdk.core.show
 
 import live.talkshop.sdk.core.authentication.isAuthenticated
-import live.talkshop.sdk.core.chat.Logging
+import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
 import live.talkshop.sdk.resources.Constants
-import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_AUTH
 import live.talkshop.sdk.resources.Constants.STATUS_LIVE
+import live.talkshop.sdk.resources.ErrorCodes.AUTHENTICATION_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.EVENT_NOT_FOUND
+import live.talkshop.sdk.resources.ErrorCodes.EVENT_UNKNOWN_EXCEPTION
+import live.talkshop.sdk.resources.ErrorCodes.SHOW_NOT_FOUND
+import live.talkshop.sdk.resources.ErrorCodes.SHOW_UNKNOWN_EXCEPTION
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
@@ -35,14 +39,19 @@ internal class ShowProvider {
         callback: ((String?, ShowModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
-            callback?.invoke(MESSAGE_ERROR_AUTH, null)
+            callback?.invoke(AUTHENTICATION_FAILED, null)
             return
         }
 
         try {
-            val jsonResponse =
+            val response =
                 APIHandler.makeRequest(getShowDetailsUrl(showKey), HTTPMethod.GET)
-            val showModel = ShowParser.parseFromJson(JSONObject(jsonResponse.body))
+
+            if (response.statusCode !in 200..299) {
+                Logging.print(SHOW_NOT_FOUND)
+            }
+
+            val showModel = ShowParser.parseFromJson(JSONObject(response.body))
             callback?.invoke(null, showModel)
             Collector.collect(
                 action = Constants.COLLECTOR_ACTION_SELECT_VIEW_SHOW_DETAILS,
@@ -53,8 +62,8 @@ internal class ShowProvider {
                 duration = showModel.duration
             )
         } catch (e: Exception) {
-            Logging.print(e)
-            callback?.invoke(e.message, null)
+            Logging.print(SHOW_UNKNOWN_EXCEPTION, e)
+            callback?.invoke(SHOW_UNKNOWN_EXCEPTION, null)
         }
     }
 
@@ -70,18 +79,22 @@ internal class ShowProvider {
         callback: ((String?, ShowStatusModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
-            callback?.invoke(MESSAGE_ERROR_AUTH, null)
+            callback?.invoke(AUTHENTICATION_FAILED, null)
             return
         }
 
         try {
-            val jsonResponse = APIHandler.makeRequest(
+            val response = APIHandler.makeRequest(
                 URLs.getCurrentStreamUrl(showKey),
                 HTTPMethod.GET
             )
 
+            if (response.statusCode !in 200..299) {
+                Logging.print(EVENT_NOT_FOUND)
+            }
+
             val showStatusModel = try {
-                ShowStatusParser.parseFromJson(JSONObject(jsonResponse.body))
+                ShowStatusParser.parseFromJson(JSONObject(response.body))
             } catch (e: Exception) {
                 ShowStatusModel()
             }
@@ -102,8 +115,8 @@ internal class ShowProvider {
 
             callback?.invoke(null, showStatusModel)
         } catch (e: Exception) {
-            Logging.print(e)
-            callback?.invoke(e.message, null)
+            Logging.print(EVENT_UNKNOWN_EXCEPTION, e)
+            callback?.invoke(EVENT_UNKNOWN_EXCEPTION, null)
         }
     }
 

@@ -3,7 +3,7 @@ package live.talkshop.sdk.utils.parsers
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult
-import live.talkshop.sdk.core.chat.Logging
+import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.resources.Constants.MESSAGE_TYPE_COMMENT

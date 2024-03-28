@@ -26,10 +26,18 @@ import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
 import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
-import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_AUTH
 import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_MESSAGE_MAX_LENGTH
 import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
+import live.talkshop.sdk.resources.ErrorCodes
+import live.talkshop.sdk.resources.ErrorCodes.AUTHENTICATION_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.CHANNEL_SUBSCRIPTION_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.INVALID_USER_TOKEN
+import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_LIST_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_SENDING_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.UNKNOWN_EXCEPTION
+import live.talkshop.sdk.resources.ErrorCodes.USER_TOKEN_EXCEPTION
 import live.talkshop.sdk.utils.Collector
+import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs.getCurrentStreamUrl
@@ -105,16 +113,22 @@ class ChatProvider {
                     Constants.AUTH_KEY to "${Constants.BEARER_KEY} $jwt"
                 )
                 val response = APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
+
+                if (response.statusCode !in 200..299) {
+                    Logging.print(INVALID_USER_TOKEN)
+                    callback?.invoke(INVALID_USER_TOKEN, null)
+                }
+
                 userTokenModel = UserTokenParser.fromJsonString(response.body)!!
                 initializePubNub()
                 callback?.invoke(null, userTokenModel)
                 currentJwt = jwt
             } catch (e: Exception) {
-                e.printStackTrace()
-                callback?.invoke(e.message, null)
+                Logging.print(USER_TOKEN_EXCEPTION, e)
+                callback?.invoke(USER_TOKEN_EXCEPTION, null)
             }
         } else {
-            callback?.invoke(MESSAGE_ERROR_AUTH, null)
+            callback?.invoke(AUTHENTICATION_FAILED, null)
         }
     }
 
@@ -138,11 +152,16 @@ class ChatProvider {
      * Subscribes to the chat and events channels.
      */
     private suspend fun subscribeChannels() {
-        val jsonResponse = APIHandler.makeRequest(
+        val response = APIHandler.makeRequest(
             getCurrentStreamUrl(currentShowKey),
             HTTPMethod.GET
         )
-        val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse.body))
+
+        if (response.statusCode !in 200..299) {
+            Logging.print(CHANNEL_SUBSCRIPTION_FAILED)
+        }
+
+        val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(response.body))
         publishChannel = CHANNEL_CHAT_PREFIX + showStatusModel.eventId
         eventsChannel = CHANNEL_EVENTS_PREFIX + showStatusModel.eventId
         channels = listOfNotNull(publishChannel, eventsChannel)
@@ -172,7 +191,7 @@ class ChatProvider {
      */
     internal suspend fun subscribe() {
         if (!isAuthenticated) {
-            println(MESSAGE_ERROR_AUTH)
+            println(AUTHENTICATION_FAILED)
             return
         }
         handleShowKeyChange()
@@ -279,7 +298,7 @@ class ChatProvider {
      */
     internal suspend fun publish(message: String, callback: ((String?, String?) -> Unit)? = null) {
         if (!isAuthenticated) {
-            callback?.invoke(MESSAGE_ERROR_AUTH, null)
+            callback?.invoke(AUTHENTICATION_FAILED, null)
             return
         }
         try {
@@ -311,8 +330,8 @@ class ChatProvider {
                 if (!status.error) {
                     callback?.invoke(null, result!!.timetoken.toString())
                 } else {
-                    Logging.print(status.exception?.message.toString())
-                    callback?.invoke(status.exception?.message, null)
+                    Logging.print(MESSAGE_SENDING_FAILED, status.exception?.message.toString())
+                    callback?.invoke(MESSAGE_SENDING_FAILED, null)
                 }
             }
         } catch (error: Exception) {
@@ -336,7 +355,7 @@ class ChatProvider {
         callback: (List<MessageModel>?, Long?, String?) -> Unit
     ) {
         if (!isAuthenticated) {
-            callback(null, null, MESSAGE_ERROR_AUTH)
+            callback(null, null, AUTHENTICATION_FAILED)
             return
         }
 
@@ -361,13 +380,13 @@ class ChatProvider {
 
                     callback(messages, nextStart, null)
                 } else {
-                    status.exception?.message?.let { Logging.print(it) }
-                    callback(null, null, status.exception?.message)
+                    status.exception?.message?.let { Logging.print(MESSAGE_LIST_FAILED, it) }
+                    callback(null, null, MESSAGE_LIST_FAILED)
                 }
             }
         } catch (error: Exception) {
-            Logging.print(error)
-            callback(null, null, error.message)
+            Logging.print(UNKNOWN_EXCEPTION, error)
+            callback(null, null, UNKNOWN_EXCEPTION)
         }
     }
 
@@ -425,7 +444,7 @@ class ChatProvider {
             if (!status.error && result != null) {
                 callback(result.channels)
             } else {
-                status.exception?.errorMessage?.let { Logging.print(it) }
+                status.exception?.errorMessage?.let { Logging.print(UNKNOWN_EXCEPTION, it) }
                 callback(null)
             }
         }
@@ -455,8 +474,8 @@ class ChatProvider {
                 Logging.print(response.body)
             }
         } catch (e: Exception) {
-            Logging.print(e)
-            callback?.let { it(false, e.message) }
+            Logging.print(UNKNOWN_EXCEPTION, e)
+            callback?.let { it(false, UNKNOWN_EXCEPTION) }
         }
     }
 }

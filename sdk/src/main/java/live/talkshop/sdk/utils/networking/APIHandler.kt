@@ -2,7 +2,7 @@ package live.talkshop.sdk.utils.networking
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import live.talkshop.sdk.core.chat.Logging
+import live.talkshop.sdk.utils.Logging
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.DataOutputStream
