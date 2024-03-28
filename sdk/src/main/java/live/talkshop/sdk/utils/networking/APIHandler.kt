@@ -69,9 +69,11 @@ object APIHandler {
                 }
             }
 
-            if (body != null && (requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT || requestMethod == HTTPMethod.DELETE)) {
+            val requestBody = body ?: payload?.toString()
+
+            if (requestBody != null && (requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT || requestMethod == HTTPMethod.DELETE)) {
                 DataOutputStream(connection.outputStream).use { os ->
-                    os.write(body.toByteArray(Charsets.UTF_8))
+                    os.write(requestBody.toByteArray(Charsets.UTF_8))
                     os.flush()
                 }
             }
