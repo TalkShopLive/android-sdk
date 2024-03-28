@@ -1,4 +1,4 @@
-package live.talkshop.sdk.core.chat
+package live.talkshop.sdk.utils
 
 import live.talkshop.sdk.core.authentication.isDebugMode
 
@@ -13,6 +13,12 @@ class Logging {
         fun print(tag: String, message: String) {
             if (isDebugMode) {
                 println("TSL DEBUG: $tag: $message")
+            }
+        }
+
+        fun print(tag: String, exception: Exception) {
+            if (isDebugMode) {
+                println("TSL DEBUG: $tag: ${exception.message}")
             }
         }
 

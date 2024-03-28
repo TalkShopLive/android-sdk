@@ -13,7 +13,7 @@ package live.talkshop.sdk.core.chat.models
 data class MessageModel(
     val id: Int?,
     val createdAt: String?,
-    val sender: SenderModel?,
+    var sender: SenderModel?,
     val text: String?,
     val type: String,
     val platform: String?

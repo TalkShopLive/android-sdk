@@ -5,12 +5,14 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import live.talkshop.sdk.core.chat.Logging
+import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.resources.Constants.COLLECTOR_ACTION_SDK_INITIALIZED
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_INTERACTION
 import live.talkshop.sdk.resources.Constants.SDK_KEY
 import live.talkshop.sdk.resources.Constants.KEY_AUTHENTICATED
 import live.talkshop.sdk.resources.Constants.SHARED_PREFS_NAME
+import live.talkshop.sdk.resources.ErrorCodes.AUTHENTICATION_EXCEPTION
+import live.talkshop.sdk.resources.ErrorCodes.AUTHENTICATION_FAILED
 import live.talkshop.sdk.resources.Keys.KEY_VALID_KEY
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APIHandler
@@ -97,13 +99,18 @@ class TalkShopLive private constructor(private val context: Context) {
         return try {
             val response =
                 APIHandler.makeRequest(getAuthUrl(), HTTPMethod.GET, headers = headers)
+
+            if (response.statusCode !in 200..299) {
+                Logging.print(AUTHENTICATION_FAILED)
+            }
+
             val jsonResponse = JSONObject(response.body)
             val validKey = jsonResponse.optBoolean(KEY_VALID_KEY, false)
 
             setAuthenticated(validKey)
             validKey
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(AUTHENTICATION_EXCEPTION, e)
             setAuthenticated(false)
             false
         }

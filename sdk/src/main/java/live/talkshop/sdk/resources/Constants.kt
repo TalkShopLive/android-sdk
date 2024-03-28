@@ -1,7 +1,6 @@
 package live.talkshop.sdk.resources
 
 object Constants {
-    const val MESSAGE_ERROR_AUTH = "Authentication invalid"
     const val MESSAGE_ERROR_MESSAGE_MAX_LENGTH = "Publishing Error: Message exceeds maximum length of 200 characters."
 
     const val CC_FILENAME_END = ".transcript.vtt"
