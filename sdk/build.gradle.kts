@@ -46,7 +46,7 @@ dependencies {
     implementation("androidx.test.ext:junit-ktx:1.1.5")
 
     testImplementation("org.mockito:mockito-core:5.10.0")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
     testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
     testImplementation("org.mockito:mockito-core:5.10.0")
 }
@@ -56,7 +56,7 @@ afterEvaluate {
         publishing.publications.create<MavenPublication>(variant.name) {
             groupId = "com.github.TalkShopLive"
             artifactId = "android-sdk"
-            version = "1.0.1-beta"
+            version = "1.0.0"
 
             pom.withXml {
                 asNode().appendNode("dependencies").apply {

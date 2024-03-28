@@ -59,7 +59,7 @@ internal class ShowProvider {
                 eventID = showModel.eventId,
                 showKey = showKey,
                 showStatus = showModel.status,
-                duration = showModel.duration
+                duration = showModel.duration.toString()
             )
         } catch (e: Exception) {
             Logging.print(SHOW_UNKNOWN_EXCEPTION, e)
@@ -108,7 +108,7 @@ internal class ShowProvider {
                         eventID = showStatusModel.eventId,
                         showKey = showKey,
                         showStatus = showStatusModel.status,
-                        duration = showStatusModel.duration,
+                        duration = showStatusModel.duration.toString(),
                     )
                 }
             }
