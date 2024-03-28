@@ -1,12 +1,12 @@
 package live.talkshop.sdk.utils.parsers
 
 import android.annotation.SuppressLint
-import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Keys.KEY_AIR_DATES
 import live.talkshop.sdk.resources.Keys.KEY_ATTACHMENT
 import live.talkshop.sdk.resources.Keys.KEY_BRAND_NAME
+import live.talkshop.sdk.resources.Keys.KEY_CURRENT_EVENT
 import live.talkshop.sdk.resources.Keys.KEY_DATE
 import live.talkshop.sdk.resources.Keys.KEY_DESCRIPTION
 import live.talkshop.sdk.resources.Keys.KEY_DURATION
@@ -28,6 +28,7 @@ import live.talkshop.sdk.resources.Keys.KEY_STATUS
 import live.talkshop.sdk.resources.Keys.KEY_STREAMING_CONTENT
 import live.talkshop.sdk.resources.Keys.KEY_TRAILERS
 import live.talkshop.sdk.resources.Keys.KEY_VIDEO
+import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.helpers.HelperFunctions
 import live.talkshop.sdk.utils.networking.URLs
 import org.json.JSONObject
@@ -57,15 +58,15 @@ internal object ShowParser {
             productJson.optString(KEY_PRODUCT_KEY, ""),
             productJson.optString(KEY_NAME, ""),
             productJson.optString(KEY_DESCRIPTION, ""),
-            parseEventsArray(productJson, KEY_STATUS),
-            parseEventsArray(productJson, KEY_HLS_PLAYBACK_URL),
+            parseCurrentEventsArray(productJson, KEY_STATUS) ?: "created",
+            parseCurrentEventsArray(productJson, KEY_HLS_PLAYBACK_URL),
             URLs.createHSLUrl(parseEventsArray(productJson, KEY_FILENAME)),
             parseTrailerUrl(streamContentJson, KEY_VIDEO),
             parseDate(parseAirDates(productJson, KEY_DATE)),
             parseDate(productJson.optString(KEY_ENDED_AT, "")),
             parseAirDates(productJson, KEY_EVENT_ID),
             URLs.createCCUrl(parseEventsArray(productJson, KEY_FILENAME)),
-            HelperFunctions.parseInt(parseEventsArray(productJson, KEY_DURATION)),
+            HelperFunctions.parseInt(parseCurrentEventsArray(productJson, KEY_DURATION)),
             HelperFunctions.parseInt(parseTrailerUrl(streamContentJson, KEY_DURATION)),
             parseVideoThumbnailUrl(productJson),
             parseChannelLogo(productJson),
@@ -135,6 +136,29 @@ internal object ShowParser {
             Logging.print(e)
         }
         return ""
+    }
+
+
+    /**
+     * Retrieves a specific value from an events array within a product JSON object.
+     *
+     * This method looks for a specified field within the first object of an events array
+     * in the given product JSON object. If the array is empty or the field is not found,
+     * it returns an empty string.
+     *
+     * @param productJson The JSON object containing the product details.
+     * @param name The name of the field to retrieve from the events array.
+     * @return The value of the specified field or an empty string if not found.
+     */
+    private fun parseCurrentEventsArray(productJson: JSONObject, name: String): String? {
+        return try {
+            val currentEvent = productJson.getJSONObject(KEY_CURRENT_EVENT)
+            currentEvent.getString(name)
+
+        } catch (e: Exception) {
+            Logging.print(e)
+            null
+        }
     }
 
     /**
