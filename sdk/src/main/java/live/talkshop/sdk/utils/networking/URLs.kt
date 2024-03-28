@@ -27,6 +27,7 @@ object URLs {
     private const val PATH_FED_TOKEN = "chat/federated_user_token/"
     private const val PATH_MESSAGES = "chat/messages/"
     private const val PATH_COLLECT = "collect"
+    private const val PATH_SENDERS_META = "api/messaging/senders/"
 
     fun createHSLUrl(videoFilename: String): String? {
         return if (isNotEmptyOrNull(videoFilename)) {
@@ -117,6 +118,14 @@ object URLs {
             "${URL_BASE_COLLECTOR_STAGING}${PATH_COLLECT}"
         } else {
             "${URL_BASE_COLLECTOR_PROD}${PATH_COLLECT}"
+        }
+    }
+
+    fun getUserMetaUrl(uuid: String): String {
+        return if (isTestMode) {
+            "${URL_BASE_STAGING}${PATH_SENDERS_META}$uuid"
+        } else {
+            "${URL_BASE_PROD}${PATH_SENDERS_META}$uuid"
         }
     }
 }
