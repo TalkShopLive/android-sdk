@@ -88,6 +88,7 @@ class ChatProvider {
     private lateinit var currentJwt: String
     private var fromUpdateUser: Boolean = false
     private val userMetadataCache = mutableMapOf<String, SenderModel>()
+    private var isSubscribed = false
 
     /**
      * Sets the callback for handling chat events and messages.
@@ -134,6 +135,7 @@ class ChatProvider {
                 callback?.invoke(null, userTokenModel)
                 currentJwt = jwt
             } catch (e: Exception) {
+                isSubscribed = false
                 Logging.print(USER_TOKEN_EXCEPTION, e)
                 callback?.invoke(USER_TOKEN_EXCEPTION, null)
             }
@@ -205,116 +207,124 @@ class ChatProvider {
             return
         }
         handleShowKeyChange()
-        val listener = object : SubscribeCallback() {
-            override fun message(pubnub: PubNub, pnMessageResult: PNMessageResult) {
-                when (pnMessageResult.channel) {
-                    publishChannel -> {
-                        val messageData: MessageModel? =
-                            MessageParser.parse(JSONObject(pnMessageResult.message.asJsonObject.toString()))
-                        if (messageData != null) {
-                            val uuid = messageData.sender?.id
-                            if (uuid != null && userMetadataCache.containsKey(uuid)) {
-                                // Update the sender information with cached metadata
-                                messageData.sender = userMetadataCache[uuid]
-                                callback?.onMessageReceived(messageData)
-                            } else if (uuid != null) {
-                                // Metadata not in cache, fetch asynchronously and update
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    fetchUserMetaData(uuid)
+        if (!isSubscribed) {
+            val listener = object : SubscribeCallback() {
+                override fun message(pubnub: PubNub, pnMessageResult: PNMessageResult) {
+                    when (pnMessageResult.channel) {
+                        publishChannel -> {
+                            val messageData: MessageModel? =
+                                MessageParser.parse(JSONObject(pnMessageResult.message.asJsonObject.toString()))
+                            if (messageData != null) {
+                                val uuid = messageData.sender?.id
+                                if (uuid != null && userMetadataCache.containsKey(uuid)) {
+                                    // Update the sender information with cached metadata
                                     messageData.sender = userMetadataCache[uuid]
-                                    // Post back on the main thread or the appropriate thread for UI updates
-                                    withContext(Dispatchers.Main) {
-                                        callback?.onMessageReceived(messageData)
+                                    callback?.onMessageReceived(messageData)
+                                } else if (uuid != null) {
+                                    // Metadata not in cache, fetch asynchronously and update
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        fetchUserMetaData(uuid)
+                                        messageData.sender = userMetadataCache[uuid]
+                                        // Post back on the main thread or the appropriate thread for UI updates
+                                        withContext(Dispatchers.Main) {
+                                            callback?.onMessageReceived(messageData)
+                                        }
                                     }
+                                } else {
+                                    // UUID is null or invalid, process the message normally
+                                    callback?.onMessageReceived(messageData)
                                 }
                             } else {
-                                // UUID is null or invalid, process the message normally
-                                callback?.onMessageReceived(messageData)
+                                println("messageData is null")
                             }
-                        } else {
-                            println("messageData is null")
+                        }
+
+                        eventsChannel -> {
+                            println("Received message on events channel: ${pnMessageResult.message}")
+                        }
+
+                        else -> {
+                            println("Received message on other channel: ${pnMessageResult.message}")
                         }
                     }
+                }
 
-                    eventsChannel -> {
-                        println("Received message on events channel: ${pnMessageResult.message}")
+                override fun status(pubnub: PubNub, pnStatus: PNStatus) {
+                    if (pnStatus.error) {
+                        println("Error on PubNub status: ${pnStatus.category}")
+                    } else {
+                        println("Status changed: ${pnStatus.category}")
                     }
+                }
 
-                    else -> {
-                        println("Received message on other channel: ${pnMessageResult.message}")
+                override fun presence(
+                    pubnub: PubNub,
+                    pnPresenceEventResult: PNPresenceEventResult
+                ) {
+                    println("Presence event: ${pnPresenceEventResult.event} on channel: ${pnPresenceEventResult.channel}")
+                }
+
+                override fun signal(pubnub: PubNub, pnSignalResult: PNSignalResult) {
+                    println("Signal received on channel: ${pnSignalResult.channel} with content: ${pnSignalResult.message}")
+                }
+
+                override fun messageAction(
+                    pubnub: PubNub,
+                    pnMessageActionResult: PNMessageActionResult
+                ) {
+                    println("Message action type: ${pnMessageActionResult.messageAction.type} on message: ${pnMessageActionResult.messageAction.value}")
+                }
+
+                override fun file(pubnub: PubNub, pnFileEventResult: PNFileEventResult) {
+                    println("File event received on channel: ${pnFileEventResult.channel}, file name: ${pnFileEventResult.file.name}")
+                }
+
+                override fun objects(pubnub: PubNub, objectEvent: PNObjectEventResult) {
+                    when (objectEvent.extractedMessage) {
+                        is PNSetChannelMetadataEventMessage -> {
+                            val message =
+                                objectEvent.extractedMessage as PNSetChannelMetadataEventMessage
+                            println("Channel metadata set event received, channel: ${message.data.name}")
+                        }
+
+                        is PNSetUUIDMetadataEventMessage -> {
+                            val message =
+                                objectEvent.extractedMessage as PNSetUUIDMetadataEventMessage
+                            println("UUID metadata set event received, UUID: ${message.data.id}")
+                        }
+
+                        is PNSetMembershipEventMessage -> {
+                            val message =
+                                objectEvent.extractedMessage as PNSetMembershipEventMessage
+                            println("Membership set event received, channel: ${message.data.channel}, UUID: ${message.data.uuid}")
+                        }
+
+                        is PNDeleteChannelMetadataEventMessage -> {
+                            val message =
+                                objectEvent.extractedMessage as PNDeleteChannelMetadataEventMessage
+                            println("Channel metadata delete event received, channel: ${message.channel}")
+                        }
+
+                        is PNDeleteUUIDMetadataEventMessage -> {
+                            val message =
+                                objectEvent.extractedMessage as PNDeleteUUIDMetadataEventMessage
+                            println("UUID metadata delete event received, UUID: ${message.uuid}")
+                        }
+
+                        is PNDeleteMembershipEventMessage -> {
+                            val message =
+                                objectEvent.extractedMessage as PNDeleteMembershipEventMessage
+                            println("Membership delete event received, channel: ${message.data.channelId}, UUID: ${message.data.uuid}")
+                        }
+
+                        else -> println("Other object event received")
                     }
                 }
             }
-
-            override fun status(pubnub: PubNub, pnStatus: PNStatus) {
-                if (pnStatus.error) {
-                    println("Error on PubNub status: ${pnStatus.category}")
-                } else {
-                    println("Status changed: ${pnStatus.category}")
-                }
-            }
-
-            override fun presence(pubnub: PubNub, pnPresenceEventResult: PNPresenceEventResult) {
-                println("Presence event: ${pnPresenceEventResult.event} on channel: ${pnPresenceEventResult.channel}")
-            }
-
-            override fun signal(pubnub: PubNub, pnSignalResult: PNSignalResult) {
-                println("Signal received on channel: ${pnSignalResult.channel} with content: ${pnSignalResult.message}")
-            }
-
-            override fun messageAction(
-                pubnub: PubNub,
-                pnMessageActionResult: PNMessageActionResult
-            ) {
-                println("Message action type: ${pnMessageActionResult.messageAction.type} on message: ${pnMessageActionResult.messageAction.value}")
-            }
-
-            override fun file(pubnub: PubNub, pnFileEventResult: PNFileEventResult) {
-                println("File event received on channel: ${pnFileEventResult.channel}, file name: ${pnFileEventResult.file.name}")
-            }
-
-            override fun objects(pubnub: PubNub, objectEvent: PNObjectEventResult) {
-                when (objectEvent.extractedMessage) {
-                    is PNSetChannelMetadataEventMessage -> {
-                        val message =
-                            objectEvent.extractedMessage as PNSetChannelMetadataEventMessage
-                        println("Channel metadata set event received, channel: ${message.data.name}")
-                    }
-
-                    is PNSetUUIDMetadataEventMessage -> {
-                        val message = objectEvent.extractedMessage as PNSetUUIDMetadataEventMessage
-                        println("UUID metadata set event received, UUID: ${message.data.id}")
-                    }
-
-                    is PNSetMembershipEventMessage -> {
-                        val message = objectEvent.extractedMessage as PNSetMembershipEventMessage
-                        println("Membership set event received, channel: ${message.data.channel}, UUID: ${message.data.uuid}")
-                    }
-
-                    is PNDeleteChannelMetadataEventMessage -> {
-                        val message =
-                            objectEvent.extractedMessage as PNDeleteChannelMetadataEventMessage
-                        println("Channel metadata delete event received, channel: ${message.channel}")
-                    }
-
-                    is PNDeleteUUIDMetadataEventMessage -> {
-                        val message =
-                            objectEvent.extractedMessage as PNDeleteUUIDMetadataEventMessage
-                        println("UUID metadata delete event received, UUID: ${message.uuid}")
-                    }
-
-                    is PNDeleteMembershipEventMessage -> {
-                        val message = objectEvent.extractedMessage as PNDeleteMembershipEventMessage
-                        println("Membership delete event received, channel: ${message.data.channelId}, UUID: ${message.data.uuid}")
-                    }
-
-                    else -> println("Other object event received")
-                }
-            }
+            pubnub?.addListener(listener)
+            pubnub!!.subscribe(channels, withPresence = true)
+            isSubscribed = true
         }
-
-        pubnub?.addListener(listener)
-        pubnub!!.subscribe(channels, withPresence = true)
     }
 
     /**
@@ -470,6 +480,7 @@ class ChatProvider {
             currentShowKey = globalShowKey
             clearConnection()
             initializePubNub()
+            isSubscribed = false
         }
     }
 
