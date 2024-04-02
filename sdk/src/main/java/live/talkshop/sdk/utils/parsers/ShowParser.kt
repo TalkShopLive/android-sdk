@@ -1,7 +1,6 @@
 package live.talkshop.sdk.utils.parsers
 
 import android.annotation.SuppressLint
-import live.talkshop.sdk.core.chat.Logging
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Keys.KEY_AIR_DATES
@@ -29,6 +28,7 @@ import live.talkshop.sdk.resources.Keys.KEY_STATUS
 import live.talkshop.sdk.resources.Keys.KEY_STREAMING_CONTENT
 import live.talkshop.sdk.resources.Keys.KEY_TRAILERS
 import live.talkshop.sdk.resources.Keys.KEY_VIDEO
+import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.helpers.HelperFunctions
 import live.talkshop.sdk.utils.networking.URLs
 import org.json.JSONObject
