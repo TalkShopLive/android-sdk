@@ -241,6 +241,13 @@ class ChatProvider {
 
                         eventsChannel -> {
                             println("Received message on events channel: ${pnMessageResult.message}")
+                            if (pnMessageResult.message.asJsonObject.get("key").asString == "message_deleted") {
+                                callback?.onMessageDeleted(
+                                    pnMessageResult.message.asJsonObject.get(
+                                        "payload"
+                                    ).asString
+                                )
+                            }
                         }
 
                         else -> {
