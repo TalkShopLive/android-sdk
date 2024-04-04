@@ -260,6 +260,10 @@ fun PublishMessage() {
                         override fun onMessageReceived(message: MessageModel) {
                             subscriptionResult = "Received message: ${message.text}"
                         }
+
+                        override fun onMessageDeleted(messageId: String) {
+                            subscriptionResult = "Deleted message: $messageId"
+                        }
                     })
                 }
             }

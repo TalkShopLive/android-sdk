@@ -18,4 +18,14 @@ internal interface ChatProviderCallback {
      * @param message The [MessageModel] instance containing the message details.
      */
     fun onMessageReceived(message: MessageModel)
+
+    /**
+     * Called when a  message is deleted.
+     *
+     * Implement this method to handle deleted messages. This method provides
+     * a [messageId], which contains the id of the deleted message.
+     *
+     * @param messageId The [String] instance containing the message details.
+     */
+    fun onMessageDeleted(messageId: String)
 }
