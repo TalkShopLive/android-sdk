@@ -2,7 +2,7 @@ package live.talkshop.sdk.utils.networking
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import live.talkshop.sdk.core.chat.Logging
+import live.talkshop.sdk.utils.Logging
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.DataOutputStream
@@ -69,9 +69,11 @@ object APIHandler {
                 }
             }
 
-            if (body != null && (requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT || requestMethod == HTTPMethod.DELETE)) {
+            val requestBody = body ?: payload?.toString()
+
+            if (requestBody != null && (requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT || requestMethod == HTTPMethod.DELETE)) {
                 DataOutputStream(connection.outputStream).use { os ->
-                    os.write(body.toByteArray(Charsets.UTF_8))
+                    os.write(requestBody.toByteArray(Charsets.UTF_8))
                     os.flush()
                 }
             }

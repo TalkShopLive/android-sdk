@@ -17,6 +17,10 @@ import com.pubnub.api.models.consumer.pubsub.objects.PNObjectEventResult
 import com.pubnub.api.models.consumer.pubsub.objects.PNSetChannelMetadataEventMessage
 import com.pubnub.api.models.consumer.pubsub.objects.PNSetMembershipEventMessage
 import com.pubnub.api.models.consumer.pubsub.objects.PNSetUUIDMetadataEventMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import live.talkshop.sdk.core.authentication.globalShowKey
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.storedClientKey
@@ -26,14 +30,27 @@ import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
 import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
-import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_AUTH
 import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_MESSAGE_MAX_LENGTH
 import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
+import live.talkshop.sdk.resources.ErrorCodes.AUTHENTICATION_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.CHANNEL_SUBSCRIPTION_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.INVALID_USER_TOKEN
+import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_LIST_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_SENDING_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.UNKNOWN_EXCEPTION
+import live.talkshop.sdk.resources.ErrorCodes.USER_ALREADY_AUTHENTICATED
+import live.talkshop.sdk.resources.ErrorCodes.USER_TOKEN_EXCEPTION
+import live.talkshop.sdk.resources.Keys.KEY_ID
+import live.talkshop.sdk.resources.Keys.KEY_NAME
+import live.talkshop.sdk.resources.Keys.KEY_PROFILE_URL
+import live.talkshop.sdk.resources.Keys.KEY_SENDER
 import live.talkshop.sdk.utils.Collector
+import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs.getCurrentStreamUrl
 import live.talkshop.sdk.utils.networking.URLs.getMessagesUrl
+import live.talkshop.sdk.utils.networking.URLs.getUserMetaUrl
 import live.talkshop.sdk.utils.networking.URLs.getUserTokenUrl
 import live.talkshop.sdk.utils.parsers.MessageParser
 import live.talkshop.sdk.utils.parsers.ShowStatusParser
@@ -70,6 +87,7 @@ class ChatProvider {
     private lateinit var userId: String
     private lateinit var currentJwt: String
     private var fromUpdateUser: Boolean = false
+    private val userMetadataCache = mutableMapOf<String, SenderModel>()
     private var isSubscribed = false
 
     /**
@@ -106,16 +124,23 @@ class ChatProvider {
                     Constants.AUTH_KEY to "${Constants.BEARER_KEY} $jwt"
                 )
                 val response = APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
+
+                if (response.statusCode !in 200..299) {
+                    Logging.print(INVALID_USER_TOKEN)
+                    callback?.invoke(INVALID_USER_TOKEN, null)
+                }
+
                 userTokenModel = UserTokenParser.fromJsonString(response.body)!!
                 initializePubNub()
                 callback?.invoke(null, userTokenModel)
                 currentJwt = jwt
             } catch (e: Exception) {
-                e.printStackTrace()
-                callback?.invoke(e.message, null)
+                isSubscribed = false
+                Logging.print(USER_TOKEN_EXCEPTION, e)
+                callback?.invoke(USER_TOKEN_EXCEPTION, null)
             }
         } else {
-            callback?.invoke(MESSAGE_ERROR_AUTH, null)
+            callback?.invoke(AUTHENTICATION_FAILED, null)
         }
     }
 
@@ -139,11 +164,16 @@ class ChatProvider {
      * Subscribes to the chat and events channels.
      */
     private suspend fun subscribeChannels() {
-        val jsonResponse = APIHandler.makeRequest(
+        val response = APIHandler.makeRequest(
             getCurrentStreamUrl(currentShowKey),
             HTTPMethod.GET
         )
-        val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(jsonResponse.body))
+
+        if (response.statusCode !in 200..299) {
+            Logging.print(CHANNEL_SUBSCRIPTION_FAILED)
+        }
+
+        val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(response.body))
         publishChannel = CHANNEL_CHAT_PREFIX + showStatusModel.eventId
         eventsChannel = CHANNEL_EVENTS_PREFIX + showStatusModel.eventId
         channels = listOfNotNull(publishChannel, eventsChannel)
@@ -173,7 +203,7 @@ class ChatProvider {
      */
     internal suspend fun subscribe() {
         if (!isAuthenticated) {
-            println(MESSAGE_ERROR_AUTH)
+            println(AUTHENTICATION_FAILED)
             return
         }
         handleShowKeyChange()
@@ -183,10 +213,27 @@ class ChatProvider {
                     when (pnMessageResult.channel) {
                         publishChannel -> {
                             val messageData: MessageModel? =
-                                MessageParser.parse(pnMessageResult.message.asJsonObject)
+                                MessageParser.parse(JSONObject(pnMessageResult.message.asJsonObject.toString()))
                             if (messageData != null) {
-                                println("Received message on publish channel: $messageData")
-                                callback?.onMessageReceived(messageData)
+                                val uuid = messageData.sender?.id
+                                if (uuid != null && userMetadataCache.containsKey(uuid)) {
+                                    // Update the sender information with cached metadata
+                                    messageData.sender = userMetadataCache[uuid]
+                                    callback?.onMessageReceived(messageData)
+                                } else if (uuid != null) {
+                                    // Metadata not in cache, fetch asynchronously and update
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        fetchUserMetaData(uuid)
+                                        messageData.sender = userMetadataCache[uuid]
+                                        // Post back on the main thread or the appropriate thread for UI updates
+                                        withContext(Dispatchers.Main) {
+                                            callback?.onMessageReceived(messageData)
+                                        }
+                                    }
+                                } else {
+                                    // UUID is null or invalid, process the message normally
+                                    callback?.onMessageReceived(messageData)
+                                }
                             } else {
                                 println("messageData is null")
                             }
@@ -194,6 +241,13 @@ class ChatProvider {
 
                         eventsChannel -> {
                             println("Received message on events channel: ${pnMessageResult.message}")
+                            if (pnMessageResult.message.asJsonObject.get("key").asString == "message_deleted") {
+                                callback?.onMessageDeleted(
+                                    pnMessageResult.message.asJsonObject.get(
+                                        "payload"
+                                    ).asString
+                                )
+                            }
                         }
 
                         else -> {
@@ -274,7 +328,6 @@ class ChatProvider {
                     }
                 }
             }
-
             pubnub?.addListener(listener)
             pubnub!!.subscribe(channels, withPresence = true)
             isSubscribed = true
@@ -289,7 +342,7 @@ class ChatProvider {
      */
     internal suspend fun publish(message: String, callback: ((String?, String?) -> Unit)? = null) {
         if (!isAuthenticated) {
-            callback?.invoke(MESSAGE_ERROR_AUTH, null)
+            callback?.invoke(AUTHENTICATION_FAILED, null)
             return
         }
         try {
@@ -321,8 +374,8 @@ class ChatProvider {
                 if (!status.error) {
                     callback?.invoke(null, result!!.timetoken.toString())
                 } else {
-                    Logging.print(status.exception?.message.toString())
-                    callback?.invoke(status.exception?.message, null)
+                    Logging.print(MESSAGE_SENDING_FAILED, status.exception?.message.toString())
+                    callback?.invoke(MESSAGE_SENDING_FAILED, null)
                 }
             }
         } catch (error: Exception) {
@@ -346,7 +399,7 @@ class ChatProvider {
         callback: (List<MessageModel>?, Long?, String?) -> Unit
     ) {
         if (!isAuthenticated) {
-            callback(null, null, MESSAGE_ERROR_AUTH)
+            callback(null, null, AUTHENTICATION_FAILED)
             return
         }
 
@@ -361,25 +414,39 @@ class ChatProvider {
                 if (!status.error && result != null) {
                     val messages = result.messages.mapNotNull { messageDetail ->
                         if (messageDetail.entry.isJsonObject) {
-                            MessageParser.parse(messageDetail.entry.asJsonObject)
+                            MessageParser.parse(JSONObject(messageDetail.entry.asJsonObject.toString()))
+                                ?.apply {
+                                    // Update sender metadata if available in the cache
+                                    this.sender?.id?.let { uuid ->
+                                        if (userMetadataCache.containsKey(uuid)) {
+                                            this.sender = userMetadataCache[uuid]
+                                        } else {
+                                            // Asynchronously fetch metadata if not in cache
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                fetchUserMetaData(uuid)
+                                            }
+                                        }
+                                    }
+                                }
                         } else {
                             null
                         }
                     }
 
+                    // Callback should be executed after all the metadata updates are initiated
                     val nextStart = result.messages.lastOrNull()?.timetoken
-
                     callback(messages, nextStart, null)
                 } else {
-                    status.exception?.message?.let { Logging.print(it) }
-                    callback(null, null, status.exception?.message)
+                    status.exception?.message?.let { Logging.print(MESSAGE_LIST_FAILED, it) }
+                    callback(null, null, MESSAGE_LIST_FAILED)
                 }
             }
         } catch (error: Exception) {
-            Logging.print(error)
-            callback(null, null, error.message)
+            Logging.print(UNKNOWN_EXCEPTION, error)
+            callback(null, null, UNKNOWN_EXCEPTION)
         }
     }
+
 
     /**
      * Attempts to update the user token model and re-initiate chat if the JWT has changed.
@@ -398,7 +465,8 @@ class ChatProvider {
             clearConnection()
             initiateChat(currentShowKey, newJwt, isGuest, callback)
         } else {
-            callback?.invoke(null, userTokenModel)
+            Logging.print(USER_ALREADY_AUTHENTICATED)
+            callback?.invoke(USER_ALREADY_AUTHENTICATED, null)
         }
     }
 
@@ -436,7 +504,7 @@ class ChatProvider {
             if (!status.error && result != null) {
                 callback(result.channels)
             } else {
-                status.exception?.errorMessage?.let { Logging.print(it) }
+                status.exception?.errorMessage?.let { Logging.print(UNKNOWN_EXCEPTION, it) }
                 callback(null)
             }
         }
@@ -466,8 +534,28 @@ class ChatProvider {
                 Logging.print(response.body)
             }
         } catch (e: Exception) {
-            Logging.print(e)
-            callback?.let { it(false, e.message) }
+            Logging.print(UNKNOWN_EXCEPTION, e)
+            callback?.let { it(false, UNKNOWN_EXCEPTION) }
+        }
+    }
+
+    private suspend fun fetchUserMetaData(uuid: String) {
+        try {
+            val response = APIHandler.makeRequest(getUserMetaUrl(uuid), HTTPMethod.GET)
+            if (response.statusCode in 200..299) {
+                val jsonObject = JSONObject(response.body)
+                val sender = jsonObject.getJSONObject(KEY_SENDER)
+                val senderModel = SenderModel(
+                    id = sender.getString(KEY_ID),
+                    name = sender.getString(KEY_NAME),
+                    profileUrl = sender.getString(KEY_PROFILE_URL)
+                )
+                userMetadataCache[uuid] = senderModel
+            } else {
+                Logging.print("$UNKNOWN_EXCEPTION: ${response.body}")
+            }
+        } catch (e: Exception) {
+            Logging.print(UNKNOWN_EXCEPTION, e)
         }
     }
 }
