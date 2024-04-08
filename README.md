@@ -192,6 +192,41 @@ Delete a message.
 Chat.deleteMessage(timeToken) { isSuccess, error -> }
 ```
 
+### Listeners
+
+#### `onMessageReceived(message: MessageModel)`
+
+Called when a new message is received.
+
+- Parameters:
+    - `message`: The `MessageModel` instance containing the message details.
+
+    ```kotlin
+Chat.subscribe(object : Chat.ChatCallback { override fun onMessageReceived(message: MessageModel) {})
+```
+
+#### `onMessageDeleted(messageId: Int)`
+
+Called when a message is deleted.
+
+- Parameters:
+    - `messageId`: The `id` of the message that has been deleted.
+
+    ```kotlin
+Chat.subscribe(object : Chat.ChatCallback { override fun onMessageDeleted(messageId: Int) {})
+```
+
+#### `onStatusChange(error: String)`
+
+Called when a there is an error.
+
+- Parameters:
+    - `error`: The error message as a string.
+
+    ```kotlin
+Chat.subscribe(object : Chat.ChatCallback { override fun onStatusChange(error: String) {})
+```
+
 ## Support
 
 If you **need help** or have a **general question**, contact <support@talkshoplive.com>.
