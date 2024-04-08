@@ -5,6 +5,7 @@ object ErrorCodes {
     const val AUTHENTICATION_FAILED = "Failed to authenticate"
     const val AUTHENTICATION_EXCEPTION = "Exception during authentication"
     const val USER_ALREADY_AUTHENTICATED = "User already authenticated"
+    const val PERMISSION_DENIED = "Permission denied"
 
     // Show module
     const val SHOW_NOT_FOUND = "Wrong Show key"
