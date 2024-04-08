@@ -123,7 +123,7 @@ Publish a message to chat.
 
 #### `subscribe(callback: ChatCallback)`
 
-Subscribe to a chat to get notfied when there are changes
+Subscribe to a chat to get notfied when there are changes.
 
 - Parameters:
     - `callback`: A callback that will be called once there's a change.
@@ -136,7 +136,7 @@ Subscribe to a chat to get notfied when there are changes
 
 #### `getChatMessages(count: Int, start: Long?, callback: (List<MessageModel>?, Long?, String?))`
 
-Get the chat history
+Get the chat history.
 
 - Parameters:
     - `count`: The number of messages to fetch. Defaults to 25.
@@ -149,7 +149,7 @@ Chat.getChatMessages { messageList, nextStartToken, error -> }
 
 #### `updateUser(newJwt: String, isGuest: Boolean, callback: ((String?, UserTokenModel?))`
 
-Update the current user
+Update the current user.
 
 - Parameters:
     - `count`: The new JWT token
@@ -158,6 +158,73 @@ Update the current user
 
 ```kotlin
 Chat.updateUser(jwt, isGuest) { errorMessage, userTokenModel -> }
+```
+
+#### `clean()`
+
+Cleans all the connections involved with chat.
+
+
+```kotlin
+Chat.clean()
+```
+
+#### `countMessages(callback: (Map<String, Long>?) -> Unit)`
+
+Count unread messages.
+
+- Parameters:
+    - `callback`: Callback to return the count of unread messages.
+
+```kotlin
+Chat.countMessages { unreadCount -> }
+```
+
+#### `deleteMessage(timeToken: String, callback: ((Boolean, String?) -> Unit)?)`
+
+Delete a message.
+
+- Parameters:
+    - `timeToken`: The time token of the message to be deleted.
+    - `callback`: An optional callback to return success or error.
+
+```kotlin
+Chat.deleteMessage(timeToken) { isSuccess, error -> }
+```
+
+### Listeners
+
+#### `onMessageReceived(message: MessageModel)`
+
+Called when a new message is received.
+
+- Parameters:
+    - `message`: The `MessageModel` instance containing the message details.
+
+    ```kotlin
+Chat.subscribe(object : Chat.ChatCallback { override fun onMessageReceived(message: MessageModel) {})
+```
+
+#### `onMessageDeleted(messageId: Int)`
+
+Called when a message is deleted.
+
+- Parameters:
+    - `messageId`: The `id` of the message that has been deleted.
+
+    ```kotlin
+Chat.subscribe(object : Chat.ChatCallback { override fun onMessageDeleted(messageId: Int) {})
+```
+
+#### `onStatusChange(error: String)`
+
+Called when a there is an error.
+
+- Parameters:
+    - `error`: The error message as a string.
+
+    ```kotlin
+Chat.subscribe(object : Chat.ChatCallback { override fun onStatusChange(error: String) {})
 ```
 
 ## Support

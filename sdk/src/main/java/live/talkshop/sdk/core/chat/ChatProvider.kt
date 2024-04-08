@@ -2,6 +2,7 @@ package live.talkshop.sdk.core.chat
 
 import com.pubnub.api.PNConfiguration
 import com.pubnub.api.PubNub
+import com.pubnub.api.PubNubException
 import com.pubnub.api.UserId
 import com.pubnub.api.callbacks.SubscribeCallback
 import com.pubnub.api.models.consumer.PNStatus
@@ -37,6 +38,7 @@ import live.talkshop.sdk.resources.ErrorCodes.CHANNEL_SUBSCRIPTION_FAILED
 import live.talkshop.sdk.resources.ErrorCodes.INVALID_USER_TOKEN
 import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_LIST_FAILED
 import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_SENDING_FAILED
+import live.talkshop.sdk.resources.ErrorCodes.PERMISSION_DENIED
 import live.talkshop.sdk.resources.ErrorCodes.UNKNOWN_EXCEPTION
 import live.talkshop.sdk.resources.ErrorCodes.USER_ALREADY_AUTHENTICATED
 import live.talkshop.sdk.resources.ErrorCodes.USER_TOKEN_EXCEPTION
@@ -47,6 +49,7 @@ import live.talkshop.sdk.resources.Keys.KEY_SENDER
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.networking.APIHandler
+import live.talkshop.sdk.utils.networking.ApiResponse
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs.getCurrentStreamUrl
 import live.talkshop.sdk.utils.networking.URLs.getMessagesUrl
@@ -115,6 +118,7 @@ class ChatProvider {
         callback: ((String?, UserTokenModel?) -> Unit)?
     ) {
         if (isAuthenticated) {
+            var response: ApiResponse? = null
             try {
                 currentShowKey = showKey
                 globalShowKey = showKey
@@ -123,21 +127,23 @@ class ChatProvider {
                     Constants.SDK_KEY to storedClientKey,
                     Constants.AUTH_KEY to "${Constants.BEARER_KEY} $jwt"
                 )
-                val response = APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
-
-                if (response.statusCode !in 200..299) {
-                    Logging.print(INVALID_USER_TOKEN)
-                    callback?.invoke(INVALID_USER_TOKEN, null)
-                }
-
+                response = APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
                 userTokenModel = UserTokenParser.fromJsonString(response.body)!!
                 initializePubNub()
                 callback?.invoke(null, userTokenModel)
                 currentJwt = jwt
             } catch (e: Exception) {
                 isSubscribed = false
-                Logging.print(USER_TOKEN_EXCEPTION, e)
-                callback?.invoke(USER_TOKEN_EXCEPTION, null)
+                if (response!!.statusCode == 403) {
+                    Logging.print(PERMISSION_DENIED)
+                    callback?.invoke(PERMISSION_DENIED, null)
+                } else if (response.statusCode !in 200..299) {
+                    Logging.print(INVALID_USER_TOKEN)
+                    callback?.invoke(INVALID_USER_TOKEN, null)
+                } else {
+                    Logging.print(USER_TOKEN_EXCEPTION)
+                    callback?.invoke(USER_TOKEN_EXCEPTION, null)
+                }
             }
         } else {
             callback?.invoke(AUTHENTICATION_FAILED, null)
@@ -245,7 +251,7 @@ class ChatProvider {
                                 callback?.onMessageDeleted(
                                     pnMessageResult.message.asJsonObject.get(
                                         "payload"
-                                    ).asString
+                                    ).asInt
                                 )
                             }
                         }
@@ -258,7 +264,10 @@ class ChatProvider {
 
                 override fun status(pubnub: PubNub, pnStatus: PNStatus) {
                     if (pnStatus.error) {
-                        println("Error on PubNub status: ${pnStatus.category}")
+                        println("Error on PubNub status: ${pnStatus.category}, error code: ${pnStatus.statusCode}")
+                        if (pnStatus.statusCode == 403) {
+                            callback?.onStatusChange(PERMISSION_DENIED)
+                        }
                     } else {
                         println("Status changed: ${pnStatus.category}")
                     }
@@ -379,8 +388,13 @@ class ChatProvider {
                 }
             }
         } catch (error: Exception) {
-            Logging.print(error)
-            callback?.invoke(error.message, null)
+            if ((error as? PubNubException)?.statusCode == 403) {
+                Logging.print(PERMISSION_DENIED)
+                callback?.invoke(PERMISSION_DENIED, null)
+            } else {
+                Logging.print(error)
+                callback?.invoke(error.message, null)
+            }
         }
     }
 
@@ -394,7 +408,7 @@ class ChatProvider {
      */
     internal suspend fun fetchPastMessages(
         count: Int = 25,
-        start: Long? = null,
+        start: Long? = System.currentTimeMillis(),
         includeMeta: Boolean = true,
         callback: (List<MessageModel>?, Long?, String?) -> Unit
     ) {
@@ -442,8 +456,13 @@ class ChatProvider {
                 }
             }
         } catch (error: Exception) {
-            Logging.print(UNKNOWN_EXCEPTION, error)
-            callback(null, null, UNKNOWN_EXCEPTION)
+            if ((error as? PubNubException)?.statusCode == 403) {
+                Logging.print(PERMISSION_DENIED)
+                callback.invoke(null, null, PERMISSION_DENIED)
+            } else {
+                Logging.print(UNKNOWN_EXCEPTION, error)
+                callback(null, null, UNKNOWN_EXCEPTION)
+            }
         }
     }
 
@@ -504,7 +523,14 @@ class ChatProvider {
             if (!status.error && result != null) {
                 callback(result.channels)
             } else {
-                status.exception?.errorMessage?.let { Logging.print(UNKNOWN_EXCEPTION, it) }
+                val error = status.exception
+                error?.statusCode?.let {
+                    if (it == 403) {
+                        Logging.print(PERMISSION_DENIED)
+                    } else {
+                        Logging.print(UNKNOWN_EXCEPTION, error.errorMessage!!)
+                    }
+                }
                 callback(null)
             }
         }
@@ -526,12 +552,22 @@ class ChatProvider {
                 requestMethod = HTTPMethod.DELETE,
                 headers = headers
             )
-            if (response.statusCode in 200..299) {
-                callback?.let { it(true, null) }
-            } else {
-                callback?.let { it(false, response.body) }
-                println(response.body)
-                Logging.print(response.body)
+
+            when (response.statusCode) {
+                403 -> {
+                    Logging.print(PERMISSION_DENIED)
+                    callback?.invoke(false, PERMISSION_DENIED)
+                }
+
+                in 200..299 -> {
+                    callback?.let { it(true, null) }
+                }
+
+                else -> {
+                    callback?.let { it(false, response.body) }
+                    println(response.body)
+                    Logging.print(response.body)
+                }
             }
         } catch (e: Exception) {
             Logging.print(UNKNOWN_EXCEPTION, e)
