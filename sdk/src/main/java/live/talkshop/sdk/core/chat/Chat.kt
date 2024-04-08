@@ -16,7 +16,8 @@ import live.talkshop.sdk.core.chat.models.UserTokenModel
 class Chat(private val showKey: String, private val jwt: String, private val isGuest: Boolean) {
     interface ChatCallback {
         fun onMessageReceived(message: MessageModel)
-        fun onMessageDeleted(messageId: String)
+        fun onMessageDeleted(messageId: Int)
+        fun onStatusChange(error: String)
     }
 
     /**
@@ -60,8 +61,12 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
                     callback.onMessageReceived(message)
                 }
 
-                override fun onMessageDeleted(messageId: String) {
+                override fun onMessageDeleted(messageId: Int) {
                     callback.onMessageDeleted(messageId)
+                }
+
+                override fun onStatusChange(error: String) {
+                    callback.onStatusChange(error)
                 }
             })
             provider.subscribe()
@@ -113,6 +118,11 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
             provider.countUnreadMessages(callback)
         }
 
+        /**
+         * Public method to count unread messages.
+         * @param timeToken The time token of the message.
+         * @param callback optional callback to return success or error.
+         */
         suspend fun deleteMessage(
             timeToken: String,
             callback: ((Boolean, String?) -> Unit)? = null

@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -261,8 +263,12 @@ fun PublishMessage() {
                             subscriptionResult = "Received message: ${message.text}"
                         }
 
-                        override fun onMessageDeleted(messageId: String) {
+                        override fun onMessageDeleted(messageId: Int) {
                             subscriptionResult = "Deleted message: $messageId"
+                        }
+
+                        override fun onStatusChange(error: String) {
+                            subscriptionResult = "Error: $error"
                         }
                     })
                 }
@@ -309,7 +315,7 @@ fun ChatHistory() {
     Button(
         onClick = {
             GlobalScope.launch {
-                Chat.getChatMessages { messageList, _, error ->
+                Chat.getChatMessages(count = 100) { messageList, _, error ->
                     if (error == null) {
                         messages = messageList
                     } else {
@@ -329,8 +335,8 @@ fun ChatHistory() {
             title = { Text("Chat History") },
             text = {
                 if (messages != null) {
-                    Column {
-                        messages!!.forEach { message ->
+                    LazyColumn {
+                        items(messages!!) { message ->
                             message.text?.let { Text(it) }
                         }
                     }
@@ -350,7 +356,7 @@ fun ChatHistory() {
 @OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 fun DeleteMessageSection() {
-    var timeToken by remember { mutableStateOf("17111319277303308") }
+    var timeToken by remember { mutableStateOf("17125987264805391") }
     var results by remember { mutableStateOf<String?>(null) }
 
     OutlinedTextField(
