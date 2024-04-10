@@ -1,6 +1,7 @@
 package live.talkshop.sdk.utils
 
 import live.talkshop.sdk.core.authentication.isDebugMode
+import live.talkshop.sdk.resources.APIClientError
 
 class Logging {
     companion object {
@@ -10,22 +11,15 @@ class Logging {
             }
         }
 
-        fun print(tag: String, message: String) {
+        fun print(message: APIClientError) {
             if (isDebugMode) {
-                println("TSL DEBUG: $tag: $message")
+                println("TSL DEBUG: $message")
             }
         }
 
-        fun print(tag: String, exception: Exception) {
+        fun print(message: APIClientError, exception: Exception) {
             if (isDebugMode) {
-                println("TSL DEBUG: $tag: ${exception.message}")
-            }
-        }
-
-        fun print(tag: String, message: String, exception: Exception) {
-            if (isDebugMode) {
-                println("TSL DEBUG: $tag: $message\nException: ${exception.message}")
-                exception.printStackTrace()
+                println("TSL DEBUG: $message: " + exception.message)
             }
         }
 

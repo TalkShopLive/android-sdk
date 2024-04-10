@@ -2,6 +2,7 @@ package live.talkshop.testapp
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -48,6 +49,7 @@ private const val jwt = ""
 @Composable
 fun MainScreen(context: Context) {
     val scrollState = rememberScrollState()
+    val timeTokenState = remember { mutableStateOf("17126936597253584") }
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -56,9 +58,9 @@ fun MainScreen(context: Context) {
         ClientKeyInputSection(context)
         ShowIdInputSection()
         InitializeChat()
-        PublishMessage()
+        PublishMessage(timeTokenState)
         ChatHistory()
-        DeleteMessageSection()
+        DeleteMessageSection(timeTokenState)
     }
 }
 
@@ -138,10 +140,11 @@ fun ShowIdInputSection() {
                                         "\nStatus: ${show.status}, " +
                                         "\nTrailer URL: ${show.trailerUrl}, " +
                                         "\nHLS URL: ${show.hlsUrl}, " +
+                                        "\nAir Date: ${show.airDate}, " +
                                         "\nHLS Playback URL: ${show.hlsPlaybackUrl}"
                             errorText = null
                         } else {
-                            errorText = error
+                            errorText = error.toString()
                             showDetails = null
                         }
 
@@ -162,11 +165,12 @@ fun ShowIdInputSection() {
                         if (error == null && show != null) {
                             showDetails = "Show Key: ${show.showKey}, " +
                                     "\nShow Status: ${show.status}," +
+                                    "\nDuration: ${show.duration}," +
                                     "\nHLS Playback URL: ${show.hlsPlaybackUrl}," +
                                     "\nHLS URL: ${show.hlsUrl}"
                             errorText = null
                         } else {
-                            errorText = error
+                            errorText = error.toString()
                             showDetails = null
                         }
 
@@ -222,8 +226,8 @@ fun InitializeChat() {
     Button(
         onClick = {
             apiResult = null
-            Chat(globalShowKey, jwt, isGuest) { errorMessage, userTokenModel ->
-                apiResult = errorMessage ?: "Great success! UserId: ${userTokenModel?.userId}"
+            Chat(globalShowKey, jwt, isGuest) { error, userTokenModel ->
+                apiResult = error?.toString() ?: "Great success! UserId: ${userTokenModel?.userId}"
             }
         },
         modifier = Modifier.wrapContentWidth(Alignment.End)
@@ -240,7 +244,7 @@ fun InitializeChat() {
 
 @OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun PublishMessage() {
+fun PublishMessage(timeTokenState: MutableState<String>) {
     var message by remember { mutableStateOf("") }
     var apiResult by remember { mutableStateOf<String?>(null) }
     var subscriptionResult by remember { mutableStateOf("") }
@@ -263,11 +267,12 @@ fun PublishMessage() {
                             subscriptionResult = "Received message: ${message.text}"
                         }
 
-                        override fun onMessageDeleted(messageId: Int) {
+                        override fun onMessageDeleted(messageId: Long) {
                             subscriptionResult = "Deleted message: $messageId"
                         }
 
                         override fun onStatusChange(error: String) {
+                            Log.e("MainActivity.kt", error)
                             subscriptionResult = "Error: $error"
                         }
                     })
@@ -282,6 +287,7 @@ fun PublishMessage() {
                 GlobalScope.launch {
                     Chat.publish(message) { error, timetoken ->
                         apiResult = if (error == null) {
+                            timeTokenState.value = timetoken ?: timeTokenState.value
                             "Message sent, timetoken: $timetoken"
                         } else {
                             "Failed to send message: $error"
@@ -319,7 +325,7 @@ fun ChatHistory() {
                     if (error == null) {
                         messages = messageList
                     } else {
-                        errorMessage = error
+                        errorMessage = error.toString()
                     }
                     showPopup = true
                 }
@@ -355,13 +361,12 @@ fun ChatHistory() {
 
 @OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
-fun DeleteMessageSection() {
-    var timeToken by remember { mutableStateOf("17125987264805391") }
+fun DeleteMessageSection(timeTokenState: MutableState<String>) {
     var results by remember { mutableStateOf<String?>(null) }
 
     OutlinedTextField(
-        value = timeToken,
-        onValueChange = { timeToken = it },
+        value = timeTokenState.value,
+        onValueChange = { timeTokenState.value = it },
         label = { Text("Time Token") },
         modifier = Modifier.fillMaxWidth()
     )
@@ -371,7 +376,7 @@ fun DeleteMessageSection() {
     Button(
         onClick = {
             GlobalScope.launch {
-                Chat.deleteMessage(timeToken) { success, errorMessage ->
+                Chat.deleteMessage(timeTokenState.value) { success, errorMessage ->
                     results = if (success) {
                         "Success"
                     } else {
