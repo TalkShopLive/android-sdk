@@ -31,17 +31,17 @@ import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
 import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
-import live.talkshop.sdk.resources.Constants.MESSAGE_ERROR_MESSAGE_MAX_LENGTH
 import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
-import live.talkshop.sdk.resources.ErrorCodes.AUTHENTICATION_FAILED
-import live.talkshop.sdk.resources.ErrorCodes.CHANNEL_SUBSCRIPTION_FAILED
-import live.talkshop.sdk.resources.ErrorCodes.INVALID_USER_TOKEN
-import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_LIST_FAILED
-import live.talkshop.sdk.resources.ErrorCodes.MESSAGE_SENDING_FAILED
-import live.talkshop.sdk.resources.ErrorCodes.PERMISSION_DENIED
-import live.talkshop.sdk.resources.ErrorCodes.UNKNOWN_EXCEPTION
-import live.talkshop.sdk.resources.ErrorCodes.USER_ALREADY_AUTHENTICATED
-import live.talkshop.sdk.resources.ErrorCodes.USER_TOKEN_EXCEPTION
+import live.talkshop.sdk.resources.APIClientError
+import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_FAILED
+import live.talkshop.sdk.resources.APIClientError.CHANNEL_SUBSCRIPTION_FAILED
+import live.talkshop.sdk.resources.APIClientError.INVALID_USER_TOKEN
+import live.talkshop.sdk.resources.APIClientError.MESSAGE_LIST_FAILED
+import live.talkshop.sdk.resources.APIClientError.MESSAGE_SENDING_FAILED
+import live.talkshop.sdk.resources.APIClientError.PERMISSION_DENIED
+import live.talkshop.sdk.resources.APIClientError.UNKNOWN_EXCEPTION
+import live.talkshop.sdk.resources.APIClientError.USER_ALREADY_AUTHENTICATED
+import live.talkshop.sdk.resources.APIClientError.USER_TOKEN_EXCEPTION
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_NAME
 import live.talkshop.sdk.resources.Keys.KEY_PROFILE_URL
@@ -115,7 +115,7 @@ class ChatProvider {
         showKey: String,
         jwt: String,
         isGuest: Boolean,
-        callback: ((String?, UserTokenModel?) -> Unit)?
+        callback: ((APIClientError?, UserTokenModel?) -> Unit)?
     ) {
         if (isAuthenticated) {
             var response: ApiResponse? = null
@@ -133,7 +133,6 @@ class ChatProvider {
                 callback?.invoke(null, userTokenModel)
                 currentJwt = jwt
             } catch (e: Exception) {
-                isSubscribed = false
                 if (response!!.statusCode == 403) {
                     Logging.print(PERMISSION_DENIED)
                     callback?.invoke(PERMISSION_DENIED, null)
@@ -199,7 +198,6 @@ class ChatProvider {
             eventID = showStatusModel.eventId,
             showKey = currentShowKey,
             showStatus = showStatusModel.status,
-            duration = showStatusModel.duration.toString(),
             userId = userId
         )
     }
@@ -246,13 +244,12 @@ class ChatProvider {
                         }
 
                         eventsChannel -> {
+                            println("Received on events channel: $pnMessageResult")
                             println("Received message on events channel: ${pnMessageResult.message}")
                             if (pnMessageResult.message.asJsonObject.get("key").asString == "message_deleted") {
-                                callback?.onMessageDeleted(
-                                    pnMessageResult.message.asJsonObject.get(
-                                        "payload"
-                                    ).asInt
-                                )
+                                val messageId =
+                                    pnMessageResult.message.asJsonObject.get("payload").asLong
+                                callback?.onMessageDeleted(messageId)
                             }
                         }
 
@@ -263,9 +260,10 @@ class ChatProvider {
                 }
 
                 override fun status(pubnub: PubNub, pnStatus: PNStatus) {
+                    println("Error on PubNub status: ${pnStatus.category}, error code: ${pnStatus.statusCode}")
                     if (pnStatus.error) {
-                        println("Error on PubNub status: ${pnStatus.category}, error code: ${pnStatus.statusCode}")
                         if (pnStatus.statusCode == 403) {
+                            isSubscribed = false
                             callback?.onStatusChange(PERMISSION_DENIED)
                         }
                     } else {
@@ -349,7 +347,10 @@ class ChatProvider {
      * @param message The message to be published.
      * @param callback An optional callback invoked with the result of the publish operation.
      */
-    internal suspend fun publish(message: String, callback: ((String?, String?) -> Unit)? = null) {
+    internal suspend fun publish(
+        message: String,
+        callback: ((APIClientError?, String?) -> Unit)? = null
+    ) {
         if (!isAuthenticated) {
             callback?.invoke(AUTHENTICATION_FAILED, null)
             return
@@ -358,7 +359,7 @@ class ChatProvider {
             handleShowKeyChange()
             if (message.length > 200) {
                 callback?.invoke(
-                    MESSAGE_ERROR_MESSAGE_MAX_LENGTH,
+                    APIClientError.MESSAGE_ERROR_MESSAGE_MAX_LENGTH,
                     null
                 )
                 return
@@ -383,7 +384,7 @@ class ChatProvider {
                 if (!status.error) {
                     callback?.invoke(null, result!!.timetoken.toString())
                 } else {
-                    Logging.print(MESSAGE_SENDING_FAILED, status.exception?.message.toString())
+                    Logging.print(MESSAGE_SENDING_FAILED)
                     callback?.invoke(MESSAGE_SENDING_FAILED, null)
                 }
             }
@@ -392,8 +393,8 @@ class ChatProvider {
                 Logging.print(PERMISSION_DENIED)
                 callback?.invoke(PERMISSION_DENIED, null)
             } else {
-                Logging.print(error)
-                callback?.invoke(error.message, null)
+                Logging.print(UNKNOWN_EXCEPTION, error)
+                callback?.invoke(UNKNOWN_EXCEPTION, null)
             }
         }
     }
@@ -410,7 +411,7 @@ class ChatProvider {
         count: Int = 25,
         start: Long? = System.currentTimeMillis(),
         includeMeta: Boolean = true,
-        callback: (List<MessageModel>?, Long?, String?) -> Unit
+        callback: (List<MessageModel>?, Long?, APIClientError?) -> Unit
     ) {
         if (!isAuthenticated) {
             callback(null, null, AUTHENTICATION_FAILED)
@@ -451,7 +452,7 @@ class ChatProvider {
                     val nextStart = result.messages.lastOrNull()?.timetoken
                     callback(messages, nextStart, null)
                 } else {
-                    status.exception?.message?.let { Logging.print(MESSAGE_LIST_FAILED, it) }
+                    status.exception?.message?.let { Logging.print(MESSAGE_LIST_FAILED) }
                     callback(null, null, MESSAGE_LIST_FAILED)
                 }
             }
@@ -460,7 +461,7 @@ class ChatProvider {
                 Logging.print(PERMISSION_DENIED)
                 callback.invoke(null, null, PERMISSION_DENIED)
             } else {
-                Logging.print(UNKNOWN_EXCEPTION, error)
+                Logging.print(UNKNOWN_EXCEPTION)
                 callback(null, null, UNKNOWN_EXCEPTION)
             }
         }
@@ -478,7 +479,7 @@ class ChatProvider {
     internal suspend fun editUser(
         newJwt: String,
         isGuest: Boolean,
-        callback: ((String?, UserTokenModel?) -> Unit)?
+        callback: ((APIClientError?, UserTokenModel?) -> Unit)?
     ) {
         if (userTokenModel.token != newJwt) {
             clearConnection()
@@ -528,7 +529,7 @@ class ChatProvider {
                     if (it == 403) {
                         Logging.print(PERMISSION_DENIED)
                     } else {
-                        Logging.print(UNKNOWN_EXCEPTION, error.errorMessage!!)
+                        Logging.print(UNKNOWN_EXCEPTION, error)
                     }
                 }
                 callback(null)
@@ -556,7 +557,7 @@ class ChatProvider {
             when (response.statusCode) {
                 403 -> {
                     Logging.print(PERMISSION_DENIED)
-                    callback?.invoke(false, PERMISSION_DENIED)
+                    callback?.invoke(false, PERMISSION_DENIED.toString())
                 }
 
                 in 200..299 -> {
@@ -571,7 +572,7 @@ class ChatProvider {
             }
         } catch (e: Exception) {
             Logging.print(UNKNOWN_EXCEPTION, e)
-            callback?.let { it(false, UNKNOWN_EXCEPTION) }
+            callback?.let { it(false, UNKNOWN_EXCEPTION.toString()) }
         }
     }
 

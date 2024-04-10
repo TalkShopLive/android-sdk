@@ -50,7 +50,7 @@ data class ShowModel(
     val trailerUrl: String?,
 
     @SerializedName("airDate")
-    val airDate: Date?,
+    val airDate: String?,
 
     @SerializedName("endedAt")
     val endedAt: Date?,
