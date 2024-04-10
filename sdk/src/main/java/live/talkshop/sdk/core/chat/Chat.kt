@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
+import live.talkshop.sdk.resources.APIClientError
 
 /**
  * Represents a chat session, encapsulating the logic to initiate and manage chat functionalities.
@@ -16,7 +17,7 @@ import live.talkshop.sdk.core.chat.models.UserTokenModel
 class Chat(private val showKey: String, private val jwt: String, private val isGuest: Boolean) {
     interface ChatCallback {
         fun onMessageReceived(message: MessageModel)
-        fun onMessageDeleted(messageId: Int)
+        fun onMessageDeleted(messageId: Long)
         fun onStatusChange(error: String)
     }
 
@@ -32,7 +33,7 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
         showKey: String,
         jwt: String,
         isGuest: Boolean,
-        callback: ((String?, UserTokenModel?) -> Unit)?
+        callback: ((APIClientError?, UserTokenModel?) -> Unit)?
     ) : this(showKey, jwt, isGuest) {
         CoroutineScope(Dispatchers.IO).launch {
             provider.initiateChat(showKey, jwt, isGuest, callback)
@@ -48,7 +49,7 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
          * @param message The message to be published.
          * @param callback An optional callback to be invoked with the result of the publish operation.
          */
-        suspend fun publish(message: String, callback: ((String?, String?) -> Unit)? = null) {
+        suspend fun publish(message: String, callback: ((APIClientError?, String?) -> Unit)? = null) {
             provider.publish(message, callback)
         }
 
@@ -61,12 +62,12 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
                     callback.onMessageReceived(message)
                 }
 
-                override fun onMessageDeleted(messageId: Int) {
+                override fun onMessageDeleted(messageId: Long) {
                     callback.onMessageDeleted(messageId)
                 }
 
-                override fun onStatusChange(error: String) {
-                    callback.onStatusChange(error)
+                override fun onStatusChange(error: APIClientError) {
+                    callback.onStatusChange(error.toString())
                 }
             })
             provider.subscribe()
@@ -82,7 +83,7 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
         suspend fun getChatMessages(
             count: Int = 25,
             start: Long? = null,
-            callback: (List<MessageModel>?, Long?, String?) -> Unit
+            callback: (List<MessageModel>?, Long?, APIClientError?) -> Unit
         ) {
             provider.fetchPastMessages(count = count, start = start, callback = callback)
         }
@@ -97,7 +98,7 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
         suspend fun updateUser(
             newJwt: String,
             isGuest: Boolean,
-            callback: ((String?, UserTokenModel?) -> Unit)?
+            callback: ((APIClientError?, UserTokenModel?) -> Unit)?
         ) {
             provider.editUser(newJwt, isGuest, callback)
         }

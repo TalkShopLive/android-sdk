@@ -4,13 +4,14 @@ import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
+import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.STATUS_LIVE
-import live.talkshop.sdk.resources.ErrorCodes.AUTHENTICATION_FAILED
-import live.talkshop.sdk.resources.ErrorCodes.EVENT_NOT_FOUND
-import live.talkshop.sdk.resources.ErrorCodes.EVENT_UNKNOWN_EXCEPTION
-import live.talkshop.sdk.resources.ErrorCodes.SHOW_NOT_FOUND
-import live.talkshop.sdk.resources.ErrorCodes.SHOW_UNKNOWN_EXCEPTION
+import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_FAILED
+import live.talkshop.sdk.resources.APIClientError.EVENT_NOT_FOUND
+import live.talkshop.sdk.resources.APIClientError.EVENT_UNKNOWN_EXCEPTION
+import live.talkshop.sdk.resources.APIClientError.SHOW_NOT_FOUND
+import live.talkshop.sdk.resources.APIClientError.SHOW_UNKNOWN_EXCEPTION
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
@@ -36,7 +37,7 @@ internal class ShowProvider {
      */
     internal suspend fun fetchShow(
         showKey: String,
-        callback: ((String?, ShowModel?) -> Unit)? = null
+        callback: ((APIClientError?, ShowModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
             callback?.invoke(AUTHENTICATION_FAILED, null)
@@ -59,7 +60,6 @@ internal class ShowProvider {
                 eventID = showModel.eventId,
                 showKey = showKey,
                 showStatus = showModel.status,
-                duration = showModel.duration.toString()
             )
         } catch (e: Exception) {
             Logging.print(SHOW_UNKNOWN_EXCEPTION, e)
@@ -76,7 +76,7 @@ internal class ShowProvider {
      */
     internal suspend fun fetchCurrentEvent(
         showKey: String,
-        callback: ((String?, ShowStatusModel?) -> Unit)? = null
+        callback: ((APIClientError?, ShowStatusModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
             callback?.invoke(AUTHENTICATION_FAILED, null)
@@ -108,7 +108,6 @@ internal class ShowProvider {
                         eventID = showStatusModel.eventId,
                         showKey = showKey,
                         showStatus = showStatusModel.status,
-                        duration = showStatusModel.duration.toString(),
                     )
                 }
             }

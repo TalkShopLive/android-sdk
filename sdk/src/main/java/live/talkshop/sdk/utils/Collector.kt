@@ -39,14 +39,13 @@ class Collector private constructor(context: Context) {
         storeId: String? = "NOT_SET",
         videoKey: String? = "NOT_SET",
         showStatus: String? = "NOT_SET",
-        duration: String? = "NOT_SET"
     ) {
         val timestamp = System.currentTimeMillis()
         val payload = JSONObject().apply {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.0.5")
+            put("version", "1.0.6")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
@@ -56,7 +55,6 @@ class Collector private constructor(context: Context) {
                 put("store_id", storeId)
                 put("video_key", videoKey)
                 put("video_status", showStatus)
-                put("video_time", duration)
             })
             put("utm", JSONObject().apply {
                 put("source", "NOT_SET")
@@ -106,7 +104,6 @@ class Collector private constructor(context: Context) {
             storeId: String? = null,
             videoKey: String? = null,
             showStatus: String? = null,
-            duration: String? = null
         ) {
             if (isDNT) {
                 return
@@ -121,7 +118,6 @@ class Collector private constructor(context: Context) {
                     storeId,
                     videoKey,
                     showStatus,
-                    duration
                 )
             }
         }

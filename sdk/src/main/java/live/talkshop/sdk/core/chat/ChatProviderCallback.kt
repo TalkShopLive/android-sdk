@@ -1,6 +1,7 @@
 package live.talkshop.sdk.core.chat
 
 import live.talkshop.sdk.core.chat.models.MessageModel
+import live.talkshop.sdk.resources.APIClientError
 
 /**
  * Interface defining callbacks for chat-related events in the ChatProvider.
@@ -27,7 +28,7 @@ internal interface ChatProviderCallback {
      *
      * @param messageId The [Int] instance containing the message details.
      */
-    fun onMessageDeleted(messageId: Int)
+    fun onMessageDeleted(messageId: Long)
 
     /**
      * Called when an error occurs.
@@ -35,7 +36,7 @@ internal interface ChatProviderCallback {
      * Implement this method to handle error handling. This method provides
      * a [error], which contains the error string.
      *
-     * @param error The [String] instance containing the error details.
+     * @param error The [APIClientError] instance containing the error details.
      */
-    fun onStatusChange(error: String)
+    fun onStatusChange(error: APIClientError)
 }

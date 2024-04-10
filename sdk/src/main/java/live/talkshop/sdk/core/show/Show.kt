@@ -2,6 +2,7 @@ package live.talkshop.sdk.core.show
 
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
+import live.talkshop.sdk.resources.APIClientError
 
 /**
  * This class provides static methods to fetch details and status of a show.
@@ -19,7 +20,7 @@ class Show {
          */
         suspend fun getDetails(
             showKey: String,
-            callback: ((String?, ShowModel?) -> Unit)? = null
+            callback: ((APIClientError?, ShowModel?) -> Unit)? = null
         ) {
             showProvider.fetchShow(showKey, callback)
         }
@@ -33,7 +34,7 @@ class Show {
          */
         suspend fun getStatus(
             showKey: String,
-            callback: ((String?, ShowStatusModel?) -> Unit)? = null
+            callback: ((APIClientError?, ShowStatusModel?) -> Unit)? = null
         ) {
             showProvider.fetchCurrentEvent(showKey, callback)
         }

@@ -62,7 +62,7 @@ internal object ShowParser {
             parseCurrentEventsArray(productJson, KEY_HLS_PLAYBACK_URL),
             URLs.createHSLUrl(parseEventsArray(productJson, KEY_FILENAME)),
             parseTrailerUrl(streamContentJson, KEY_VIDEO),
-            parseDate(parseAirDates(productJson, KEY_DATE)),
+            parseAirDates(productJson, KEY_DATE),
             parseDate(productJson.optString(KEY_ENDED_AT, "")),
             parseAirDates(productJson, KEY_EVENT_ID),
             URLs.createCCUrl(parseEventsArray(productJson, KEY_FILENAME)),
