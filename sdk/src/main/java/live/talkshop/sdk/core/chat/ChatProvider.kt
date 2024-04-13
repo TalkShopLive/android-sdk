@@ -5,6 +5,7 @@ import com.pubnub.api.PubNub
 import com.pubnub.api.PubNubException
 import com.pubnub.api.UserId
 import com.pubnub.api.callbacks.SubscribeCallback
+import com.pubnub.api.enums.PNStatusCategory
 import com.pubnub.api.models.consumer.PNStatus
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult
@@ -35,6 +36,7 @@ import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_FAILED
 import live.talkshop.sdk.resources.APIClientError.CHANNEL_SUBSCRIPTION_FAILED
+import live.talkshop.sdk.resources.APIClientError.CHAT_CONNECTION_ERROR
 import live.talkshop.sdk.resources.APIClientError.INVALID_USER_TOKEN
 import live.talkshop.sdk.resources.APIClientError.MESSAGE_LIST_FAILED
 import live.talkshop.sdk.resources.APIClientError.MESSAGE_SENDING_FAILED
@@ -81,6 +83,7 @@ import java.util.concurrent.TimeUnit
 class ChatProvider {
     private lateinit var userTokenModel: UserTokenModel
     private lateinit var channels: List<String>
+    private var triedToReconnectBefore = false
     private var pubnub: PubNub? = null
     private lateinit var publishChannel: String
     private var eventsChannel: String? = null
@@ -133,15 +136,26 @@ class ChatProvider {
                 callback?.invoke(null, userTokenModel)
                 currentJwt = jwt
             } catch (e: Exception) {
-                if (response!!.statusCode == 403) {
-                    Logging.print(PERMISSION_DENIED)
-                    callback?.invoke(PERMISSION_DENIED, null)
-                } else if (response.statusCode !in 200..299) {
-                    Logging.print(INVALID_USER_TOKEN)
-                    callback?.invoke(INVALID_USER_TOKEN, null)
+                if (response != null) {
+                    when (response.statusCode) {
+                        403 -> {
+                            Logging.print(PERMISSION_DENIED)
+                            callback?.invoke(PERMISSION_DENIED, null)
+                        }
+
+                        !in 200..299 -> {
+                            Logging.print(INVALID_USER_TOKEN)
+                            callback?.invoke(INVALID_USER_TOKEN, null)
+                        }
+
+                        else -> {
+                            Logging.print(USER_TOKEN_EXCEPTION)
+                            callback?.invoke(USER_TOKEN_EXCEPTION, null)
+                        }
+                    }
                 } else {
-                    Logging.print(USER_TOKEN_EXCEPTION)
-                    callback?.invoke(USER_TOKEN_EXCEPTION, null)
+                    Logging.print(CHAT_CONNECTION_ERROR)
+                    callback?.invoke(CHAT_CONNECTION_ERROR, null)
                 }
             }
         } else {
@@ -176,6 +190,8 @@ class ChatProvider {
 
         if (response.statusCode !in 200..299) {
             Logging.print(CHANNEL_SUBSCRIPTION_FAILED)
+        } else {
+            Logging.print("Channels subscribe success")
         }
 
         val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(response.body))
@@ -224,8 +240,7 @@ class ChatProvider {
                                     // Update the sender information with cached metadata
                                     messageData.sender = userMetadataCache[uuid]
                                     callback?.onMessageReceived(messageData)
-                                } else if (uuid != null) {
-                                    // Metadata not in cache, fetch asynchronously and update
+                                } else if (uuid != null) { // Metadata not in cache, fetch asynchronously and update
                                     CoroutineScope(Dispatchers.IO).launch {
                                         fetchUserMetaData(uuid)
                                         messageData.sender = userMetadataCache[uuid]
@@ -244,7 +259,6 @@ class ChatProvider {
                         }
 
                         eventsChannel -> {
-                            println("Received on events channel: $pnMessageResult")
                             println("Received message on events channel: ${pnMessageResult.message}")
                             if (pnMessageResult.message.asJsonObject.get("key").asString == "message_deleted") {
                                 val messageId =
@@ -260,14 +274,22 @@ class ChatProvider {
                 }
 
                 override fun status(pubnub: PubNub, pnStatus: PNStatus) {
-                    println("Error on PubNub status: ${pnStatus.category}, error code: ${pnStatus.statusCode}")
+                    println("PubNub status: ${pnStatus.category}, error code: ${pnStatus.statusCode}")
+                    if (pnStatus.category == PNStatusCategory.PNUnexpectedDisconnectCategory) {
+                        if (!triedToReconnectBefore) {
+                            triedToReconnectBefore = true
+                            pubnub.reconnect()
+                        }
+                    } else if (pnStatus.category == PNStatusCategory.PNConnectionError && triedToReconnectBefore) {
+                        callback?.onStatusChange(CHAT_CONNECTION_ERROR)
+                    } else if (pnStatus.category == PNStatusCategory.PNConnectedCategory || pnStatus.category == PNStatusCategory.PNReconnectedCategory) {
+                        triedToReconnectBefore = false
+                    }
+
                     if (pnStatus.error) {
                         if (pnStatus.statusCode == 403) {
                             isSubscribed = false
-                            callback?.onStatusChange(PERMISSION_DENIED)
                         }
-                    } else {
-                        println("Status changed: ${pnStatus.category}")
                     }
                 }
 
@@ -372,7 +394,7 @@ class ChatProvider {
 
 
             val messageObject = MessageModel(
-                id = System.currentTimeMillis().toInt(),
+                id = System.currentTimeMillis(),
                 createdAt = Date().toString(),
                 sender = SenderModel(id = userTokenModel.userId, name = userTokenModel.name),
                 text = message,
@@ -424,25 +446,26 @@ class ChatProvider {
                 channel = publishChannel,
                 start = start,
                 count = count,
+                includeTimetoken = true,
                 includeMeta = includeMeta
             )?.async { result, status ->
                 if (!status.error && result != null) {
                     val messages = result.messages.mapNotNull { messageDetail ->
                         if (messageDetail.entry.isJsonObject) {
-                            MessageParser.parse(JSONObject(messageDetail.entry.asJsonObject.toString()))
-                                ?.apply {
-                                    // Update sender metadata if available in the cache
-                                    this.sender?.id?.let { uuid ->
-                                        if (userMetadataCache.containsKey(uuid)) {
-                                            this.sender = userMetadataCache[uuid]
-                                        } else {
-                                            // Asynchronously fetch metadata if not in cache
-                                            CoroutineScope(Dispatchers.IO).launch {
-                                                fetchUserMetaData(uuid)
-                                            }
+                            MessageParser.parse(
+                                JSONObject(messageDetail.entry.asJsonObject.toString()),
+                                messageDetail.timetoken
+                            )?.apply { // Update sender metadata if available in the cache
+                                this.sender?.id?.let { uuid ->
+                                    if (userMetadataCache.containsKey(uuid)) {
+                                        this.sender = userMetadataCache[uuid]
+                                    } else { // Asynchronously fetch metadata if not in cache
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            fetchUserMetaData(uuid)
                                         }
                                     }
                                 }
+                            }
                         } else {
                             null
                         }
@@ -497,6 +520,7 @@ class ChatProvider {
         pubnub?.unsubscribeAll()
         pubnub?.destroy()
         pubnub = null
+        isSubscribed = false
     }
 
     /**
