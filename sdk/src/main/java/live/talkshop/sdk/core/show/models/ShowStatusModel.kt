@@ -24,7 +24,7 @@ data class ShowStatusModel(
     val hlsPlaybackUrl: String? = null,
 
     @SerializedName("hlsUrl")
-    val hlsUrl: String?? = null,
+    val hlsUrl: String? = null,
 
     @SerializedName("trailerUrl")
     val trailerUrl: String? = null,

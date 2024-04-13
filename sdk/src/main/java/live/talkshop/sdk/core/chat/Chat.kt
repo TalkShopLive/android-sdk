@@ -18,7 +18,7 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
     interface ChatCallback {
         fun onMessageReceived(message: MessageModel)
         fun onMessageDeleted(messageId: Long)
-        fun onStatusChange(error: String)
+        fun onStatusChange(error: APIClientError)
     }
 
     /**
@@ -67,7 +67,7 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
                 }
 
                 override fun onStatusChange(error: APIClientError) {
-                    callback.onStatusChange(error.toString())
+                    callback.onStatusChange(error)
                 }
             })
             provider.subscribe()

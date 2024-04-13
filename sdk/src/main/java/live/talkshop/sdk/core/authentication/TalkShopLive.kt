@@ -94,11 +94,16 @@ class TalkShopLive private constructor(private val context: Context) {
     }
 
     private suspend fun authenticateWithAPI(clientKey: String): Boolean {
-        val headers = mapOf(SDK_KEY to clientKey)
+
+        val headers = mutableMapOf(SDK_KEY to clientKey)
 
         return try {
             val response =
-                APIHandler.makeRequest(getAuthUrl(), HTTPMethod.GET, headers = headers)
+                APIHandler.makeRequest(
+                    requestUrl = getAuthUrl(),
+                    requestMethod = HTTPMethod.GET,
+                    headers = headers
+                )
 
             if (response.statusCode !in 200..299) {
                 Logging.print(AUTHENTICATION_FAILED)
