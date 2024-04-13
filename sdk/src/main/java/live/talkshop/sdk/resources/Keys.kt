@@ -31,6 +31,7 @@ object Keys {
     const val KEY_TEXT = "text"
     const val KEY_TYPE = "type"
     const val KEY_PLATFORM = "platform"
+    const val KEY_TIME_TOKEN = "timetoken"
     const val KEY_MASTER = "master"
     const val KEY_IMAGES = "images"
     const val KEY_IMAGE = "image"

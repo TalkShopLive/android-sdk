@@ -11,10 +11,11 @@ package live.talkshop.sdk.core.chat.models
  * @property platform An identifier for the platform from which the message was sent, e.g., "sdk".
  */
 data class MessageModel(
-    val id: Int?,
+    val id: Long?,
     val createdAt: String?,
     var sender: SenderModel?,
     val text: String?,
     val type: String,
-    val platform: String?
+    val platform: String?,
+    val timeToken: Long? = null
 )

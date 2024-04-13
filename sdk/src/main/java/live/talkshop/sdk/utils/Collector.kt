@@ -7,6 +7,7 @@ import android.view.WindowManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.isDNT
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
@@ -45,7 +46,7 @@ class Collector private constructor(context: Context) {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.0.6")
+            put("version", "1.0.7")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
@@ -69,11 +70,13 @@ class Collector private constructor(context: Context) {
             })
         }
 
-        APIHandler.makeRequest(
-            requestUrl = getCollectorUrl(),
-            requestMethod = HTTPMethod.POST,
-            payload = payload
-        )
+        if (isAuthenticated) {
+            APIHandler.makeRequest(
+                requestUrl = getCollectorUrl(),
+                requestMethod = HTTPMethod.POST,
+                payload = payload
+            )
+        }
     }
 
     companion object {

@@ -23,6 +23,7 @@ import live.talkshop.sdk.core.authentication.TalkShopLive
 import live.talkshop.sdk.core.chat.Chat
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.show.Show
+import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.testapp.ui.theme.TestAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -41,7 +42,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//Update these values to test scanarios
+//Update these values to test scenarios
 private const val clientKey = ""
 private const val globalShowKey = ""
 private const val jwt = ""
@@ -271,8 +272,8 @@ fun PublishMessage(timeTokenState: MutableState<String>) {
                             subscriptionResult = "Deleted message: $messageId"
                         }
 
-                        override fun onStatusChange(error: String) {
-                            Log.e("MainActivity.kt", error)
+                        override fun onStatusChange(error: APIClientError) {
+                            Log.e("MainActivity.kt", error.toString())
                             subscriptionResult = "Error: $error"
                         }
                     })
@@ -343,6 +344,7 @@ fun ChatHistory() {
                 if (messages != null) {
                     LazyColumn {
                         items(messages!!) { message ->
+
                             message.text?.let { Text(it) }
                         }
                     }
