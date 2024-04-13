@@ -233,7 +233,10 @@ class ChatProvider {
                     when (pnMessageResult.channel) {
                         publishChannel -> {
                             val messageData: MessageModel? =
-                                MessageParser.parse(JSONObject(pnMessageResult.message.asJsonObject.toString()))
+                                MessageParser.parse(
+                                    JSONObject(pnMessageResult.message.asJsonObject.toString()),
+                                    pnMessageResult.timetoken
+                                )
                             if (messageData != null) {
                                 val uuid = messageData.sender?.id
                                 if (uuid != null && userMetadataCache.containsKey(uuid)) {
