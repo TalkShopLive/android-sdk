@@ -15,8 +15,16 @@ enum class APIClientError(private val code: String, private val description: Str
     MESSAGE_SENDING_FAILED("MESSAGE_SENDING_FAILED", "Failed to send message"),
     MESSAGE_LIST_FAILED("MESSAGE_LIST_FAILED", "Failed to fetch message history"),
     UNKNOWN_EXCEPTION("UNKNOWN_EXCEPTION", "Unknown exception occurred"),
-    MESSAGE_ERROR_MESSAGE_MAX_LENGTH("MESSAGE_ERROR_MESSAGE_MAX_LENGTH","Publishing Error: Message exceeds maximum length of 200 characters."),
-    CHAT_CONNECTION_ERROR("CHAT_CONNECTION_ERROR","Cannot reconnect to chat due to network issues");
+    MESSAGE_ERROR_MESSAGE_MAX_LENGTH(
+        "MESSAGE_ERROR_MESSAGE_MAX_LENGTH",
+        "Publishing Error: Message exceeds maximum length of 200 characters."
+    ),
+    CHAT_CONNECTION_ERROR(
+        "CHAT_CONNECTION_ERROR",
+        "Cannot reconnect to chat due to network issues"
+    ),
+    CHAT_TIMEOUT("CHAT_TIMEOUT", "The chat you're trying to connect to has timed out"),
+    SHOW_NOT_LIVE("SHOW_NOT_LIVE", "The show is not live.");
 
     override fun toString(): String {
         return "$code: $description"

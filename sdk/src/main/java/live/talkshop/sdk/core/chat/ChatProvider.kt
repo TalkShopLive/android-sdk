@@ -20,9 +20,13 @@ import com.pubnub.api.models.consumer.pubsub.objects.PNSetChannelMetadataEventMe
 import com.pubnub.api.models.consumer.pubsub.objects.PNSetMembershipEventMessage
 import com.pubnub.api.models.consumer.pubsub.objects.PNSetUUIDMetadataEventMessage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import live.talkshop.sdk.core.authentication.globalShowId
 import live.talkshop.sdk.core.authentication.globalShowKey
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.storedClientKey
@@ -50,6 +54,7 @@ import live.talkshop.sdk.resources.Keys.KEY_PROFILE_URL
 import live.talkshop.sdk.resources.Keys.KEY_SENDER
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.Logging
+import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.ApiResponse
 import live.talkshop.sdk.utils.networking.HTTPMethod
@@ -121,6 +126,10 @@ class ChatProvider {
         callback: ((APIClientError?, UserTokenModel?) -> Unit)?
     ) {
         if (isAuthenticated) {
+            if (!isNotEmptyOrNull(globalShowId)) {
+                callback?.invoke(APIClientError.SHOW_NOT_LIVE, null)
+                return
+            }
             var response: ApiResponse? = null
             try {
                 currentShowKey = showKey
@@ -240,24 +249,21 @@ class ChatProvider {
                             if (messageData != null) {
                                 val uuid = messageData.sender?.id
                                 if (uuid != null && userMetadataCache.containsKey(uuid)) {
-                                    // Update the sender information with cached metadata
                                     messageData.sender = userMetadataCache[uuid]
                                     callback?.onMessageReceived(messageData)
-                                } else if (uuid != null) { // Metadata not in cache, fetch asynchronously and update
+                                } else if (uuid != null) {
                                     CoroutineScope(Dispatchers.IO).launch {
                                         fetchUserMetaData(uuid)
                                         messageData.sender = userMetadataCache[uuid]
-                                        // Post back on the main thread or the appropriate thread for UI updates
                                         withContext(Dispatchers.Main) {
                                             callback?.onMessageReceived(messageData)
                                         }
                                     }
                                 } else {
-                                    // UUID is null or invalid, process the message normally
                                     callback?.onMessageReceived(messageData)
                                 }
                             } else {
-                                println("messageData is null")
+                                Logging.print("messageData is null")
                             }
                         }
 
@@ -287,12 +293,10 @@ class ChatProvider {
                         callback?.onStatusChange(CHAT_CONNECTION_ERROR)
                     } else if (pnStatus.category == PNStatusCategory.PNConnectedCategory || pnStatus.category == PNStatusCategory.PNReconnectedCategory) {
                         triedToReconnectBefore = false
-                    }
-
-                    if (pnStatus.error) {
-                        if (pnStatus.statusCode == 403) {
-                            isSubscribed = false
-                        }
+                    } else if (pnStatus.category == PNStatusCategory.PNTimeoutCategory) {
+                        callback?.onStatusChange(APIClientError.CHAT_TIMEOUT)
+                    } else if (pnStatus.category == PNStatusCategory.PNAccessDeniedCategory) {
+                        callback?.onStatusChange(PERMISSION_DENIED)
                     }
                 }
 
@@ -453,46 +457,64 @@ class ChatProvider {
                 includeMeta = includeMeta
             )?.async { result, status ->
                 if (!status.error && result != null) {
-                    val messages = result.messages.mapNotNull { messageDetail ->
-                        if (messageDetail.entry.isJsonObject) {
-                            MessageParser.parse(
-                                JSONObject(messageDetail.entry.asJsonObject.toString()),
-                                messageDetail.timetoken
-                            )?.apply { // Update sender metadata if available in the cache
-                                this.sender?.id?.let { uuid ->
-                                    if (userMetadataCache.containsKey(uuid)) {
-                                        this.sender = userMetadataCache[uuid]
-                                    } else { // Asynchronously fetch metadata if not in cache
-                                        CoroutineScope(Dispatchers.IO).launch {
-                                            fetchUserMetaData(uuid)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val deferredMetadataUpdates = mutableListOf<Deferred<Unit>>()
+                        val messages = result.messages.mapNotNull { messageDetail ->
+                            if (messageDetail.entry.isJsonObject) {
+                                MessageParser.parse(
+                                    JSONObject(messageDetail.entry.asJsonObject.toString()),
+                                    messageDetail.timetoken
+                                )?.apply {
+                                    this.sender?.id?.let { uuid ->
+                                        if (userMetadataCache.containsKey(uuid)) {
+                                            this.sender = userMetadataCache[uuid]
+                                        } else {
+                                            deferredMetadataUpdates.add(async {
+                                                fetchUserMetaData(uuid)
+                                                sender = userMetadataCache[uuid]
+                                            })
                                         }
                                     }
                                 }
+                            } else {
+                                null
                             }
-                        } else {
-                            null
+                        }
+
+                        deferredMetadataUpdates.awaitAll()
+                        withContext(Dispatchers.Main) {
+                            val nextStart = result.messages.firstOrNull()
+                            if (nextStart != null) {
+                                callback(messages, nextStart.timetoken, null)
+                            } else {
+                                callback(messages, null, null)
+                            }
                         }
                     }
-
-                    // Callback should be executed after all the metadata updates are initiated
-                    val nextStart = result.messages.lastOrNull()?.timetoken
-                    callback(messages, nextStart, null)
                 } else {
                     status.exception?.message?.let { Logging.print(MESSAGE_LIST_FAILED) }
                     callback(null, null, MESSAGE_LIST_FAILED)
                 }
             }
         } catch (error: Exception) {
-            if ((error as? PubNubException)?.statusCode == 403) {
-                Logging.print(PERMISSION_DENIED)
-                callback.invoke(null, null, PERMISSION_DENIED)
-            } else {
-                Logging.print(UNKNOWN_EXCEPTION)
-                callback(null, null, UNKNOWN_EXCEPTION)
+            when (error) {
+                is PubNubException -> {
+                    if (error.statusCode == 403) {
+                        Logging.print(PERMISSION_DENIED)
+                        callback.invoke(null, null, PERMISSION_DENIED)
+                    } else {
+                        Logging.print(UNKNOWN_EXCEPTION)
+                        callback(null, null, UNKNOWN_EXCEPTION)
+                    }
+                }
+
+                else -> {
+                    Logging.print(UNKNOWN_EXCEPTION)
+                    callback(null, null, UNKNOWN_EXCEPTION)
+                }
             }
         }
     }
-
 
     /**
      * Attempts to update the user token model and re-initiate chat if the JWT has changed.
