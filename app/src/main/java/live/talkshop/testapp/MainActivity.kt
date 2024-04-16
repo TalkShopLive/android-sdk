@@ -3,6 +3,7 @@ package live.talkshop.testapp
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -265,7 +267,8 @@ fun PublishMessage(timeTokenState: MutableState<String>) {
                 GlobalScope.launch {
                     Chat.subscribe(object : Chat.ChatCallback {
                         override fun onMessageReceived(message: MessageModel) {
-                            subscriptionResult = "Received message: ${message.text}"
+                            subscriptionResult =
+                                "${message.sender?.name}: Received message: ${message.text}"
                         }
 
                         override fun onMessageDeleted(messageId: Long) {
@@ -318,21 +321,23 @@ fun ChatHistory() {
     var messages by remember { mutableStateOf<List<MessageModel>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showPopup by remember { mutableStateOf(false) }
+    var chatTimeToken by remember { mutableStateOf<Long?>(null) }
 
-    Button(
-        onClick = {
-            GlobalScope.launch {
-                Chat.getChatMessages(count = 100) { messageList, _, error ->
-                    if (error == null) {
-                        messages = messageList
-                    } else {
-                        errorMessage = error.toString()
-                    }
-                    showPopup = true
+    val context = LocalContext.current
+
+    Button(onClick = {
+        GlobalScope.launch {
+            Chat.getChatMessages(count = 100) { messageList, newChatTimeToken, error ->
+                if (error == null) {
+                    messages = messageList
+                    chatTimeToken = newChatTimeToken
+                } else {
+                    errorMessage = error.toString()
                 }
+                showPopup = true
             }
         }
-    ) {
+    }) {
         Text("Get Chat History")
     }
 
@@ -344,8 +349,7 @@ fun ChatHistory() {
                 if (messages != null) {
                     LazyColumn {
                         items(messages!!) { message ->
-
-                            message.text?.let { Text(it) }
+                            message.text?.let { Text(message.sender?.name + ": " + it) }
                         }
                     }
                 } else {
@@ -355,6 +359,33 @@ fun ChatHistory() {
             confirmButton = {
                 Button(onClick = { showPopup = false }) {
                     Text("OK")
+                }
+            },
+            dismissButton = {
+                Button(onClick = {
+                    if (chatTimeToken != null) {
+                        GlobalScope.launch {
+                            Chat.getChatMessages(
+                                count = 100,
+                                start = chatTimeToken
+                            ) { messageList, newChatTimeToken, error ->
+                                if (error == null) {
+                                    messages = messageList
+                                    chatTimeToken = newChatTimeToken
+                                } else {
+                                    errorMessage = error.toString()
+                                }
+                            }
+                        }
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "You've reached end of chat",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }) {
+                    Text("Next")
                 }
             }
         )

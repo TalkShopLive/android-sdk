@@ -55,7 +55,7 @@ internal class ShowProvider {
             val showModel = ShowParser.parseFromJson(JSONObject(response.body))
             callback?.invoke(null, showModel)
             Collector.collect(
-                action = Constants.COLLECTOR_ACTION_SELECT_VIEW_SHOW_DETAILS,
+                action = Constants.COLLECTOR_ACTION_SELECT_SHOW_METADATA,
                 category = Constants.COLLECTOR_CAT_INTERACTION,
                 eventID = showModel.eventId,
                 showKey = showKey,

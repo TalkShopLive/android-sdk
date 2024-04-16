@@ -14,6 +14,8 @@ import live.talkshop.sdk.resources.Keys.KEY_PLATFORM
 import live.talkshop.sdk.resources.Keys.KEY_PROFILE_URL
 import live.talkshop.sdk.resources.Keys.KEY_SENDER
 import live.talkshop.sdk.resources.Keys.KEY_TEXT
+import live.talkshop.sdk.resources.Keys.KEY_TIME_MESSAGE
+import live.talkshop.sdk.resources.Keys.KEY_TIME_ORIGINAL
 import live.talkshop.sdk.resources.Keys.KEY_TIME_TOKEN
 import live.talkshop.sdk.resources.Keys.KEY_TYPE
 import org.json.JSONException
@@ -26,37 +28,21 @@ object MessageParser {
      * @param message The [JSONObject] containing the message payload.
      * @return The parsed [MessageModel] or null if the parsing fails.
      */
-    fun parse(message: JSONObject): MessageModel? {
-        return try {
-            val id = message.optLong(KEY_ID)
-            val createdAt = message.optString(KEY_CREATED_AT)
-            val sender = parseSender(message.get(KEY_SENDER).toString())
-            val text = message.optString(KEY_TEXT)
-            val type = message.optString(KEY_TYPE) ?: MESSAGE_TYPE_COMMENT
-            val platform = message.optString(KEY_PLATFORM)
-            val timeToken = message.optLong(KEY_TIME_TOKEN)
-            MessageModel(id, createdAt, sender, text, type, platform, timeToken = timeToken)
-        } catch (e: Exception) {
-            Logging.print(e)
-            null
-        }
-    }
-
-    /**
-     * Parses the payload of a [PNMessageResult] to a [MessageModel].
-     *
-     * @param message The [JSONObject] containing the message payload.
-     * @return The parsed [MessageModel] or null if the parsing fails.
-     */
     fun parse(message: JSONObject, timeToken: Long?): MessageModel? {
         return try {
-            val id = message.optLong(KEY_ID)
-            val createdAt = message.optString(KEY_CREATED_AT)
-            val sender = parseSender(message.get(KEY_SENDER).toString())
-            val text = message.optString(KEY_TEXT)
-            val type = message.optString(KEY_TYPE) ?: MESSAGE_TYPE_COMMENT
-            val platform = message.optString(KEY_PLATFORM)
-            MessageModel(id, createdAt, sender, text, type, platform, timeToken = timeToken)
+            MessageModel(
+                id = message.optLong(KEY_ID),
+                createdAt = message.optString(KEY_CREATED_AT),
+                sender = parseSender(message.get(KEY_SENDER).toString()),
+                text = message.optString(KEY_TEXT),
+                type = message.optString(KEY_TYPE) ?: MESSAGE_TYPE_COMMENT,
+                platform = message.optString(KEY_PLATFORM),
+                timeToken = timeToken,
+                original = message.optJSONObject(KEY_TIME_ORIGINAL)?.let {
+                    it.optJSONObject(KEY_TIME_MESSAGE)
+                        ?.let { message -> parse(message, it.optLong(KEY_TIME_TOKEN)) }
+                }
+            )
         } catch (e: Exception) {
             Logging.print(e)
             null

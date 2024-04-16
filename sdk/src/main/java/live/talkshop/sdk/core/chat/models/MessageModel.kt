@@ -17,5 +17,6 @@ data class MessageModel(
     val text: String?,
     val type: String,
     val platform: String?,
-    val timeToken: Long? = null
+    val timeToken: Long? = null,
+    val original: MessageModel? = null
 )
