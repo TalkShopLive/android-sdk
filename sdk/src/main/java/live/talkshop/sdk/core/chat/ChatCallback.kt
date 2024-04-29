@@ -8,7 +8,7 @@ import live.talkshop.sdk.resources.APIClientError
  * Implement this interface to handle various events emitted by the ChatProvider.
  * Add more callback methods for different events if needed.
  */
-internal interface ChatProviderCallback {
+interface ChatCallback {
     /**
      * Called when a new message is received on the publish channel.
      *

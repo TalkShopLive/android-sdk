@@ -23,6 +23,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.authentication.TalkShopLive
 import live.talkshop.sdk.core.chat.Chat
+import live.talkshop.sdk.core.chat.ChatCallback
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.show.Show
 import live.talkshop.sdk.resources.APIClientError
@@ -265,7 +266,7 @@ fun PublishMessage(timeTokenState: MutableState<String>) {
         Button(
             onClick = {
                 GlobalScope.launch {
-                    Chat.subscribe(object : Chat.ChatCallback {
+                    Chat.subscribe(object : ChatCallback {
                         override fun onMessageReceived(message: MessageModel) {
                             subscriptionResult =
                                 "${message.sender?.name}: Received message: ${message.text}"
@@ -327,7 +328,7 @@ fun ChatHistory() {
 
     Button(onClick = {
         GlobalScope.launch {
-            Chat.getChatMessages(count = 100) { messageList, newChatTimeToken, error ->
+            Chat.getChatMessages(count = 2) { messageList, newChatTimeToken, error ->
                 if (error == null) {
                     messages = messageList
                     chatTimeToken = newChatTimeToken

@@ -1,26 +1,14 @@
 package live.talkshop.sdk.core.show
 
-import live.talkshop.sdk.core.authentication.isAuthenticated
-import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.STATUS_LIVE
-import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_FAILED
-import live.talkshop.sdk.resources.APIClientError.EVENT_NOT_FOUND
-import live.talkshop.sdk.resources.APIClientError.EVENT_UNKNOWN_EXCEPTION
-import live.talkshop.sdk.resources.APIClientError.SHOW_NOT_FOUND
-import live.talkshop.sdk.resources.APIClientError.SHOW_UNKNOWN_EXCEPTION
 import live.talkshop.sdk.utils.Collector
-import live.talkshop.sdk.utils.networking.APIHandler
-import live.talkshop.sdk.utils.networking.HTTPMethod
-import live.talkshop.sdk.utils.networking.URLs
-import live.talkshop.sdk.utils.networking.URLs.getIncrementViewUrl
-import live.talkshop.sdk.utils.networking.URLs.getShowDetailsUrl
-import live.talkshop.sdk.utils.parsers.ShowParser
-import live.talkshop.sdk.utils.parsers.ShowStatusParser
-import org.json.JSONObject
+import live.talkshop.sdk.utils.networking.APICalls.getCurrentEvent
+import live.talkshop.sdk.utils.networking.APICalls.getShowDetails
+import live.talkshop.sdk.utils.networking.APICalls.incrementView
 
 /**
  * This class is responsible for fetching show details and current event status from the network.
@@ -39,31 +27,17 @@ internal class ShowProvider {
         showKey: String,
         callback: ((APIClientError?, ShowModel?) -> Unit)? = null
     ) {
-        if (!isAuthenticated) {
-            callback?.invoke(AUTHENTICATION_FAILED, null)
-            return
-        }
-
-        try {
-            val response =
-                APIHandler.makeRequest(getShowDetailsUrl(showKey), HTTPMethod.GET)
-
-            if (response.statusCode !in 200..299) {
-                Logging.print(SHOW_NOT_FOUND)
-            }
-
-            val showModel = ShowParser.parseFromJson(JSONObject(response.body))
-            callback?.invoke(null, showModel)
+        getShowDetails(showKey).onError {
+            callback?.invoke(it, null)
+        }.onResult {
+            callback?.invoke(null, it)
             Collector.collect(
                 action = Constants.COLLECTOR_ACTION_SELECT_SHOW_METADATA,
                 category = Constants.COLLECTOR_CAT_INTERACTION,
-                eventID = showModel.eventId,
+                eventID = it.eventId,
                 showKey = showKey,
-                showStatus = showModel.status,
+                showStatus = it.status,
             )
-        } catch (e: Exception) {
-            Logging.print(SHOW_UNKNOWN_EXCEPTION, e)
-            callback?.invoke(SHOW_UNKNOWN_EXCEPTION, null)
         }
     }
 
@@ -78,57 +52,23 @@ internal class ShowProvider {
         showKey: String,
         callback: ((APIClientError?, ShowStatusModel?) -> Unit)? = null
     ) {
-        if (!isAuthenticated) {
-            callback?.invoke(AUTHENTICATION_FAILED, null)
-            return
-        }
-
-        try {
-            val response = APIHandler.makeRequest(
-                URLs.getCurrentStreamUrl(showKey),
-                HTTPMethod.GET
-            )
-
-            if (response.statusCode !in 200..299) {
-                Logging.print(EVENT_NOT_FOUND)
-            }
-
-            val showStatusModel = try {
-                ShowStatusParser.parseFromJson(JSONObject(response.body))
-            } catch (e: Exception) {
-                ShowStatusModel()
-            }
-            if (showStatusModel.streamInCloud == true && showStatusModel.status == STATUS_LIVE) {
+        getCurrentEvent(showKey).onError {
+            callback?.invoke(it, null)
+        }.onResult {
+            if (it.streamInCloud == true && it.status == STATUS_LIVE) {
                 if (!incrementViewCalledMap.containsKey(showKey) || !incrementViewCalledMap[showKey]!!) {
-                    incrementView(showStatusModel.eventId!!)
+                    incrementView(it.eventId!!)
                     incrementViewCalledMap[showKey] = true
                     Collector.collect(
                         action = Constants.COLLECTOR_ACTION_VIEW_COUNT,
                         category = Constants.COLLECTOR_CAT_INTERACTION,
-                        eventID = showStatusModel.eventId,
+                        eventID = it.eventId,
                         showKey = showKey,
-                        showStatus = showStatusModel.status,
+                        showStatus = it.status,
                     )
                 }
             }
-
-            callback?.invoke(null, showStatusModel)
-        } catch (e: Exception) {
-            Logging.print(EVENT_UNKNOWN_EXCEPTION, e)
-            callback?.invoke(EVENT_UNKNOWN_EXCEPTION, null)
-        }
-    }
-
-    /**
-     * Private method to increment view count for a show.
-     *
-     * @param eventId The event id for which view count is to be incremented.
-     */
-    private suspend fun incrementView(eventId: String) {
-        try {
-            APIHandler.makeRequest(getIncrementViewUrl(eventId), HTTPMethod.POST)
-        } catch (e: Exception) {
-            Logging.print(e)
+            callback?.invoke(null, it)
         }
     }
 }

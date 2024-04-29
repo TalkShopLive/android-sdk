@@ -1,7 +1,6 @@
-package live.talkshop.sdk.utils.networking
+package live.talkshop.sdk.resources
 
 import live.talkshop.sdk.core.authentication.isTestMode
-import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CC_FILENAME_END
 import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 
@@ -32,9 +31,9 @@ object URLs {
     fun createHSLUrl(videoFilename: String): String? {
         return if (isNotEmptyOrNull(videoFilename)) {
             return if (isTestMode) {
-                "${URL_ASSET_BASE_STAGING}${PATH_EVENTS}${videoFilename}"
+                "$URL_ASSET_BASE_STAGING$PATH_EVENTS${videoFilename}"
             } else {
-                "${URL_ASSET_BASE_PROD}${PATH_EVENTS}${videoFilename}"
+                "$URL_ASSET_BASE_PROD$PATH_EVENTS${videoFilename}"
             }
         } else {
             null
@@ -44,7 +43,7 @@ object URLs {
     fun createCCUrl(videoFilename: String): String? {
         return if (isNotEmptyOrNull(videoFilename)) {
             return if (isTestMode) {
-                "${URL_ASSET_BASE_STAGING}${PATH_EVENTS}${
+                "$URL_ASSET_BASE_STAGING$PATH_EVENTS${
                     videoFilename.replace(
                         Constants.KEY_MP4_EXTENSION,
                         CC_FILENAME_END,
@@ -52,7 +51,7 @@ object URLs {
                     )
                 }"
             } else {
-                "${URL_ASSET_BASE_PROD}${PATH_EVENTS}${
+                "$URL_ASSET_BASE_PROD$PATH_EVENTS${
                     videoFilename.replace(
                         Constants.KEY_MP4_EXTENSION,
                         CC_FILENAME_END,
@@ -67,65 +66,65 @@ object URLs {
 
     fun getCurrentStreamUrl(showKey: String): String {
         return if (isTestMode) {
-            "${URL_BASE_STAGING}${PATH_SHOWS}$showKey/$PATH_STREAMS_CURRENT"
+            "$URL_BASE_STAGING$PATH_SHOWS$showKey/$PATH_STREAMS_CURRENT"
         } else {
-            "${URL_BASE_PROD}${PATH_SHOWS}$showKey/$PATH_STREAMS_CURRENT"
+            "$URL_BASE_PROD$PATH_SHOWS$showKey/$PATH_STREAMS_CURRENT"
         }
     }
 
     fun getShowDetailsUrl(showKey: String): String {
         return if (isTestMode) {
-            "${URL_BASE_STAGING}${PATH_SHOW_DETAILS}$showKey"
+            "$URL_BASE_STAGING$PATH_SHOW_DETAILS$showKey"
         } else {
-            "${URL_BASE_PROD}${PATH_SHOW_DETAILS}$showKey"
+            "$URL_BASE_PROD$PATH_SHOW_DETAILS$showKey"
         }
     }
 
     fun getAuthUrl(): String {
         return if (isTestMode) {
-            "${URL_BASE_STAGING}${PATH_AUTH}"
+            "$URL_BASE_STAGING$PATH_AUTH"
         } else {
-            "${URL_BASE_PROD}${PATH_AUTH}"
+            "$URL_BASE_PROD$PATH_AUTH"
         }
     }
 
     fun getMessagesUrl(eventId: String, timeToken: String): String {
         return if (isTestMode) {
-            "${URL_BASE_STAGING}${PATH_AUTH}${PATH_MESSAGES}$eventId/$timeToken"
+            "$URL_BASE_STAGING$PATH_AUTH$PATH_MESSAGES$eventId/$timeToken"
         } else {
-            "${URL_BASE_PROD}${PATH_AUTH}${PATH_MESSAGES}$eventId/$timeToken"
+            "$URL_BASE_PROD$PATH_AUTH$PATH_MESSAGES$eventId/$timeToken"
         }
     }
 
     fun getUserTokenUrl(isGuest: Boolean): String {
         return if (isTestMode) {
-            if (isGuest) "${URL_BASE_STAGING}${PATH_AUTH}${PATH_GUEST_TOKEN}" else "${URL_BASE_STAGING}${PATH_AUTH}${PATH_FED_TOKEN}"
+            if (isGuest) "$URL_BASE_STAGING$PATH_AUTH$PATH_GUEST_TOKEN" else "$URL_BASE_STAGING$PATH_AUTH$PATH_FED_TOKEN"
         } else {
-            if (isGuest) "${URL_BASE_PROD}${PATH_AUTH}${PATH_GUEST_TOKEN}" else "${URL_BASE_PROD}${PATH_AUTH}${PATH_FED_TOKEN}"
+            if (isGuest) "$URL_BASE_PROD$PATH_AUTH$PATH_GUEST_TOKEN" else "$URL_BASE_PROD$PATH_AUTH$PATH_FED_TOKEN"
         }
     }
 
     fun getIncrementViewUrl(eventId: String): String {
         return if (isTestMode) {
-            "${URL_BASE_EVENTS_STAGING}${PATH_EVENT}$eventId/$PATH_INCREMENT"
+            "$URL_BASE_EVENTS_STAGING$PATH_EVENT$eventId/$PATH_INCREMENT"
         } else {
-            "${URL_BASE_EVENTS_PROD}${PATH_EVENT}$eventId/$PATH_INCREMENT"
+            "$URL_BASE_EVENTS_PROD$PATH_EVENT$eventId/$PATH_INCREMENT"
         }
     }
 
     fun getCollectorUrl(): String {
         return if (isTestMode) {
-            "${URL_BASE_COLLECTOR_STAGING}${PATH_COLLECT}"
+            "$URL_BASE_COLLECTOR_STAGING$PATH_COLLECT"
         } else {
-            "${URL_BASE_COLLECTOR_PROD}${PATH_COLLECT}"
+            "$URL_BASE_COLLECTOR_PROD$PATH_COLLECT"
         }
     }
 
     fun getUserMetaUrl(uuid: String): String {
         return if (isTestMode) {
-            "${URL_BASE_STAGING}${PATH_SENDERS_META}$uuid"
+            "$URL_BASE_STAGING$PATH_SENDERS_META$uuid"
         } else {
-            "${URL_BASE_PROD}${PATH_SENDERS_META}$uuid"
+            "$URL_BASE_PROD$PATH_SENDERS_META$uuid"
         }
     }
 }
