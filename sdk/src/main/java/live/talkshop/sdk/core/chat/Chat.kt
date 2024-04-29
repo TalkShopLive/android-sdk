@@ -15,12 +15,6 @@ import live.talkshop.sdk.resources.APIClientError
  * @property isGuest A boolean indicating whether the user is a guest.
  */
 class Chat(private val showKey: String, private val jwt: String, private val isGuest: Boolean) {
-    interface ChatCallback {
-        fun onMessageReceived(message: MessageModel)
-        fun onMessageDeleted(messageId: Long)
-        fun onStatusChange(error: APIClientError)
-    }
-
     /**
      * Secondary constructor that initiates a chat session using the provided parameters.
      *
@@ -57,7 +51,7 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
          * Subscribes to the chat channels to receive messages and other events.
          */
         suspend fun subscribe(callback: ChatCallback) {
-            provider.setCallback(object : ChatProviderCallback {
+            provider.setCallback(object : ChatCallback {
                 override fun onMessageReceived(message: MessageModel) {
                     callback.onMessageReceived(message)
                 }

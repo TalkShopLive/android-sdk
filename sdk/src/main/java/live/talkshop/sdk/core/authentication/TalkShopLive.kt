@@ -17,7 +17,7 @@ import live.talkshop.sdk.resources.Keys.KEY_VALID_KEY
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
-import live.talkshop.sdk.utils.networking.URLs.getAuthUrl
+import live.talkshop.sdk.resources.URLs.getAuthUrl
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 

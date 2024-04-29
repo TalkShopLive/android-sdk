@@ -9,9 +9,9 @@ import live.talkshop.sdk.resources.Constants.RESPONSE_POSTED
 import live.talkshop.sdk.resources.Constants.RESPONSE_SUCCESS
 import live.talkshop.sdk.resources.Constants.TERM_KEY
 import live.talkshop.sdk.resources.Constants.TERM_VALUE
-import live.talkshop.sdk.utils.networking.URLs.URL_SAMPLE_API
-import live.talkshop.sdk.utils.networking.URLs.URL_SAMPLE_API_POST
-import live.talkshop.sdk.utils.networking.URLs.URL_SAMPLE_BASE
+import live.talkshop.sdk.resources.URLs.URL_SAMPLE_API
+import live.talkshop.sdk.resources.URLs.URL_SAMPLE_API_POST
+import live.talkshop.sdk.resources.URLs.URL_SAMPLE_BASE
 import org.json.JSONObject
 import org.junit.Before
 import org.junit.Test

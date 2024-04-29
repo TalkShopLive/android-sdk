@@ -10,6 +10,6 @@ object HelperFunctions {
     }
 
     fun isNotEmptyOrNull(string: String?): Boolean {
-        return !string.isNullOrEmpty() && !string.equals("null")
+        return !string.isNullOrEmpty() && string != "null"
     }
 }

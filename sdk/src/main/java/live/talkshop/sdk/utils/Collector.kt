@@ -11,7 +11,7 @@ import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.isDNT
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
-import live.talkshop.sdk.utils.networking.URLs.getCollectorUrl
+import live.talkshop.sdk.resources.URLs.getCollectorUrl
 import org.json.JSONObject
 
 class Collector private constructor(context: Context) {

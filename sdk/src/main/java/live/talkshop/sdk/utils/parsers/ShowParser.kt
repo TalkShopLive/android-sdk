@@ -30,7 +30,7 @@ import live.talkshop.sdk.resources.Keys.KEY_TRAILERS
 import live.talkshop.sdk.resources.Keys.KEY_VIDEO
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.helpers.HelperFunctions
-import live.talkshop.sdk.utils.networking.URLs
+import live.talkshop.sdk.resources.URLs
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date

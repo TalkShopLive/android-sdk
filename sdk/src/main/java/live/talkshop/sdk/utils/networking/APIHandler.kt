@@ -50,7 +50,7 @@ object APIHandler {
         payload: JSONObject? = null,
         headers: Map<String, String> = emptyMap(),
         body: String? = null
-    ): ApiResponse = withContext(Dispatchers.IO) {
+    ): APIResponse = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
             val url = URL(requestUrl)
@@ -103,7 +103,7 @@ object APIHandler {
                 Logging.print("HTTP request failed with status code $responseCode: $responseText")
             }
 
-            return@withContext ApiResponse(responseText, responseCode)
+            return@withContext APIResponse(responseText, responseCode)
         } catch (e: Exception) {
             Logging.print(e)
             throw IOException("Failed to make HTTP request: ${e.message}", e)
