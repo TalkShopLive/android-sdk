@@ -30,7 +30,7 @@ internal object UserTokenParser {
                 }
             )
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(UserTokenParser::class.java, e)
             null
         }
     }

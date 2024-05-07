@@ -109,7 +109,7 @@ internal object ShowParser {
                 }
             }
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
         }
         return ""
     }
@@ -133,7 +133,7 @@ internal object ShowParser {
                 return firstStatus.optString(name, "")
             }
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
         }
         return ""
     }
@@ -156,7 +156,7 @@ internal object ShowParser {
             currentEvent.getString(name)
 
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
             null
         }
     }
@@ -180,7 +180,7 @@ internal object ShowParser {
                 return firstAirDate.optString(name, "")
             }
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
         }
         return ""
     }
@@ -198,7 +198,7 @@ internal object ShowParser {
             productJson.getJSONObject(KEY_MASTER).getJSONArray(KEY_IMAGES).getJSONObject(0)
                 .getJSONObject(KEY_ATTACHMENT).optString(KEY_LARGE, "")
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
             ""
         }
     }
@@ -216,7 +216,7 @@ internal object ShowParser {
             productJson.getJSONObject(KEY_OWNING_STORE).getJSONObject(KEY_IMAGE)
                 .getJSONObject(KEY_ATTACHMENT).optString(KEY_LARGE, "")
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
             ""
         }
     }

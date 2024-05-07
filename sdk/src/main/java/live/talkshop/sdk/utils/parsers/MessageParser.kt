@@ -44,7 +44,7 @@ object MessageParser {
                 }
             )
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(MessageParser::class.java, e)
             null
         }
     }

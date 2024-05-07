@@ -5,28 +5,28 @@ import live.talkshop.sdk.resources.APIClientError
 
 class Logging {
     companion object {
-        fun print(message: String) {
+        fun print(className: Class<*>, message: String) {
             if (isDebugMode) {
-                println("TSL DEBUG: $message")
+                println("${className.simpleName}: $message")
             }
         }
 
-        fun print(message: APIClientError) {
+        fun print(className: Class<*>, exception: Exception) {
             if (isDebugMode) {
-                println("TSL DEBUG: $message")
-            }
-        }
-
-        fun print(message: APIClientError, exception: Exception) {
-            if (isDebugMode) {
-                println("TSL DEBUG: $message: " + exception.message)
-            }
-        }
-
-        fun print(exception: Exception) {
-            if (isDebugMode) {
-                println("TSL DEBUG: Exception: ${exception.message}")
+                println("${className.simpleName}: ${exception.message}")
                 exception.printStackTrace()
+            }
+        }
+
+        fun print(className: Class<*>, message: APIClientError) {
+            if (isDebugMode) {
+                println("${className.simpleName}: $message")
+            }
+        }
+
+        fun print(className: Class<*>, message: APIClientError, exception: Exception) {
+            if (isDebugMode) {
+                println("${className.simpleName}: $message: " + exception.message)
             }
         }
     }
