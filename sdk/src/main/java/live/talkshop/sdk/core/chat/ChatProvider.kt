@@ -48,6 +48,7 @@ import live.talkshop.sdk.resources.APIClientError.PERMISSION_DENIED
 import live.talkshop.sdk.resources.APIClientError.UNKNOWN_EXCEPTION
 import live.talkshop.sdk.resources.APIClientError.USER_ALREADY_AUTHENTICATED
 import live.talkshop.sdk.resources.APIClientError.USER_TOKEN_EXCEPTION
+import live.talkshop.sdk.resources.APIClientError.CHAT_TOKEN_EXPIRED
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_NAME
 import live.talkshop.sdk.resources.Keys.KEY_PROFILE_URL
@@ -148,27 +149,46 @@ class ChatProvider {
                 if (response != null) {
                     when (response.statusCode) {
                         403 -> {
-                            Logging.print(PERMISSION_DENIED)
-                            callback?.invoke(PERMISSION_DENIED, null)
+                            Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
+                            if (response.body.contains("expired")) {
+                                callback?.invoke(
+                                    CHAT_TOKEN_EXPIRED.from(ChatProvider::class.java.name),
+                                    null
+                                )
+                            } else {
+                                callback?.invoke(
+                                    PERMISSION_DENIED.from(ChatProvider::class.java.name),
+                                    null
+                                )
+                            }
                         }
 
                         !in 200..299 -> {
-                            Logging.print(INVALID_USER_TOKEN)
-                            callback?.invoke(INVALID_USER_TOKEN, null)
+                            Logging.print(ChatProvider::class.java, INVALID_USER_TOKEN)
+                            callback?.invoke(
+                                INVALID_USER_TOKEN.from(ChatProvider::class.java.name),
+                                null
+                            )
                         }
 
                         else -> {
-                            Logging.print(USER_TOKEN_EXCEPTION)
-                            callback?.invoke(USER_TOKEN_EXCEPTION, null)
+                            Logging.print(ChatProvider::class.java, USER_TOKEN_EXCEPTION)
+                            callback?.invoke(
+                                USER_TOKEN_EXCEPTION.from(ChatProvider::class.java.name),
+                                null
+                            )
                         }
                     }
                 } else {
-                    Logging.print(CHAT_CONNECTION_ERROR)
-                    callback?.invoke(CHAT_CONNECTION_ERROR, null)
+                    Logging.print(ChatProvider::class.java, CHAT_CONNECTION_ERROR)
+                    callback?.invoke(
+                        CHAT_CONNECTION_ERROR.from(ChatProvider::class.java.name),
+                        null
+                    )
                 }
             }
         } else {
-            callback?.invoke(AUTHENTICATION_FAILED, null)
+            callback?.invoke(AUTHENTICATION_FAILED.from(ChatProvider::class.java.name), null)
         }
     }
 
@@ -198,9 +218,9 @@ class ChatProvider {
         )
 
         if (response.statusCode !in 200..299) {
-            Logging.print(CHANNEL_SUBSCRIPTION_FAILED)
+            Logging.print(ChatProvider::class.java, CHANNEL_SUBSCRIPTION_FAILED)
         } else {
-            Logging.print("Channels subscribe success")
+            Logging.print(ChatProvider::class.java, "Channels subscribe success")
         }
 
         val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(response.body))
@@ -232,7 +252,7 @@ class ChatProvider {
      */
     internal suspend fun subscribe() {
         if (!isAuthenticated) {
-            println(AUTHENTICATION_FAILED)
+            Logging.print(ChatProvider::class.java, AUTHENTICATION_FAILED)
             return
         }
         handleShowKeyChange()
@@ -263,7 +283,7 @@ class ChatProvider {
                                     callback?.onMessageReceived(messageData)
                                 }
                             } else {
-                                Logging.print("messageData is null")
+                                Logging.print(ChatProvider::class.java, "messageData is null")
                             }
                         }
 
@@ -290,13 +310,13 @@ class ChatProvider {
                             pubnub.reconnect()
                         }
                     } else if (pnStatus.category == PNStatusCategory.PNConnectionError && triedToReconnectBefore) {
-                        callback?.onStatusChange(CHAT_CONNECTION_ERROR)
+                        callback?.onStatusChange(CHAT_CONNECTION_ERROR.from(ChatProvider::class.java.name))
                     } else if (pnStatus.category == PNStatusCategory.PNConnectedCategory || pnStatus.category == PNStatusCategory.PNReconnectedCategory) {
                         triedToReconnectBefore = false
                     } else if (pnStatus.category == PNStatusCategory.PNTimeoutCategory) {
                         callback?.onStatusChange(APIClientError.CHAT_TIMEOUT)
                     } else if (pnStatus.category == PNStatusCategory.PNAccessDeniedCategory) {
-                        callback?.onStatusChange(PERMISSION_DENIED)
+                        callback?.onStatusChange(PERMISSION_DENIED.from(ChatProvider::class.java.name))
                     }
                 }
 
@@ -381,7 +401,7 @@ class ChatProvider {
         callback: ((APIClientError?, String?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
-            callback?.invoke(AUTHENTICATION_FAILED, null)
+            callback?.invoke(AUTHENTICATION_FAILED.from(ChatProvider::class.java.name), null)
             return
         }
         try {
@@ -413,17 +433,20 @@ class ChatProvider {
                 if (!status.error) {
                     callback?.invoke(null, result!!.timetoken.toString())
                 } else {
-                    Logging.print(MESSAGE_SENDING_FAILED)
-                    callback?.invoke(MESSAGE_SENDING_FAILED, null)
+                    Logging.print(ChatProvider::class.java, MESSAGE_SENDING_FAILED)
+                    callback?.invoke(
+                        MESSAGE_SENDING_FAILED.from(ChatProvider::class.java.name),
+                        null
+                    )
                 }
             }
         } catch (error: Exception) {
             if ((error as? PubNubException)?.statusCode == 403) {
-                Logging.print(PERMISSION_DENIED)
-                callback?.invoke(PERMISSION_DENIED, null)
+                Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
+                callback?.invoke(PERMISSION_DENIED.from(ChatProvider::class.java.name), null)
             } else {
-                Logging.print(UNKNOWN_EXCEPTION, error)
-                callback?.invoke(UNKNOWN_EXCEPTION, null)
+                Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION, error)
+                callback?.invoke(UNKNOWN_EXCEPTION.from(ChatProvider::class.java.name), null)
             }
         }
     }
@@ -443,7 +466,7 @@ class ChatProvider {
         callback: (List<MessageModel>?, Long?, APIClientError?) -> Unit
     ) {
         if (!isAuthenticated) {
-            callback(null, null, AUTHENTICATION_FAILED)
+            callback(null, null, AUTHENTICATION_FAILED.from(ChatProvider::class.java.name))
             return
         }
 
@@ -492,25 +515,42 @@ class ChatProvider {
                         }
                     }
                 } else {
-                    status.exception?.message?.let { Logging.print(MESSAGE_LIST_FAILED) }
-                    callback(null, null, MESSAGE_LIST_FAILED)
+                    status.exception?.message?.let {
+                        Logging.print(
+                            ChatProvider::class.java,
+                            MESSAGE_LIST_FAILED
+                        )
+                    }
+                    callback(
+                        null,
+                        null,
+                        MESSAGE_LIST_FAILED.from(ChatProvider::class.java.name)
+                    )
                 }
             }
         } catch (error: Exception) {
             when (error) {
                 is PubNubException -> {
                     if (error.statusCode == 403) {
-                        Logging.print(PERMISSION_DENIED)
-                        callback.invoke(null, null, PERMISSION_DENIED)
+                        Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
+                        callback.invoke(
+                            null,
+                            null,
+                            PERMISSION_DENIED.from(ChatProvider::class.java.name)
+                        )
                     } else {
-                        Logging.print(UNKNOWN_EXCEPTION)
-                        callback(null, null, UNKNOWN_EXCEPTION)
+                        Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION)
+                        callback(
+                            null,
+                            null,
+                            UNKNOWN_EXCEPTION.from(ChatProvider::class.java.name)
+                        )
                     }
                 }
 
                 else -> {
-                    Logging.print(UNKNOWN_EXCEPTION)
-                    callback(null, null, UNKNOWN_EXCEPTION)
+                    Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION)
+                    callback(null, null, UNKNOWN_EXCEPTION.from(ChatProvider::class.java.name))
                 }
             }
         }
@@ -533,8 +573,11 @@ class ChatProvider {
             clearConnection()
             initiateChat(currentShowKey, newJwt, isGuest, callback)
         } else {
-            Logging.print(USER_ALREADY_AUTHENTICATED)
-            callback?.invoke(USER_ALREADY_AUTHENTICATED, null)
+            Logging.print(ChatProvider::class.java, USER_ALREADY_AUTHENTICATED)
+            callback?.invoke(
+                USER_ALREADY_AUTHENTICATED.from(ChatProvider::class.java.name),
+                null
+            )
         }
     }
 
@@ -576,9 +619,9 @@ class ChatProvider {
                 val error = status.exception
                 error?.statusCode?.let {
                     if (it == 403) {
-                        Logging.print(PERMISSION_DENIED)
+                        Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
                     } else {
-                        Logging.print(UNKNOWN_EXCEPTION, error)
+                        Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION, error)
                     }
                 }
                 callback(null)
@@ -605,8 +648,11 @@ class ChatProvider {
 
             when (response.statusCode) {
                 403 -> {
-                    Logging.print(PERMISSION_DENIED)
-                    callback?.invoke(false, PERMISSION_DENIED.toString())
+                    Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
+                    callback?.invoke(
+                        false,
+                        PERMISSION_DENIED.from(ChatProvider::class.java.name).toString()
+                    )
                 }
 
                 in 200..299 -> {
@@ -616,12 +662,17 @@ class ChatProvider {
                 else -> {
                     callback?.let { it(false, response.body) }
                     println(response.body)
-                    Logging.print(response.body)
+                    Logging.print(ChatProvider::class.java, response.body)
                 }
             }
         } catch (e: Exception) {
-            Logging.print(UNKNOWN_EXCEPTION, e)
-            callback?.let { it(false, UNKNOWN_EXCEPTION.toString()) }
+            Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION, e)
+            callback?.let {
+                it(
+                    false,
+                    UNKNOWN_EXCEPTION.from(ChatProvider::class.java.name).toString()
+                )
+            }
         }
     }
 
@@ -638,10 +689,10 @@ class ChatProvider {
                 )
                 userMetadataCache[uuid] = senderModel
             } else {
-                Logging.print("$UNKNOWN_EXCEPTION: ${response.body}")
+                Logging.print(ChatProvider::class.java, "$UNKNOWN_EXCEPTION: ${response.body}")
             }
         } catch (e: Exception) {
-            Logging.print(UNKNOWN_EXCEPTION, e)
+            Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION, e)
         }
     }
 }

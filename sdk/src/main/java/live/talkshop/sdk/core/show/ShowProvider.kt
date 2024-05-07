@@ -40,7 +40,7 @@ internal class ShowProvider {
         callback: ((APIClientError?, ShowModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
-            callback?.invoke(AUTHENTICATION_FAILED, null)
+            callback?.invoke(AUTHENTICATION_FAILED.from(ShowProvider::class.java.name), null)
             return
         }
 
@@ -49,7 +49,7 @@ internal class ShowProvider {
                 APIHandler.makeRequest(getShowDetailsUrl(showKey), HTTPMethod.GET)
 
             if (response.statusCode !in 200..299) {
-                Logging.print(SHOW_NOT_FOUND)
+                Logging.print(ShowProvider::class.java, SHOW_NOT_FOUND)
             }
 
             val showModel = ShowParser.parseFromJson(JSONObject(response.body))
@@ -62,8 +62,8 @@ internal class ShowProvider {
                 showStatus = showModel.status,
             )
         } catch (e: Exception) {
-            Logging.print(SHOW_UNKNOWN_EXCEPTION, e)
-            callback?.invoke(SHOW_UNKNOWN_EXCEPTION, null)
+            Logging.print(ShowProvider::class.java, SHOW_UNKNOWN_EXCEPTION, e)
+            callback?.invoke(SHOW_UNKNOWN_EXCEPTION.from(ShowProvider::class.java.name), null)
         }
     }
 
@@ -79,7 +79,7 @@ internal class ShowProvider {
         callback: ((APIClientError?, ShowStatusModel?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
-            callback?.invoke(AUTHENTICATION_FAILED, null)
+            callback?.invoke(AUTHENTICATION_FAILED.from(ShowProvider::class.java.name), null)
             return
         }
 
@@ -90,7 +90,7 @@ internal class ShowProvider {
             )
 
             if (response.statusCode !in 200..299) {
-                Logging.print(EVENT_NOT_FOUND)
+                Logging.print(ShowProvider::class.java, EVENT_NOT_FOUND)
             }
 
             val showStatusModel = try {
@@ -114,8 +114,8 @@ internal class ShowProvider {
 
             callback?.invoke(null, showStatusModel)
         } catch (e: Exception) {
-            Logging.print(EVENT_UNKNOWN_EXCEPTION, e)
-            callback?.invoke(EVENT_UNKNOWN_EXCEPTION, null)
+            Logging.print(ShowProvider::class.java, EVENT_UNKNOWN_EXCEPTION, e)
+            callback?.invoke(EVENT_UNKNOWN_EXCEPTION.from(ShowProvider::class.java.name), null)
         }
     }
 
@@ -128,7 +128,7 @@ internal class ShowProvider {
         try {
             APIHandler.makeRequest(getIncrementViewUrl(eventId), HTTPMethod.POST)
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowProvider::class.java, e)
         }
     }
 }
