@@ -18,6 +18,7 @@ object URLs {
     private const val PATH_AUTH = "api2/v1/sdk/"
     private const val PATH_SHOW_DETAILS = "api/products/digital/streaming_content/"
     private const val PATH_SHOWS = "api/shows/"
+    private const val PATH_PRODUCTS = "api/fetch_multiple_products?per_page=50&"
     private const val PATH_STREAMS_CURRENT = "streams/current/"
     private const val PATH_EVENTS = "events/"
     private const val PATH_EVENT = "event/"
@@ -78,6 +79,12 @@ object URLs {
         } else {
             "$URL_BASE_PROD$PATH_SHOW_DETAILS$showKey"
         }
+    }
+
+    fun getMultipleProducts(ids: List<Int>): String {
+        val baseUrl = if (isTestMode) URL_BASE_STAGING else URL_BASE_PROD
+        val idsQuery = ids.joinToString("&") { "ids[]=$it" }
+        return "$baseUrl$PATH_PRODUCTS$idsQuery&order_by=array_order"
     }
 
     fun getAuthUrl(): String {

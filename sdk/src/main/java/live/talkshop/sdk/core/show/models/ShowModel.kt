@@ -74,5 +74,8 @@ data class ShowModel(
     val channelLogo: String,
 
     @SerializedName("channelName")
-    val channelName: String
+    val channelName: String,
+
+    @SerializedName("productIds")
+    val productIds: List<Int>? = null
 )

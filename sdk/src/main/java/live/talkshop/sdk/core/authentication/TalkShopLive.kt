@@ -53,7 +53,7 @@ class TalkShopLive private constructor(private val context: Context) {
             dnt: Boolean = false,
             callback: ((Boolean) -> Unit)? = null
         ) {
-            Collector.initialize(context)
+            Collector.initialize()
             getInstance(context).initializeInternal(clientKey, debugMode, testMode, dnt, callback)
             Collector.collect(
                 action = COLLECTOR_ACTION_SDK_INITIALIZED,
@@ -106,7 +106,7 @@ class TalkShopLive private constructor(private val context: Context) {
                 )
 
             if (response.statusCode !in 200..299) {
-                Logging.print(AUTHENTICATION_FAILED)
+                Logging.print(TalkShopLive::class.java, AUTHENTICATION_FAILED)
             }
 
             val jsonResponse = JSONObject(response.body)
@@ -115,7 +115,7 @@ class TalkShopLive private constructor(private val context: Context) {
             setAuthenticated(validKey)
             validKey
         } catch (e: Exception) {
-            Logging.print(AUTHENTICATION_EXCEPTION, e)
+            Logging.print(TalkShopLive::class.java, AUTHENTICATION_EXCEPTION, e)
             setAuthenticated(false)
             false
         }

@@ -63,7 +63,7 @@ internal class PubNubListeners(
                             callback?.onMessageReceived(messageData)
                         }
                     } else {
-                        Logging.print("messageData is null")
+                        log("messageData is null")
                     }
                 }
 
@@ -90,13 +90,13 @@ internal class PubNubListeners(
                     pubnub.reconnect()
                 }
             } else if (pnStatus.category == PNStatusCategory.PNConnectionError && triedToReconnectBefore) {
-                callback?.onStatusChange(APIClientError.CHAT_CONNECTION_ERROR)
+                callback?.onStatusChange(APIClientError.CHAT_CONNECTION_ERROR.from(PubNubListeners::class.java.name))
             } else if (pnStatus.category == PNStatusCategory.PNConnectedCategory || pnStatus.category == PNStatusCategory.PNReconnectedCategory) {
                 triedToReconnectBefore = false
             } else if (pnStatus.category == PNStatusCategory.PNTimeoutCategory) {
-                callback?.onStatusChange(APIClientError.CHAT_TIMEOUT)
+                callback?.onStatusChange(APIClientError.CHAT_TIMEOUT.from(PubNubListeners::class.java.name))
             } else if (pnStatus.category == PNStatusCategory.PNAccessDeniedCategory) {
-                callback?.onStatusChange(APIClientError.PERMISSION_DENIED)
+                callback?.onStatusChange(APIClientError.PERMISSION_DENIED.from(PubNubListeners::class.java.name))
             }
         }
 
@@ -104,22 +104,22 @@ internal class PubNubListeners(
             pubnub: PubNub,
             pnPresenceEventResult: PNPresenceEventResult
         ) {
-            Logging.print("Presence event: ${pnPresenceEventResult.event} on channel: ${pnPresenceEventResult.channel}")
+            log("Presence event: ${pnPresenceEventResult.event} on channel: ${pnPresenceEventResult.channel}")
         }
 
         override fun signal(pubnub: PubNub, pnSignalResult: PNSignalResult) {
-            Logging.print("Signal received on channel: ${pnSignalResult.channel} with content: ${pnSignalResult.message}")
+            log("Signal received on channel: ${pnSignalResult.channel} with content: ${pnSignalResult.message}")
         }
 
         override fun messageAction(
             pubnub: PubNub,
             pnMessageActionResult: PNMessageActionResult
         ) {
-            Logging.print("Message action type: ${pnMessageActionResult.messageAction.type} on message: ${pnMessageActionResult.messageAction.value}")
+            log("Message action type: ${pnMessageActionResult.messageAction.type} on message: ${pnMessageActionResult.messageAction.value}")
         }
 
         override fun file(pubnub: PubNub, pnFileEventResult: PNFileEventResult) {
-            Logging.print("File event received on channel: ${pnFileEventResult.channel}, file name: ${pnFileEventResult.file.name}")
+            log("File event received on channel: ${pnFileEventResult.channel}, file name: ${pnFileEventResult.file.name}")
         }
 
         override fun objects(pubnub: PubNub, objectEvent: PNObjectEventResult) {
@@ -127,41 +127,45 @@ internal class PubNubListeners(
                 is PNSetChannelMetadataEventMessage -> {
                     val message =
                         objectEvent.extractedMessage as PNSetChannelMetadataEventMessage
-                    Logging.print("Channel metadata set event received, channel: ${message.data.name}")
+                    log("Channel metadata set event received, channel: ${message.data.name}")
                 }
 
                 is PNSetUUIDMetadataEventMessage -> {
                     val message =
                         objectEvent.extractedMessage as PNSetUUIDMetadataEventMessage
-                    Logging.print("UUID metadata set event received, UUID: ${message.data.id}")
+                    log("UUID metadata set event received, UUID: ${message.data.id}")
                 }
 
                 is PNSetMembershipEventMessage -> {
                     val message =
                         objectEvent.extractedMessage as PNSetMembershipEventMessage
-                    Logging.print("Membership set event received, channel: ${message.data.channel}, UUID: ${message.data.uuid}")
+                    log("Membership set event received, channel: ${message.data.channel}, UUID: ${message.data.uuid}")
                 }
 
                 is PNDeleteChannelMetadataEventMessage -> {
                     val message =
                         objectEvent.extractedMessage as PNDeleteChannelMetadataEventMessage
-                    Logging.print("Channel metadata delete event received, channel: ${message.channel}")
+                    log("Channel metadata delete event received, channel: ${message.channel}")
                 }
 
                 is PNDeleteUUIDMetadataEventMessage -> {
                     val message =
                         objectEvent.extractedMessage as PNDeleteUUIDMetadataEventMessage
-                    Logging.print("UUID metadata delete event received, UUID: ${message.uuid}")
+                    log("UUID metadata delete event received, UUID: ${message.uuid}")
                 }
 
                 is PNDeleteMembershipEventMessage -> {
                     val message =
                         objectEvent.extractedMessage as PNDeleteMembershipEventMessage
-                    Logging.print("Membership delete event received, channel: ${message.data.channelId}, UUID: ${message.data.uuid}")
+                    log("Membership delete event received, channel: ${message.data.channelId}, UUID: ${message.data.uuid}")
                 }
 
-                else -> Logging.print("Other object event received")
+                else -> log("Other object event received")
             }
         }
+    }
+
+    private fun log(message: String) {
+        Logging.print(PubNubListeners::class.java, message)
     }
 }

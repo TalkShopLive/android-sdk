@@ -18,6 +18,7 @@ import live.talkshop.sdk.resources.Keys.KEY_HLS_PLAYBACK_URL
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_IMAGE
 import live.talkshop.sdk.resources.Keys.KEY_IMAGES
+import live.talkshop.sdk.resources.Keys.KEY_IN_SHOW_PRODUCT_IDS
 import live.talkshop.sdk.resources.Keys.KEY_LARGE
 import live.talkshop.sdk.resources.Keys.KEY_MASTER
 import live.talkshop.sdk.resources.Keys.KEY_NAME
@@ -70,7 +71,17 @@ internal object ShowParser {
             HelperFunctions.parseInt(parseTrailerUrl(streamContentJson, KEY_DURATION)),
             parseVideoThumbnailUrl(productJson),
             parseChannelLogo(productJson),
-            productJson.optString(KEY_BRAND_NAME, "")
+            productJson.optString(KEY_BRAND_NAME, ""),
+            streamContentJson.optJSONArray(KEY_IN_SHOW_PRODUCT_IDS)?.let {
+                val intList = mutableListOf<Int>()
+
+                for (i in 0 until it.length()) {
+                    val value = it.optInt(i)
+                    intList.add(value)
+                }
+
+                intList
+            }
         )
     }
 
@@ -109,7 +120,7 @@ internal object ShowParser {
                 }
             }
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
         }
         return ""
     }
@@ -133,7 +144,7 @@ internal object ShowParser {
                 return firstStatus.optString(name, "")
             }
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
         }
         return ""
     }
@@ -156,7 +167,7 @@ internal object ShowParser {
             currentEvent.getString(name)
 
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
             null
         }
     }
@@ -180,7 +191,7 @@ internal object ShowParser {
                 return firstAirDate.optString(name, "")
             }
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
         }
         return ""
     }
@@ -198,7 +209,7 @@ internal object ShowParser {
             productJson.getJSONObject(KEY_MASTER).getJSONArray(KEY_IMAGES).getJSONObject(0)
                 .getJSONObject(KEY_ATTACHMENT).optString(KEY_LARGE, "")
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
             ""
         }
     }
@@ -216,7 +227,7 @@ internal object ShowParser {
             productJson.getJSONObject(KEY_OWNING_STORE).getJSONObject(KEY_IMAGE)
                 .getJSONObject(KEY_ATTACHMENT).optString(KEY_LARGE, "")
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(ShowParser::class.java, e)
             ""
         }
     }

@@ -1,5 +1,6 @@
 package live.talkshop.sdk.core.show
 
+import live.talkshop.sdk.core.show.models.ProductModel
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
 import live.talkshop.sdk.resources.APIClientError
@@ -37,6 +38,20 @@ class Show {
             callback: ((APIClientError?, ShowStatusModel?) -> Unit)? = null
         ) {
             showProvider.fetchCurrentEvent(showKey, callback)
+        }
+
+        /**
+         * Fetches the products for a given show.
+         *
+         * @param showKey The product key of the show.
+         * @param callback An callback that is invoked upon completion of the request.
+         * It provides an error message if something goes wrong, or a list of Products if successful.
+         */
+        suspend fun getProducts(
+            showKey: String,
+            callback: ((APIClientError?, List<ProductModel>?) -> Unit)
+        ) {
+            showProvider.fetchProducts(showKey, callback)
         }
     }
 }

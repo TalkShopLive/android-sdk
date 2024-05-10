@@ -1,36 +1,16 @@
 package live.talkshop.sdk.utils
 
-import android.content.Context
-import android.os.Build
-import android.util.DisplayMetrics
-import android.view.WindowManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.isDNT
+import live.talkshop.sdk.resources.URLs.getCollectorUrl
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
-import live.talkshop.sdk.resources.URLs.getCollectorUrl
 import org.json.JSONObject
 
-class Collector private constructor(context: Context) {
-    private val deviceScreenResolution: String
-
-    init {
-        val displayMetrics = DisplayMetrics()
-        val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        deviceScreenResolution = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val windowMetrics = windowManager.currentWindowMetrics
-            val bounds = windowMetrics.bounds
-            "${bounds.width()}x${bounds.height()}"
-        } else {
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.getMetrics(displayMetrics)
-            "${displayMetrics.widthPixels}x${displayMetrics.heightPixels}"
-        }
-    }
-
+class Collector private constructor() {
     private suspend fun collect(
         action: String,
         category: String,
@@ -46,7 +26,7 @@ class Collector private constructor(context: Context) {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.0.9")
+            put("version", "1.1.0")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
@@ -66,7 +46,6 @@ class Collector private constructor(context: Context) {
             })
             put("aspect", JSONObject().apply {
                 put("browser_resolution", "NOT_SET")
-                put("screen_resolution", deviceScreenResolution)
             })
         }
 
@@ -83,11 +62,11 @@ class Collector private constructor(context: Context) {
         @Volatile
         private var instance: Collector? = null
 
-        fun initialize(context: Context) {
+        fun initialize() {
             if (instance == null) {
                 synchronized(this) {
                     if (instance == null) {
-                        instance = Collector(context)
+                        instance = Collector()
                     }
                 }
             }

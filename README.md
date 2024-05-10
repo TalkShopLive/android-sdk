@@ -123,7 +123,7 @@ Publish a message to chat.
 
 #### `subscribe(callback: ChatCallback)`
 
-Subscribe to a chat to get notfied when there are changes.
+Subscribe to a chat to get notified when there are changes.
 
 - Parameters:
     - `callback`: A callback that will be called once there's a change.
@@ -201,7 +201,7 @@ Called when a new message is received.
 - Parameters:
     - `message`: The `MessageModel` instance containing the message details.
 
-    ```kotlin
+```kotlin
 Chat.subscribe(object : Chat.ChatCallback { override fun onMessageReceived(message: MessageModel) {})
 ```
 
@@ -212,7 +212,7 @@ Called when a message is deleted.
 - Parameters:
     - `messageId`: The `id` of the message that has been deleted.
 
-    ```kotlin
+```kotlin
 Chat.subscribe(object : Chat.ChatCallback { override fun onMessageDeleted(messageId: Int) {})
 ```
 
@@ -223,7 +223,7 @@ Called when a there is an error.
 - Parameters:
     - `error`: The error message as a string.
 
-    ```kotlin
+```kotlin
 Chat.subscribe(object : Chat.ChatCallback { override fun onStatusChange(error: String) {})
 ```
 
