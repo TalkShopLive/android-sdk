@@ -36,18 +36,15 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.11.0")
-
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("com.pubnub:pubnub-kotlin:8.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.test.ext:junit-ktx:1.1.5")
 
+    testImplementation("androidx.test.ext:junit-ktx:1.1.5")
     testImplementation("org.mockito:mockito-core:5.10.0")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
     testImplementation("org.mockito:mockito-core:5.10.0")
 }
 
@@ -56,7 +53,7 @@ afterEvaluate {
         publishing.publications.create<MavenPublication>(variant.name) {
             groupId = "com.github.TalkShopLive"
             artifactId = "android-sdk"
-            version = "1.1.0"
+            version = "1.1.1"
 
             pom.withXml {
                 asNode().appendNode("dependencies").apply {
