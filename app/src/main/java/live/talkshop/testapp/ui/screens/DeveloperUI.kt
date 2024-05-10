@@ -1,4 +1,4 @@
-package live.talkshop.testapp.ui.theme
+package live.talkshop.testapp.ui.screens
 
 import android.content.Context
 import android.util.Log
