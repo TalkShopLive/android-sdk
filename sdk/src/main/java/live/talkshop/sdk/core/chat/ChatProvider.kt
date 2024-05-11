@@ -33,14 +33,11 @@ import live.talkshop.sdk.core.authentication.storedClientKey
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
-import live.talkshop.sdk.resources.Constants
-import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
-import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
-import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_FAILED
 import live.talkshop.sdk.resources.APIClientError.CHANNEL_SUBSCRIPTION_FAILED
 import live.talkshop.sdk.resources.APIClientError.CHAT_CONNECTION_ERROR
+import live.talkshop.sdk.resources.APIClientError.CHAT_TOKEN_EXPIRED
 import live.talkshop.sdk.resources.APIClientError.INVALID_USER_TOKEN
 import live.talkshop.sdk.resources.APIClientError.MESSAGE_LIST_FAILED
 import live.talkshop.sdk.resources.APIClientError.MESSAGE_SENDING_FAILED
@@ -48,7 +45,10 @@ import live.talkshop.sdk.resources.APIClientError.PERMISSION_DENIED
 import live.talkshop.sdk.resources.APIClientError.UNKNOWN_EXCEPTION
 import live.talkshop.sdk.resources.APIClientError.USER_ALREADY_AUTHENTICATED
 import live.talkshop.sdk.resources.APIClientError.USER_TOKEN_EXCEPTION
-import live.talkshop.sdk.resources.APIClientError.CHAT_TOKEN_EXPIRED
+import live.talkshop.sdk.resources.Constants
+import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
+import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
+import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_NAME
 import live.talkshop.sdk.resources.Keys.KEY_PROFILE_URL
@@ -126,8 +126,13 @@ class ChatProvider {
         isGuest: Boolean,
         callback: ((APIClientError?, UserTokenModel?) -> Unit)?
     ) {
+        Logging.print(ChatProvider::class.java,"El valor de isAuthenticated es: $isAuthenticated")
+        Logging.print(ChatProvider::class.java,"El valor de showKey es: $showKey")
+
+
         if (isAuthenticated) {
             if (!isNotEmptyOrNull(globalShowId)) {
+                Logging.print(ChatProvider::class.java,"El valor de globalShowId es: $globalShowId")
                 callback?.invoke(APIClientError.SHOW_NOT_LIVE, null)
                 return
             }
@@ -140,6 +145,8 @@ class ChatProvider {
                     Constants.SDK_KEY to storedClientKey,
                     Constants.AUTH_KEY to "${Constants.BEARER_KEY} $jwt"
                 )
+                Logging.print(ChatProvider::class.java, "El valor de currentShowKey es: $currentShowKey")
+                Logging.print(ChatProvider::class.java, "El valor de url es: $url")
                 response = APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
                 userTokenModel = UserTokenParser.fromJsonString(response.body)!!
                 initializePubNub()
@@ -172,6 +179,7 @@ class ChatProvider {
                         }
 
                         else -> {
+                            Logging.print(ChatProvider::class.java, "Estoy aqui...")
                             Logging.print(ChatProvider::class.java, USER_TOKEN_EXCEPTION)
                             callback?.invoke(
                                 USER_TOKEN_EXCEPTION.from(ChatProvider::class.java.name),

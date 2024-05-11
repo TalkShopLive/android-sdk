@@ -5,16 +5,16 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import live.talkshop.sdk.utils.Logging
-import live.talkshop.sdk.resources.Constants.COLLECTOR_ACTION_SDK_INITIALIZED
-import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_INTERACTION
-import live.talkshop.sdk.resources.Constants.SDK_KEY
-import live.talkshop.sdk.resources.Constants.KEY_AUTHENTICATED
-import live.talkshop.sdk.resources.Constants.SHARED_PREFS_NAME
 import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_EXCEPTION
 import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_FAILED
+import live.talkshop.sdk.resources.Constants.COLLECTOR_ACTION_SDK_INITIALIZED
+import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_INTERACTION
+import live.talkshop.sdk.resources.Constants.KEY_AUTHENTICATED
+import live.talkshop.sdk.resources.Constants.SDK_KEY
+import live.talkshop.sdk.resources.Constants.SHARED_PREFS_NAME
 import live.talkshop.sdk.resources.Keys.KEY_VALID_KEY
 import live.talkshop.sdk.utils.Collector
+import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.utils.networking.URLs.getAuthUrl
@@ -84,7 +84,7 @@ class TalkShopLive private constructor(private val context: Context) {
         isDebugMode = debugMode
         isTestMode = testMode
         isDNT = dnt
-
+        Logging.print(TalkShopLive::class.java, "El valor de testMode es: $testMode")
         GlobalScope.launch(Dispatchers.IO) {
             val success = authenticateWithAPI(clientKey)
             isAuthenticated = success
