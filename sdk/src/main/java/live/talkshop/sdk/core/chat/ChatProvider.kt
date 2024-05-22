@@ -17,11 +17,11 @@ import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
+import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
 import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
 import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
-import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
@@ -90,7 +90,7 @@ class ChatProvider {
     ) {
         if (isAuthenticated) {
             if (!isNotEmptyOrNull(globalShowId)) {
-                callback?.invoke(APIClientError.SHOW_NOT_LIVE, null)
+                callback?.invoke(getError(APIClientError.SHOW_NOT_LIVE), null)
                 return
             }
 
@@ -106,7 +106,7 @@ class ChatProvider {
                 currentJwt = jwt
             }
         } else {
-            callback?.invoke(APIClientError.AUTHENTICATION_FAILED, null)
+            callback?.invoke(getError(APIClientError.AUTHENTICATION_FAILED), null)
         }
     }
 
@@ -184,14 +184,14 @@ class ChatProvider {
         callback: ((APIClientError?, String?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
-            callback?.invoke(APIClientError.AUTHENTICATION_FAILED, null)
+            callback?.invoke(getError(APIClientError.AUTHENTICATION_FAILED), null)
             return
         }
         try {
             handleShowKeyChange()
             if (message.length > 200) {
                 callback?.invoke(
-                    APIClientError.MESSAGE_ERROR_MESSAGE_MAX_LENGTH,
+                    getError(APIClientError.MESSAGE_ERROR_MESSAGE_MAX_LENGTH),
                     null
                 )
                 return
@@ -216,17 +216,22 @@ class ChatProvider {
                 if (!status.error) {
                     callback?.invoke(null, result!!.timetoken.toString())
                 } else {
-                    Logging.print(APIClientError.MESSAGE_SENDING_FAILED)
-                    callback?.invoke(APIClientError.MESSAGE_SENDING_FAILED, null)
+                    callback?.invoke(getError(APIClientError.MESSAGE_SENDING_FAILED), null)
                 }
             }
         } catch (error: Exception) {
             if ((error as? PubNubException)?.statusCode == 403) {
-                Logging.print(APIClientError.PERMISSION_DENIED)
-                callback?.invoke(APIClientError.PERMISSION_DENIED, null)
+                if (error.message?.contains("expired") == true) {
+                    callback?.invoke(
+                        getError(APIClientError.CHAT_TOKEN_EXPIRED),
+                        null
+                    )
+                } else {
+                    callback?.invoke(getError(APIClientError.PERMISSION_DENIED), null)
+                }
             } else {
-                Logging.print(APIClientError.UNKNOWN_EXCEPTION, error)
-                callback?.invoke(APIClientError.UNKNOWN_EXCEPTION, null)
+                log(APIClientError.UNKNOWN_EXCEPTION, error)
+                callback?.invoke(getError(APIClientError.UNKNOWN_EXCEPTION), null)
             }
         }
     }
@@ -246,7 +251,7 @@ class ChatProvider {
         callback: (List<MessageModel>?, Long?, APIClientError?) -> Unit
     ) {
         if (!isAuthenticated) {
-            callback(null, null, APIClientError.AUTHENTICATION_FAILED)
+            callback(null, null, getError(APIClientError.AUTHENTICATION_FAILED))
             return
         }
 
@@ -297,25 +302,21 @@ class ChatProvider {
                         }
                     }
                 } else {
-                    status.exception?.message?.let { Logging.print(APIClientError.MESSAGE_LIST_FAILED) }
-                    callback(null, null, APIClientError.MESSAGE_LIST_FAILED)
+                    callback(null, null, getError(APIClientError.MESSAGE_LIST_FAILED))
                 }
             }
         } catch (error: Exception) {
             when (error) {
                 is PubNubException -> {
                     if (error.statusCode == 403) {
-                        Logging.print(APIClientError.PERMISSION_DENIED)
-                        callback.invoke(null, null, APIClientError.PERMISSION_DENIED)
+                        callback.invoke(null, null, getError(APIClientError.PERMISSION_DENIED))
                     } else {
-                        Logging.print(APIClientError.UNKNOWN_EXCEPTION)
-                        callback(null, null, APIClientError.UNKNOWN_EXCEPTION)
+                        callback(null, null, getError(APIClientError.UNKNOWN_EXCEPTION))
                     }
                 }
 
                 else -> {
-                    Logging.print(APIClientError.UNKNOWN_EXCEPTION)
-                    callback(null, null, APIClientError.UNKNOWN_EXCEPTION)
+                    callback(null, null, getError(APIClientError.UNKNOWN_EXCEPTION))
                 }
             }
         }
@@ -338,8 +339,7 @@ class ChatProvider {
             clearConnection()
             initiateChat(currentShowKey, newJwt, isGuest, callback)
         } else {
-            Logging.print(APIClientError.USER_ALREADY_AUTHENTICATED)
-            callback?.invoke(APIClientError.USER_ALREADY_AUTHENTICATED, null)
+            callback?.invoke(getError(APIClientError.USER_ALREADY_AUTHENTICATED), null)
         }
     }
 
@@ -381,9 +381,9 @@ class ChatProvider {
                 val error = status.exception
                 error?.statusCode?.let {
                     if (it == 403) {
-                        Logging.print(APIClientError.PERMISSION_DENIED)
+                        log(APIClientError.PERMISSION_DENIED)
                     } else {
-                        Logging.print(APIClientError.UNKNOWN_EXCEPTION, error)
+                        log(APIClientError.UNKNOWN_EXCEPTION, error)
                     }
                 }
                 callback(null)
@@ -400,5 +400,16 @@ class ChatProvider {
         }.onResult {
             callback?.let { it(true, null) }
         }
+    }
+
+    private fun getError(error: APIClientError): APIClientError {
+        return error.from(ChatProvider::class.java.name)
+    }
+
+    private fun log(code: APIClientError? = null, error: Exception? = null) {
+        if (code != null && error != null)
+            Logging.print(ChatProvider::class.java, code, error)
+        else if (code != null)
+            Logging.print(ChatProvider::class.java, code)
     }
 }

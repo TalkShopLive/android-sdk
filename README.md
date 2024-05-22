@@ -86,6 +86,62 @@ Get the current event of a show.
 Show.getStatus(showKey) { error, show -> }
 ```
 
+#### `getProducts(showKey: String, callback: ((APIClientError?, List<ProductModel>?) -> Unit)`
+
+Get the products of a specfic show.
+
+- Parameters:
+    - `showKey`: The unique identifier of the show.
+    - `callback`: A callback that will be called once the show products is fetched or an error is thrown.
+
+```kotlin
+Show.getProducts(showKey) { error, show -> }
+```
+
+The Product object has a 'variants' of type JSONArray that is structured as such:
+
+```json
+[
+    {
+      "id": 1234,
+      "sku": "",
+      "is_master": false,
+      "is_default": false,
+      "weight": "0.0",
+      "width": null,
+      "height": null,
+      "depth": null,
+      "deleted_at": null,
+      "created_at": "2020-12-02T23:39:08.000Z",
+      "updated_at": "2024-03-22T22:50:04.000Z",
+      "position": 1,
+      "limit_per_order": null,
+      "count_on_hand": 123,
+      "price": "123.12345",
+      "display_price": "$12.34",
+      "cost_price": null,
+      "cost_currency": "USD",
+      "product_id": 123,
+      "metadata": null,
+      "source_images": null,
+      "has_geo": false,
+      "allow_international": false,
+      "exchange_name": "",
+      "affiliate_link": null,
+      "original_price": "30.0",
+      "external_customer_rating": null,
+      "external_number_of_reviews": null,
+      "external_offer_id": null,
+      "options": [],
+      "buyer_price": "123.12345",
+      "allowed_countries": null,
+      "promotions": [],
+      "shipping_method": null,
+      "images": []
+    }
+]
+```
+
 ## Chat
 
 ### Overview
@@ -123,7 +179,7 @@ Publish a message to chat.
 
 #### `subscribe(callback: ChatCallback)`
 
-Subscribe to a chat to get notfied when there are changes.
+Subscribe to a chat to get notified when there are changes.
 
 - Parameters:
     - `callback`: A callback that will be called once there's a change.
@@ -201,7 +257,7 @@ Called when a new message is received.
 - Parameters:
     - `message`: The `MessageModel` instance containing the message details.
 
-    ```kotlin
+```kotlin
 Chat.subscribe(object : Chat.ChatCallback { override fun onMessageReceived(message: MessageModel) {})
 ```
 
@@ -212,7 +268,7 @@ Called when a message is deleted.
 - Parameters:
     - `messageId`: The `id` of the message that has been deleted.
 
-    ```kotlin
+```kotlin
 Chat.subscribe(object : Chat.ChatCallback { override fun onMessageDeleted(messageId: Int) {})
 ```
 
@@ -223,7 +279,7 @@ Called when a there is an error.
 - Parameters:
     - `error`: The error message as a string.
 
-    ```kotlin
+```kotlin
 Chat.subscribe(object : Chat.ChatCallback { override fun onStatusChange(error: String) {})
 ```
 

@@ -46,4 +46,5 @@ object Keys {
     const val KEY_CHANNEL_CODE = "channelCode"
     const val KEY_IS_VERIFIED = "isVerified"
     const val KEY_TOTAL_VIEWS = "total_views"
+    const val KEY_IN_SHOW_PRODUCT_IDS = "in_show_product_ids"
 }

@@ -60,7 +60,8 @@ object APIHandler {
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 setRequestProperty("Accept", "application/json")
                 doInput = true
-                doOutput = (requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT || (requestMethod == HTTPMethod.DELETE && body != null))
+                doOutput =
+                    (requestMethod == HTTPMethod.POST || requestMethod == HTTPMethod.PUT || (requestMethod == HTTPMethod.DELETE && body != null))
                 connectTimeout = 15000
                 readTimeout = 15000
 
@@ -100,12 +101,15 @@ object APIHandler {
             }
 
             if (responseCode !in 200..299) {
-                Logging.print("HTTP request failed with status code $responseCode: $responseText")
+                Logging.print(
+                    APIHandler::class.java,
+                    "HTTP request failed with status code $responseCode: $responseText"
+                )
             }
 
             return@withContext APIResponse(responseText, responseCode)
         } catch (e: Exception) {
-            Logging.print(e)
+            Logging.print(APIHandler::class.java, e)
             throw IOException("Failed to make HTTP request: ${e.message}", e)
         } finally {
             connection?.disconnect()

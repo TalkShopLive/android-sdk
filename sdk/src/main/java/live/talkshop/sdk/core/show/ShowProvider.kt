@@ -1,5 +1,6 @@
 package live.talkshop.sdk.core.show
 
+import live.talkshop.sdk.core.show.models.ProductModel
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
 import live.talkshop.sdk.resources.APIClientError
@@ -8,6 +9,7 @@ import live.talkshop.sdk.resources.Constants.STATUS_LIVE
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APICalls.getCurrentEvent
 import live.talkshop.sdk.utils.networking.APICalls.getShowDetails
+import live.talkshop.sdk.utils.networking.APICalls.getShowProducts
 import live.talkshop.sdk.utils.networking.APICalls.incrementView
 
 /**
@@ -69,6 +71,23 @@ internal class ShowProvider {
                 }
             }
             callback?.invoke(null, it)
+        }
+    }
+
+    /**
+     * Fetches products for a given show key.
+     *
+     * @param showKey The key of the show to fetch products for.
+     * @param callback The callback to return the result: an error or a list of products.
+     */
+    internal suspend fun fetchProducts(
+        showKey: String,
+        callback: ((APIClientError?, List<ProductModel>?) -> Unit)
+    ) {
+        getShowProducts(showKey).onError {
+            callback.invoke(it, null)
+        }.onResult {
+            callback.invoke(null, it)
         }
     }
 }
