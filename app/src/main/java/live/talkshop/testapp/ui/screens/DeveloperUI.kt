@@ -292,6 +292,14 @@ fun PublishMessage(timeTokenState: MutableState<String>) {
                             Log.e("MainActivity.kt", error.toString())
                             subscriptionResult = "Error: $error"
                         }
+
+                        override fun onLikeComment(messageId: Long) {
+                            subscriptionResult = "onLikeComment: $messageId"
+                        }
+
+                        override fun onUnlikeComment(messageId: Long) {
+                            subscriptionResult = "onUnlikeComment: $messageId"
+                        }
                     })
                 }
             }

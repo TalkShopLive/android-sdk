@@ -95,11 +95,23 @@ object URLs {
         }
     }
 
-    fun getMessagesUrl(eventId: String, timeToken: String): String {
-        return if (isTestMode) {
-            "$URL_BASE_STAGING$PATH_AUTH$PATH_MESSAGES$eventId/$timeToken"
+    fun getMessagesUrl(
+        eventId: String,
+        timeToken: String,
+        actionTimeToken: String? = null
+    ): String {
+        return if (actionTimeToken == null) {
+            if (isTestMode) {
+                "$URL_BASE_STAGING$PATH_AUTH$PATH_MESSAGES$eventId/$timeToken"
+            } else {
+                "$URL_BASE_PROD$PATH_AUTH$PATH_MESSAGES$eventId/$timeToken"
+            }
         } else {
-            "$URL_BASE_PROD$PATH_AUTH$PATH_MESSAGES$eventId/$timeToken"
+            if (isTestMode) {
+                "$URL_BASE_STAGING$PATH_AUTH$PATH_MESSAGES$eventId/$timeToken/$actionTimeToken"
+            } else {
+                "$URL_BASE_PROD$PATH_AUTH$PATH_MESSAGES$eventId/$timeToken/$actionTimeToken"
+            }
         }
     }
 

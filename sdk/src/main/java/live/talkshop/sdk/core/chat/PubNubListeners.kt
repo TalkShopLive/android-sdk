@@ -73,6 +73,10 @@ internal class PubNubListeners(
                         val messageId =
                             pnMessageResult.message.asJsonObject.get("payload").asLong
                         callback?.onMessageDeleted(messageId)
+                    } else if (pnMessageResult.message.asJsonObject.get("key").asString == "action_deleted") {
+                        val payload = pnMessageResult.message.asJsonObject.get("payload")
+                        val messageId = payload.asJsonObject.get("timetoken").asLong
+                        callback?.onUnlikeComment(messageId)
                     }
                 }
 
@@ -116,6 +120,9 @@ internal class PubNubListeners(
             pnMessageActionResult: PNMessageActionResult
         ) {
             log("Message action type: ${pnMessageActionResult.messageAction.type} on message: ${pnMessageActionResult.messageAction.value}")
+            if (pnMessageActionResult.messageAction.type == "reaction" && pnMessageActionResult.messageAction.value == "like") {
+                pnMessageActionResult.timetoken?.let { callback?.onLikeComment(it) }
+            }
         }
 
         override fun file(pubnub: PubNub, pnFileEventResult: PNFileEventResult) {

@@ -39,4 +39,18 @@ interface ChatCallback {
      * @param error The [APIClientError] instance containing the error details.
      */
     fun onStatusChange(error: APIClientError)
+
+    /**
+     * Called when a comment is liked.
+     *
+     * @param messageId The Long instance containing the message ID.
+     */
+    fun onLikeComment(messageId: Long)
+
+    /**
+     * Called when a comment is unliked.
+     *
+     * @param messageId The Long instance containing the message ID.
+     */
+    fun onUnlikeComment(messageId: Long)
 }

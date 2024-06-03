@@ -4,6 +4,7 @@ import com.pubnub.api.PNConfiguration
 import com.pubnub.api.PubNub
 import com.pubnub.api.PubNubException
 import com.pubnub.api.UserId
+import com.pubnub.api.models.consumer.message_actions.PNMessageAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -25,10 +26,7 @@ import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
-import live.talkshop.sdk.utils.networking.APICalls.deleteMessage
-import live.talkshop.sdk.utils.networking.APICalls.getCurrentStream
-import live.talkshop.sdk.utils.networking.APICalls.getUserMeta
-import live.talkshop.sdk.utils.networking.APICalls.getUserToken
+import live.talkshop.sdk.utils.networking.APICalls
 import live.talkshop.sdk.utils.parsers.MessageParser
 import org.json.JSONObject
 import java.util.Calendar
@@ -97,7 +95,7 @@ class ChatProvider {
             currentShowKey = showKey
             globalShowKey = showKey
 
-            getUserToken(jwt, isGuest).onError {
+            APICalls.getUserToken(jwt, isGuest).onError {
                 callback?.invoke(it, null)
             }.onResult {
                 userTokenModel = it
@@ -130,7 +128,7 @@ class ChatProvider {
      * Subscribes to the chat and events channels.
      */
     private suspend fun subscribeChannels() {
-        getCurrentStream(currentShowKey).onResult {
+        APICalls.getCurrentStream(currentShowKey).onResult {
             publishChannel = CHANNEL_CHAT_PREFIX + it.eventId
             eventsChannel = CHANNEL_EVENTS_PREFIX + it.eventId
             channels = listOfNotNull(publishChannel, eventsChannel)
@@ -278,7 +276,7 @@ class ChatProvider {
                                             this.sender = userMetadataCache[uuid]
                                         } else {
                                             deferredMetadataUpdates.add(async {
-                                                getUserMeta(uuid).onResult {
+                                                APICalls.getUserMeta(uuid).onResult {
                                                     userMetadataCache[uuid] = it
                                                 }
                                                 sender = userMetadataCache[uuid]
@@ -391,15 +389,51 @@ class ChatProvider {
         }
     }
 
+    /**
+     * Unpublishes a message with the given time token.
+     *
+     * @param timeToken The time token of the message to unpublish.
+     * @param callback  Callback with the result: true if successful, false with an error message otherwise.
+     */
     internal suspend fun unPublishMessage(
         timeToken: String,
         callback: ((Boolean, String?) -> Unit)?
     ) {
-        deleteMessage(eventId, timeToken, currentJwt).onError {
+        APICalls.deleteMessage(eventId, timeToken, currentJwt).onError {
             callback?.let { it(false, it.toString()) }
         }.onResult {
             callback?.let { it(true, null) }
         }
+    }
+
+    internal fun likeComment(
+        timeToken: Long,
+        callback: ((Boolean, APIClientError?) -> Unit)? = null
+    ) {
+        pubnub?.let {
+            it.addMessageAction(
+                publishChannel, PNMessageAction("reaction", "like", timeToken)
+            ).async { _, status ->
+                if (!status.error) {
+                    callback?.let { it(false, getError(APIClientError.LIKE_COMMENT_FAILED)) }
+                } else {
+                    callback?.let { it(true, null) }
+                }
+            }
+        }
+    }
+
+    internal suspend fun unlikeComment(
+        timeToken: Long,
+        actionTimeToken: Long,
+        callback: ((Boolean, APIClientError?) -> Unit)? = null
+    ) {
+        APICalls.deleteAction(eventId, timeToken.toString(), actionTimeToken.toString(), currentJwt)
+            .onError { error ->
+                callback?.let { it(false, getError(error)) }
+            }.onResult {
+                callback?.let { it(true, null) }
+            }
     }
 
     private fun getError(error: APIClientError): APIClientError {
