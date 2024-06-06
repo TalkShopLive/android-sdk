@@ -43,7 +43,10 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
          * @param message The message to be published.
          * @param callback An optional callback to be invoked with the result of the publish operation.
          */
-        suspend fun publish(message: String, callback: ((APIClientError?, String?) -> Unit)? = null) {
+        suspend fun publish(
+            message: String,
+            callback: ((APIClientError?, String?) -> Unit)? = null
+        ) {
             provider.publish(message, callback)
         }
 
@@ -62,6 +65,14 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
 
                 override fun onStatusChange(error: APIClientError) {
                     callback.onStatusChange(error)
+                }
+
+                override fun onLikeComment(messageId: Long) {
+                    callback.onLikeComment(messageId)
+                }
+
+                override fun onUnlikeComment(messageId: Long) {
+                    callback.onUnlikeComment(messageId)
                 }
             })
             provider.subscribe()
@@ -123,6 +134,32 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
             callback: ((Boolean, String?) -> Unit)? = null
         ) {
             provider.unPublishMessage(timeToken, callback)
+        }
+
+        /**
+         * Public method to like a comment.
+         * @param timeToken The time token of the comment.
+         * @param callback optional callback to return success or error.
+         */
+        suspend fun likeComment(
+            timeToken: Long,
+            callback: ((Boolean, APIClientError?) -> Unit)? = null
+        ) {
+            provider.likeComment(timeToken, callback)
+        }
+
+        /**
+         * Public method to unlike a comment.
+         * @param timeToken The time token of the comment.
+         * @param actionTimeToken The time token of the like on the comment.
+         * @param callback optional callback to return success or error.
+         */
+        suspend fun unlikeComment(
+            timeToken: Long,
+            actionTimeToken: Long,
+            callback: ((Boolean, APIClientError?) -> Unit)? = null
+        ) {
+            provider.unlikeComment(timeToken, actionTimeToken, callback)
         }
     }
 }

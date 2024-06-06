@@ -267,6 +267,53 @@ internal object APICalls {
     }
 
     /**
+     * Deletes an action for a specific message based on the event ID and message timestamp.
+     *
+     * @param eventId The unique identifier for the event.
+     * @param timeToken The timestamp of the message.
+     * @param actionTimeToken The timestamp of the action to be deleted.
+     * @param currentJwt The current JWT for authentication.
+     * @return An `Either` object containing `true` if successful, or an `APIClientError`.
+     */
+    internal suspend fun deleteAction(
+        eventId: String,
+        timeToken: String,
+        actionTimeToken: String,
+        currentJwt: String
+    ): Either<APIClientError, Boolean> {
+        return executeWithAuthCheck {
+            try {
+                val response = APIHandler.makeRequest(
+                    requestUrl = getMessagesUrl(eventId, timeToken, actionTimeToken),
+                    requestMethod = HTTPMethod.DELETE,
+                    headers = mutableMapOf(
+                        Constants.SDK_KEY to storedClientKey,
+                        Constants.AUTH_KEY to "${Constants.BEARER_KEY} $currentJwt"
+                    )
+                )
+
+                when (response.statusCode) {
+                    in 200..299 -> {
+                        Either.Result(true)
+                    }
+
+                    403 -> {
+                        Either.Error(getError(APIClientError.PERMISSION_DENIED))
+                    }
+
+                    else -> {
+                        Logging.print(APICalls::class.java, response.body)
+                        Either.Error(getError(APIClientError.UNKNOWN_EXCEPTION))
+                    }
+                }
+            } catch (e: Exception) {
+                Logging.print(APICalls::class.java, e)
+                Either.Error(getError(APIClientError.UNKNOWN_EXCEPTION))
+            }
+        }
+    }
+
+    /**
      * Increments the view count for a specific event.
      *
      * @param eventId The unique identifier for the event.
