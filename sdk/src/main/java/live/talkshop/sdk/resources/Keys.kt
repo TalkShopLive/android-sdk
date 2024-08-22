@@ -39,7 +39,7 @@ object Keys {
     const val KEY_IMAGE = "image"
     const val KEY_ATTACHMENT = "attachment"
     const val KEY_LARGE = "large"
-    const val KEY_OWNING_STORE = "owningStore"
+    const val KEY_OWNING_STORE = "owning_store"
     const val KEY_BRAND_NAME = "brand_name"
     const val KEY_STREAM_IN_CLOUD = "stream_in_cloud"
     const val KEY_PROFILE_URL = "profileUrl"
