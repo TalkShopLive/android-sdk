@@ -20,9 +20,6 @@ import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
-import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
-import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
-import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
@@ -129,21 +126,24 @@ class ChatProvider {
      */
     private suspend fun subscribeChannels() {
         APICalls.getCurrentStream(currentShowKey).onResult {
-            publishChannel = CHANNEL_CHAT_PREFIX + it.eventId
-            eventsChannel = CHANNEL_EVENTS_PREFIX + it.eventId
+            publishChannel = Constants.CHANNEL_CHAT_PREFIX + it.eventId
+            eventsChannel = Constants.CHANNEL_EVENTS_PREFIX + it.eventId
             channels = listOfNotNull(publishChannel, eventsChannel)
             eventId = publishChannel
 
             val action: String
+            val category: String
             if (fromUpdateUser) {
                 action = Constants.COLLECTOR_ACTION_UPDATE_USER
+                category = Constants.COLLECTOR_CAT_PROCESS
             } else {
                 action = Constants.COLLECTOR_ACTION_SELECT_VIEW_CHAT
+                category = Constants.COLLECTOR_CAT_INTERACTION
                 fromUpdateUser = true
             }
             Collector.collect(
                 action = action,
-                category = Constants.COLLECTOR_CAT_INTERACTION,
+                category = category,
                 eventID = it.eventId,
                 showKey = currentShowKey,
                 showStatus = it.status,
@@ -207,7 +207,7 @@ class ChatProvider {
                 sender = SenderModel(id = userTokenModel.userId, name = userTokenModel.name),
                 text = message,
                 type = messageType,
-                platform = PLATFORM_TYPE
+                platform = Constants.PLATFORM_TYPE
             )
 
             pubnub?.publish(publishChannel, messageObject)?.async { result, status ->

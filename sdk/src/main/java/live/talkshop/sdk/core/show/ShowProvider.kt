@@ -5,7 +5,6 @@ import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
-import live.talkshop.sdk.resources.Constants.STATUS_LIVE
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APICalls.getCurrentEvent
 import live.talkshop.sdk.utils.networking.APICalls.getShowDetails
@@ -35,7 +34,7 @@ internal class ShowProvider {
             callback?.invoke(null, it)
             Collector.collect(
                 action = Constants.COLLECTOR_ACTION_SELECT_SHOW_METADATA,
-                category = Constants.COLLECTOR_CAT_INTERACTION,
+                category = Constants.COLLECTOR_CAT_PROCESS,
                 eventID = it.eventId,
                 showKey = showKey,
                 showStatus = it.status,
@@ -57,13 +56,13 @@ internal class ShowProvider {
         getCurrentEvent(showKey).onError {
             callback?.invoke(it, null)
         }.onResult {
-            if (it.streamInCloud == true && it.status == STATUS_LIVE) {
+            if (it.streamInCloud == true && it.status == Constants.STATUS_LIVE) {
                 if (!incrementViewCalledMap.containsKey(showKey) || !incrementViewCalledMap[showKey]!!) {
                     incrementView(it.eventId!!)
                     incrementViewCalledMap[showKey] = true
                     Collector.collect(
                         action = Constants.COLLECTOR_ACTION_VIEW_COUNT,
-                        category = Constants.COLLECTOR_CAT_INTERACTION,
+                        category = Constants.COLLECTOR_CAT_PROCESS,
                         eventID = it.eventId,
                         showKey = showKey,
                         showStatus = it.status,
@@ -88,6 +87,11 @@ internal class ShowProvider {
             callback.invoke(it, null)
         }.onResult {
             callback.invoke(null, it)
+            Collector.collect(
+                action = Constants.COLLECTOR_ACTION_SELECT_SHOW_PRODUCTS,
+                category = Constants.COLLECTOR_CAT_PROCESS,
+                showKey = showKey
+            )
         }
     }
 }
