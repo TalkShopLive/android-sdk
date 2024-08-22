@@ -281,8 +281,7 @@ Called when a there is an error.
 
 ```kotlin
 Chat.subscribe(object : Chat.ChatCallback { override fun onStatusChange(error: String) {})
+
 ```
-
 ## Support
-
 If you **need help** or have a **general question**, contact <support@talkshoplive.com>.
