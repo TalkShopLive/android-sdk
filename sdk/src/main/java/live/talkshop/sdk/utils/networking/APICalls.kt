@@ -38,7 +38,7 @@ internal object APICalls {
      * @param showKey The key associated with the desired show.
      * @return An `Either` object containing the `ShowModel` if successful, or an `APIClientError`.
      */
-    internal suspend fun getShowDetails(showKey: String): Either<APIClientError, ShowModel> {
+    suspend fun getShowDetails(showKey: String): Either<APIClientError, ShowModel> {
         return executeWithAuthCheck {
             try {
                 val response =
@@ -62,7 +62,7 @@ internal object APICalls {
      * @param showKey The key associated with the desired show.
      * @return An `Either` object containing the `ShowStatusModel` if successful, or an `APIClientError`.
      */
-    internal suspend fun getCurrentEvent(showKey: String): Either<APIClientError, ShowStatusModel> {
+    suspend fun getCurrentEvent(showKey: String): Either<APIClientError, ShowStatusModel> {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(
@@ -93,7 +93,7 @@ internal object APICalls {
      * @param showKey The key associated with the desired show.
      * @return An `Either` object containing the `ProductModel` if successful, or an `APIClientError`.
      */
-    internal suspend fun getShowProducts(showKey: String): Either<APIClientError, List<ProductModel>> {
+    suspend fun getShowProducts(showKey: String): Either<APIClientError, List<ProductModel>> {
         var finalResult: Either<APIClientError, List<ProductModel>> =
             Either.Error(APIClientError.UNKNOWN_EXCEPTION)
 
@@ -132,7 +132,7 @@ internal object APICalls {
      * @param isGuest Indicates whether the user is a guest.
      * @return An `Either` object containing the `UserTokenModel` if successful, or an `APIClientError`.
      */
-    internal suspend fun getUserToken(
+    suspend fun getUserToken(
         jwt: String,
         isGuest: Boolean
     ): Either<APIClientError, UserTokenModel> {
@@ -166,7 +166,7 @@ internal object APICalls {
      * @param currentShowKey The key associated with the current show.
      * @return An `Either` object containing the `ShowStatusModel` if successful, or an `APIClientError`.
      */
-    internal suspend fun getCurrentStream(currentShowKey: String): Either<APIClientError, ShowStatusModel> {
+    suspend fun getCurrentStream(currentShowKey: String): Either<APIClientError, ShowStatusModel> {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(
@@ -195,7 +195,7 @@ internal object APICalls {
      * @param currentJwt The current JWT for authentication.
      * @return An `Either` object containing `true` if successful, or an `APIClientError`.
      */
-    internal suspend fun deleteMessage(
+    suspend fun deleteMessage(
         eventId: String,
         timeToken: String,
         currentJwt: String
@@ -238,7 +238,7 @@ internal object APICalls {
      * @param uuid The unique identifier for the user.
      * @return An `Either` object containing the `SenderModel` if successful, or an `APIClientError`.
      */
-    internal suspend fun getUserMeta(uuid: String): Either<APIClientError, SenderModel> {
+    suspend fun getUserMeta(uuid: String): Either<APIClientError, SenderModel> {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(getUserMetaUrl(uuid), HTTPMethod.GET)
@@ -275,7 +275,7 @@ internal object APICalls {
      * @param currentJwt The current JWT for authentication.
      * @return An `Either` object containing `true` if successful, or an `APIClientError`.
      */
-    internal suspend fun deleteAction(
+    suspend fun deleteAction(
         eventId: String,
         timeToken: String,
         actionTimeToken: String,
@@ -318,7 +318,7 @@ internal object APICalls {
      *
      * @param eventId The unique identifier for the event.
      */
-    internal suspend fun incrementView(eventId: String) {
+    suspend fun incrementView(eventId: String) {
         try {
             APIHandler.makeRequest(URLs.getIncrementViewUrl(eventId), HTTPMethod.POST)
         } catch (e: Exception) {

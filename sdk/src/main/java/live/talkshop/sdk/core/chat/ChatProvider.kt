@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit
  * @property currentShowKey The current show's key.
  * @property eventId The id of the current event..
  */
-class ChatProvider {
+internal class ChatProvider {
     private lateinit var userTokenModel: UserTokenModel
     private lateinit var channels: List<String>
     private var pubnub: PubNub? = null
@@ -64,7 +64,7 @@ class ChatProvider {
      *
      * @param callback The callback to be invoked on chat events.
      */
-    internal suspend fun setCallback(callback: ChatCallback) {
+    suspend fun setCallback(callback: ChatCallback) {
         handleShowKeyChange()
         this.callback = callback
     }
@@ -77,7 +77,7 @@ class ChatProvider {
      * @param isGuest Indicates whether the user is a guest.
      * @param callback A callback invoked upon the completion of the chat initiation process.
      */
-    internal suspend fun initiateChat(
+    suspend fun initiateChat(
         showKey: String,
         jwt: String,
         isGuest: Boolean,
@@ -155,7 +155,7 @@ class ChatProvider {
     /**
      * Subscribes to the channels and sets up listeners for handling chat events.
      */
-    internal suspend fun subscribe() {
+    suspend fun subscribe() {
         if (!isAuthenticated) {
             println(APIClientError.AUTHENTICATION_FAILED)
             return
@@ -177,12 +177,19 @@ class ChatProvider {
      * @param message The message to be published.
      * @param callback An optional callback invoked with the result of the publish operation.
      */
-    internal suspend fun publish(
+    suspend fun publish(
         message: String,
+        type: String? = null,
+        aspectRatio: Long? = null,
         callback: ((APIClientError?, String?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
             callback?.invoke(getError(APIClientError.AUTHENTICATION_FAILED), null)
+            return
+        }
+
+        if (type == Constants.MESSAGE_TYPE_GIPHY && aspectRatio == null) {
+            callback?.invoke(getError(APIClientError.MESSAGE_SENDING_GIPHY_DATA_NOT_FOUND), null)
             return
         }
         try {
@@ -197,9 +204,9 @@ class ChatProvider {
 
             val messageType = when {
                 message.trim().contains("?") -> Constants.MESSAGE_TYPE_QUESTION
+                type == Constants.MESSAGE_TYPE_GIPHY -> Constants.MESSAGE_TYPE_GIPHY
                 else -> Constants.MESSAGE_TYPE_COMMENT
             }
-
 
             val messageObject = MessageModel(
                 id = System.currentTimeMillis(),
@@ -209,6 +216,10 @@ class ChatProvider {
                 type = messageType,
                 platform = Constants.PLATFORM_TYPE
             )
+
+            if (type == Constants.MESSAGE_TYPE_GIPHY) {
+                messageObject.aspectRatio = aspectRatio
+            }
 
             pubnub?.publish(publishChannel, messageObject)?.async { result, status ->
                 if (!status.error) {
@@ -242,7 +253,7 @@ class ChatProvider {
      * @param includeMeta Whether to include message metadata.
      * @param callback Callback to return the result or error.
      */
-    internal suspend fun fetchPastMessages(
+    suspend fun fetchPastMessages(
         count: Int = 25,
         start: Long? = System.currentTimeMillis(),
         includeMeta: Boolean = true,
@@ -328,7 +339,7 @@ class ChatProvider {
      * @param callback A callback to be invoked after the update attempt with any resulting message
      * and the updated UserTokenModel.
      */
-    internal suspend fun editUser(
+    suspend fun editUser(
         newJwt: String,
         isGuest: Boolean,
         callback: ((APIClientError?, UserTokenModel?) -> Unit)?
@@ -344,7 +355,7 @@ class ChatProvider {
     /**
      * Cleans up the current PubNub instance and prepares for re-initialization or shutdown.
      */
-    internal fun clearConnection() {
+    fun clearConnection() {
         pubnub?.unsubscribeAll()
         pubnub?.destroy()
         pubnub = null
@@ -369,7 +380,7 @@ class ChatProvider {
      * @param callback Callback to return the count of unread messages based on the
      * name of the channel
      */
-    internal fun countUnreadMessages(callback: (Map<String, Long>?) -> Unit) {
+    fun countUnreadMessages(callback: (Map<String, Long>?) -> Unit) {
         val lastHourTimeToken =
             (Calendar.getInstance().timeInMillis - TimeUnit.HOURS.toMillis(1)) * 10000L
         pubnub?.messageCounts(channels, listOf(lastHourTimeToken))?.async { result, status ->
@@ -395,7 +406,7 @@ class ChatProvider {
      * @param timeToken The time token of the message to unpublish.
      * @param callback  Callback with the result: true if successful, false with an error message otherwise.
      */
-    internal suspend fun unPublishMessage(
+    suspend fun unPublishMessage(
         timeToken: String,
         callback: ((Boolean, String?) -> Unit)?
     ) {
@@ -406,7 +417,7 @@ class ChatProvider {
         }
     }
 
-    internal fun likeComment(
+    fun likeComment(
         timeToken: Long,
         callback: ((Boolean, APIClientError?) -> Unit)? = null
     ) {
@@ -423,7 +434,7 @@ class ChatProvider {
         }
     }
 
-    internal suspend fun unlikeComment(
+    suspend fun unlikeComment(
         timeToken: Long,
         actionTimeToken: Long,
         callback: ((Boolean, APIClientError?) -> Unit)? = null

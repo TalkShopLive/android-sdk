@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets
 /**
  * Represents HTTP request methods.
  */
-enum class HTTPMethod(val value: String) {
+internal enum class HTTPMethod(val value: String) {
     GET("GET"),
     POST("POST"),
     PUT("PUT"),
@@ -26,13 +26,13 @@ enum class HTTPMethod(val value: String) {
  * A singleton object that handles HTTP requests (GET, POST, PUT, DELETE) using `HttpURLConnection`.
  * It supports adding custom headers and sending JSON payloads.
  */
-object APIHandler {
+internal object APIHandler {
     /**
      * The factory used for creating [HttpURLConnection] instances.
      * Defaults to [DefaultHttpURLConnectionFactory] but can be replaced,
      * particularly useful in testing environments to use mock connections.
      */
-    var connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
+    private var connectionFactory: HttpURLConnectionFactory = DefaultHttpURLConnectionFactory()
 
     /**
      * Makes an HTTP request and returns the response as a String.

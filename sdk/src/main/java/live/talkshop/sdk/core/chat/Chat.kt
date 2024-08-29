@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.APIClientError
+import live.talkshop.sdk.resources.Constants
 
 /**
  * Represents a chat session, encapsulating the logic to initiate and manage chat functionalities.
@@ -35,6 +36,9 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
     }
 
     companion object {
+        const val MESSAGE_TYPE_GIPHY = Constants.MESSAGE_TYPE_GIPHY
+        const val MESSAGE_TYPE_QUESTION = Constants.MESSAGE_TYPE_QUESTION
+        const val MESSAGE_TYPE_COMMENT = Constants.MESSAGE_TYPE_COMMENT
         private val provider = ChatProvider()
 
         /**
@@ -45,9 +49,11 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
          */
         suspend fun publish(
             message: String,
+            type: String? = null,
+            aspectRatio: Long? = null,
             callback: ((APIClientError?, String?) -> Unit)? = null
         ) {
-            provider.publish(message, callback)
+            provider.publish(message, type, aspectRatio, callback)
         }
 
         /**

@@ -10,7 +10,7 @@ import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import org.json.JSONObject
 
-class Collector private constructor() {
+internal class Collector private constructor() {
     private suspend fun collect(
         action: String,
         category: String,

@@ -37,8 +37,8 @@ enum class APIClientError(
     CHAT_TIMEOUT("TSL", "CHAT_TIMEOUT", "The chat you're trying to connect to has timed out"),
     SHOW_NOT_LIVE("TSL", "SHOW_NOT_LIVE", "The show is not live."),
     NO_PRODUCTS_FOUND("TSL", "NO_PRODUCTS_FOUND", "The show does not contain any products."),
-    LIKE_COMMENT_FAILED("TSL", "LIKE_COMMENT_FAILED", "The comment could not be liked.");
-
+    LIKE_COMMENT_FAILED("TSL", "LIKE_COMMENT_FAILED", "The comment could not be liked."),
+    MESSAGE_SENDING_GIPHY_DATA_NOT_FOUND("TSL", "MESSAGE_SENDING_GIPHY_DATA_NOT_FOUND", "The Giphy data is missing (such as aspect ratio)");
     fun from(originatingClass: String): APIClientError {
         this.className = originatingClass
         return this

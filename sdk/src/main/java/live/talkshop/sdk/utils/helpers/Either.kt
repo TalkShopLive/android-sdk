@@ -1,6 +1,6 @@
 package live.talkshop.sdk.utils.helpers
 
-sealed class Either<out E, out V> {
+internal sealed class Either<out E, out V> {
     data class Error<out E>(val error: E) : Either<E, Nothing>()
     data class Result<out V>(val value: V) : Either<Nothing, V>()
 
