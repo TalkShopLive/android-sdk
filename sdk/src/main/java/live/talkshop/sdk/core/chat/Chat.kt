@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.APIClientError
+import live.talkshop.sdk.resources.Constants
 
 /**
  * Represents a chat session, encapsulating the logic to initiate and manage chat functionalities.
@@ -15,12 +16,6 @@ import live.talkshop.sdk.resources.APIClientError
  * @property isGuest A boolean indicating whether the user is a guest.
  */
 class Chat(private val showKey: String, private val jwt: String, private val isGuest: Boolean) {
-    interface ChatCallback {
-        fun onMessageReceived(message: MessageModel)
-        fun onMessageDeleted(messageId: Long)
-        fun onStatusChange(error: APIClientError)
-    }
-
     /**
      * Secondary constructor that initiates a chat session using the provided parameters.
      *
@@ -41,6 +36,9 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
     }
 
     companion object {
+        const val MESSAGE_TYPE_GIPHY = Constants.MESSAGE_TYPE_GIPHY
+        const val MESSAGE_TYPE_QUESTION = Constants.MESSAGE_TYPE_QUESTION
+        const val MESSAGE_TYPE_COMMENT = Constants.MESSAGE_TYPE_COMMENT
         private val provider = ChatProvider()
 
         /**
@@ -49,15 +47,20 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
          * @param message The message to be published.
          * @param callback An optional callback to be invoked with the result of the publish operation.
          */
-        suspend fun publish(message: String, callback: ((APIClientError?, String?) -> Unit)? = null) {
-            provider.publish(message, callback)
+        suspend fun publish(
+            message: String,
+            type: String? = null,
+            aspectRatio: Long? = null,
+            callback: ((APIClientError?, String?) -> Unit)? = null
+        ) {
+            provider.publish(message, type, aspectRatio, callback)
         }
 
         /**
          * Subscribes to the chat channels to receive messages and other events.
          */
         suspend fun subscribe(callback: ChatCallback) {
-            provider.setCallback(object : ChatProviderCallback {
+            provider.setCallback(object : ChatCallback {
                 override fun onMessageReceived(message: MessageModel) {
                     callback.onMessageReceived(message)
                 }
@@ -68,6 +71,14 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
 
                 override fun onStatusChange(error: APIClientError) {
                     callback.onStatusChange(error)
+                }
+
+                override fun onLikeComment(messageId: Long) {
+                    callback.onLikeComment(messageId)
+                }
+
+                override fun onUnlikeComment(messageId: Long) {
+                    callback.onUnlikeComment(messageId)
                 }
             })
             provider.subscribe()
@@ -129,6 +140,32 @@ class Chat(private val showKey: String, private val jwt: String, private val isG
             callback: ((Boolean, String?) -> Unit)? = null
         ) {
             provider.unPublishMessage(timeToken, callback)
+        }
+
+        /**
+         * Public method to like a comment.
+         * @param timeToken The time token of the comment.
+         * @param callback optional callback to return success or error.
+         */
+        suspend fun likeComment(
+            timeToken: Long,
+            callback: ((Boolean, APIClientError?) -> Unit)? = null
+        ) {
+            provider.likeComment(timeToken, callback)
+        }
+
+        /**
+         * Public method to unlike a comment.
+         * @param timeToken The time token of the comment.
+         * @param actionTimeToken The time token of the like on the comment.
+         * @param callback optional callback to return success or error.
+         */
+        suspend fun unlikeComment(
+            timeToken: Long,
+            actionTimeToken: Long,
+            callback: ((Boolean, APIClientError?) -> Unit)? = null
+        ) {
+            provider.unlikeComment(timeToken, actionTimeToken, callback)
         }
     }
 }

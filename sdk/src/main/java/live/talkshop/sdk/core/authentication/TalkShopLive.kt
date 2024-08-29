@@ -7,17 +7,17 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.resources.Constants.COLLECTOR_ACTION_SDK_INITIALIZED
-import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_INTERACTION
 import live.talkshop.sdk.resources.Constants.SDK_KEY
 import live.talkshop.sdk.resources.Constants.KEY_AUTHENTICATED
 import live.talkshop.sdk.resources.Constants.SHARED_PREFS_NAME
 import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_EXCEPTION
 import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_FAILED
+import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PROCESS
 import live.talkshop.sdk.resources.Keys.KEY_VALID_KEY
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
-import live.talkshop.sdk.utils.networking.URLs.getAuthUrl
+import live.talkshop.sdk.resources.URLs.getAuthUrl
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
@@ -57,7 +57,7 @@ class TalkShopLive private constructor(private val context: Context) {
             getInstance(context).initializeInternal(clientKey, debugMode, testMode, dnt, callback)
             Collector.collect(
                 action = COLLECTOR_ACTION_SDK_INITIALIZED,
-                category = COLLECTOR_CAT_INTERACTION
+                category = COLLECTOR_CAT_PROCESS
             )
         }
 

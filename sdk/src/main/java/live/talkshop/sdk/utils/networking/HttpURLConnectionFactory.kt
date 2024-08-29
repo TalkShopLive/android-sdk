@@ -12,7 +12,7 @@ import java.net.URL
  * implementations of HTTP connection creation, which is particularly useful for testing,
  * where mock or fake connections might be needed.
  */
-interface HttpURLConnectionFactory {
+internal interface HttpURLConnectionFactory {
     /**
      * Creates and returns a new instance of [HttpURLConnection].
      *

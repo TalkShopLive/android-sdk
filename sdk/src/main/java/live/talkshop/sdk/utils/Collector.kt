@@ -5,12 +5,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.isDNT
+import live.talkshop.sdk.resources.URLs.getCollectorUrl
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
-import live.talkshop.sdk.utils.networking.URLs.getCollectorUrl
 import org.json.JSONObject
 
-class Collector private constructor() {
+internal class Collector private constructor() {
     private suspend fun collect(
         action: String,
         category: String,
@@ -26,7 +26,7 @@ class Collector private constructor() {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.1.1")
+            put("version", "1.1.2")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {

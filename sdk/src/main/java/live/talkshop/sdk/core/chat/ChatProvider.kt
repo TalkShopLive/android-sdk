@@ -4,21 +4,7 @@ import com.pubnub.api.PNConfiguration
 import com.pubnub.api.PubNub
 import com.pubnub.api.PubNubException
 import com.pubnub.api.UserId
-import com.pubnub.api.callbacks.SubscribeCallback
-import com.pubnub.api.enums.PNStatusCategory
-import com.pubnub.api.models.consumer.PNStatus
-import com.pubnub.api.models.consumer.pubsub.PNMessageResult
-import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult
-import com.pubnub.api.models.consumer.pubsub.PNSignalResult
-import com.pubnub.api.models.consumer.pubsub.files.PNFileEventResult
-import com.pubnub.api.models.consumer.pubsub.message_actions.PNMessageActionResult
-import com.pubnub.api.models.consumer.pubsub.objects.PNDeleteChannelMetadataEventMessage
-import com.pubnub.api.models.consumer.pubsub.objects.PNDeleteMembershipEventMessage
-import com.pubnub.api.models.consumer.pubsub.objects.PNDeleteUUIDMetadataEventMessage
-import com.pubnub.api.models.consumer.pubsub.objects.PNObjectEventResult
-import com.pubnub.api.models.consumer.pubsub.objects.PNSetChannelMetadataEventMessage
-import com.pubnub.api.models.consumer.pubsub.objects.PNSetMembershipEventMessage
-import com.pubnub.api.models.consumer.pubsub.objects.PNSetUUIDMetadataEventMessage
+import com.pubnub.api.models.consumer.message_actions.PNMessageAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -29,43 +15,16 @@ import kotlinx.coroutines.withContext
 import live.talkshop.sdk.core.authentication.globalShowId
 import live.talkshop.sdk.core.authentication.globalShowKey
 import live.talkshop.sdk.core.authentication.isAuthenticated
-import live.talkshop.sdk.core.authentication.storedClientKey
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
-import live.talkshop.sdk.resources.Constants
-import live.talkshop.sdk.resources.Constants.CHANNEL_CHAT_PREFIX
-import live.talkshop.sdk.resources.Constants.CHANNEL_EVENTS_PREFIX
-import live.talkshop.sdk.resources.Constants.PLATFORM_TYPE
 import live.talkshop.sdk.resources.APIClientError
-import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_FAILED
-import live.talkshop.sdk.resources.APIClientError.CHANNEL_SUBSCRIPTION_FAILED
-import live.talkshop.sdk.resources.APIClientError.CHAT_CONNECTION_ERROR
-import live.talkshop.sdk.resources.APIClientError.INVALID_USER_TOKEN
-import live.talkshop.sdk.resources.APIClientError.MESSAGE_LIST_FAILED
-import live.talkshop.sdk.resources.APIClientError.MESSAGE_SENDING_FAILED
-import live.talkshop.sdk.resources.APIClientError.PERMISSION_DENIED
-import live.talkshop.sdk.resources.APIClientError.UNKNOWN_EXCEPTION
-import live.talkshop.sdk.resources.APIClientError.USER_ALREADY_AUTHENTICATED
-import live.talkshop.sdk.resources.APIClientError.USER_TOKEN_EXCEPTION
-import live.talkshop.sdk.resources.APIClientError.CHAT_TOKEN_EXPIRED
-import live.talkshop.sdk.resources.Keys.KEY_ID
-import live.talkshop.sdk.resources.Keys.KEY_NAME
-import live.talkshop.sdk.resources.Keys.KEY_PROFILE_URL
-import live.talkshop.sdk.resources.Keys.KEY_SENDER
+import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
-import live.talkshop.sdk.utils.networking.APIHandler
-import live.talkshop.sdk.utils.networking.ApiResponse
-import live.talkshop.sdk.utils.networking.HTTPMethod
-import live.talkshop.sdk.utils.networking.URLs.getCurrentStreamUrl
-import live.talkshop.sdk.utils.networking.URLs.getMessagesUrl
-import live.talkshop.sdk.utils.networking.URLs.getUserMetaUrl
-import live.talkshop.sdk.utils.networking.URLs.getUserTokenUrl
+import live.talkshop.sdk.utils.networking.APICalls
 import live.talkshop.sdk.utils.parsers.MessageParser
-import live.talkshop.sdk.utils.parsers.ShowStatusParser
-import live.talkshop.sdk.utils.parsers.UserTokenParser
 import org.json.JSONObject
 import java.util.Calendar
 import java.util.Date
@@ -86,28 +45,26 @@ import java.util.concurrent.TimeUnit
  * @property currentShowKey The current show's key.
  * @property eventId The id of the current event..
  */
-class ChatProvider {
+internal class ChatProvider {
     private lateinit var userTokenModel: UserTokenModel
     private lateinit var channels: List<String>
-    private var triedToReconnectBefore = false
     private var pubnub: PubNub? = null
     private lateinit var publishChannel: String
     private var eventsChannel: String? = null
-    private var callback: ChatProviderCallback? = null
+    private var callback: ChatCallback? = null
     private lateinit var currentShowKey: String
     private lateinit var eventId: String
     private lateinit var userId: String
     private lateinit var currentJwt: String
     private var fromUpdateUser: Boolean = false
     private val userMetadataCache = mutableMapOf<String, SenderModel>()
-    private var isSubscribed = false
 
     /**
      * Sets the callback for handling chat events and messages.
      *
      * @param callback The callback to be invoked on chat events.
      */
-    internal suspend fun setCallback(callback: ChatProviderCallback) {
+    suspend fun setCallback(callback: ChatCallback) {
         handleShowKeyChange()
         this.callback = callback
     }
@@ -120,7 +77,7 @@ class ChatProvider {
      * @param isGuest Indicates whether the user is a guest.
      * @param callback A callback invoked upon the completion of the chat initiation process.
      */
-    internal suspend fun initiateChat(
+    suspend fun initiateChat(
         showKey: String,
         jwt: String,
         isGuest: Boolean,
@@ -128,67 +85,23 @@ class ChatProvider {
     ) {
         if (isAuthenticated) {
             if (!isNotEmptyOrNull(globalShowId)) {
-                callback?.invoke(APIClientError.SHOW_NOT_LIVE, null)
+                callback?.invoke(getError(APIClientError.SHOW_NOT_LIVE), null)
                 return
             }
-            var response: ApiResponse? = null
-            try {
-                currentShowKey = showKey
-                globalShowKey = showKey
-                val url = getUserTokenUrl(isGuest)
-                val headers = mutableMapOf(
-                    Constants.SDK_KEY to storedClientKey,
-                    Constants.AUTH_KEY to "${Constants.BEARER_KEY} $jwt"
-                )
-                response = APIHandler.makeRequest(url, HTTPMethod.POST, headers = headers)
-                userTokenModel = UserTokenParser.fromJsonString(response.body)!!
+
+            currentShowKey = showKey
+            globalShowKey = showKey
+
+            APICalls.getUserToken(jwt, isGuest).onError {
+                callback?.invoke(it, null)
+            }.onResult {
+                userTokenModel = it
                 initializePubNub()
                 callback?.invoke(null, userTokenModel)
                 currentJwt = jwt
-            } catch (e: Exception) {
-                if (response != null) {
-                    when (response.statusCode) {
-                        403 -> {
-                            Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
-                            if (response.body.contains("expired")) {
-                                callback?.invoke(
-                                    CHAT_TOKEN_EXPIRED.from(ChatProvider::class.java.name),
-                                    null
-                                )
-                            } else {
-                                callback?.invoke(
-                                    PERMISSION_DENIED.from(ChatProvider::class.java.name),
-                                    null
-                                )
-                            }
-                        }
-
-                        !in 200..299 -> {
-                            Logging.print(ChatProvider::class.java, INVALID_USER_TOKEN)
-                            callback?.invoke(
-                                INVALID_USER_TOKEN.from(ChatProvider::class.java.name),
-                                null
-                            )
-                        }
-
-                        else -> {
-                            Logging.print(ChatProvider::class.java, USER_TOKEN_EXCEPTION)
-                            callback?.invoke(
-                                USER_TOKEN_EXCEPTION.from(ChatProvider::class.java.name),
-                                null
-                            )
-                        }
-                    }
-                } else {
-                    Logging.print(ChatProvider::class.java, CHAT_CONNECTION_ERROR)
-                    callback?.invoke(
-                        CHAT_CONNECTION_ERROR.from(ChatProvider::class.java.name),
-                        null
-                    )
-                }
             }
         } else {
-            callback?.invoke(AUTHENTICATION_FAILED.from(ChatProvider::class.java.name), null)
+            callback?.invoke(getError(APIClientError.AUTHENTICATION_FAILED), null)
         }
     }
 
@@ -212,182 +125,50 @@ class ChatProvider {
      * Subscribes to the chat and events channels.
      */
     private suspend fun subscribeChannels() {
-        val response = APIHandler.makeRequest(
-            getCurrentStreamUrl(currentShowKey),
-            HTTPMethod.GET
-        )
+        APICalls.getCurrentStream(currentShowKey).onResult {
+            publishChannel = Constants.CHANNEL_CHAT_PREFIX + it.eventId
+            eventsChannel = Constants.CHANNEL_EVENTS_PREFIX + it.eventId
+            channels = listOfNotNull(publishChannel, eventsChannel)
+            eventId = publishChannel
 
-        if (response.statusCode !in 200..299) {
-            Logging.print(ChatProvider::class.java, CHANNEL_SUBSCRIPTION_FAILED)
-        } else {
-            Logging.print(ChatProvider::class.java, "Channels subscribe success")
+            val action: String
+            val category: String
+            if (fromUpdateUser) {
+                action = Constants.COLLECTOR_ACTION_UPDATE_USER
+                category = Constants.COLLECTOR_CAT_PROCESS
+            } else {
+                action = Constants.COLLECTOR_ACTION_SELECT_VIEW_CHAT
+                category = Constants.COLLECTOR_CAT_INTERACTION
+                fromUpdateUser = true
+            }
+            Collector.collect(
+                action = action,
+                category = category,
+                eventID = it.eventId,
+                showKey = currentShowKey,
+                showStatus = it.status,
+                userId = userId
+            )
         }
-
-        val showStatusModel = ShowStatusParser.parseFromJson(JSONObject(response.body))
-        publishChannel = CHANNEL_CHAT_PREFIX + showStatusModel.eventId
-        eventsChannel = CHANNEL_EVENTS_PREFIX + showStatusModel.eventId
-        channels = listOfNotNull(publishChannel, eventsChannel)
-        eventId = publishChannel
-        subscribe()
-
-        val action: String
-        if (fromUpdateUser) {
-            action = Constants.COLLECTOR_ACTION_UPDATE_USER
-        } else {
-            action = Constants.COLLECTOR_ACTION_SELECT_VIEW_CHAT
-            fromUpdateUser = true
-        }
-        Collector.collect(
-            action = action,
-            category = Constants.COLLECTOR_CAT_INTERACTION,
-            eventID = showStatusModel.eventId,
-            showKey = currentShowKey,
-            showStatus = showStatusModel.status,
-            userId = userId
-        )
     }
 
     /**
      * Subscribes to the channels and sets up listeners for handling chat events.
      */
-    internal suspend fun subscribe() {
+    suspend fun subscribe() {
         if (!isAuthenticated) {
-            Logging.print(ChatProvider::class.java, AUTHENTICATION_FAILED)
+            println(APIClientError.AUTHENTICATION_FAILED)
             return
         }
         handleShowKeyChange()
-        if (!isSubscribed) {
-            val listener = object : SubscribeCallback() {
-                override fun message(pubnub: PubNub, pnMessageResult: PNMessageResult) {
-                    when (pnMessageResult.channel) {
-                        publishChannel -> {
-                            val messageData: MessageModel? =
-                                MessageParser.parse(
-                                    JSONObject(pnMessageResult.message.asJsonObject.toString()),
-                                    pnMessageResult.timetoken
-                                )
-                            if (messageData != null) {
-                                val uuid = messageData.sender?.id
-                                if (uuid != null && userMetadataCache.containsKey(uuid)) {
-                                    messageData.sender = userMetadataCache[uuid]
-                                    callback?.onMessageReceived(messageData)
-                                } else if (uuid != null) {
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        fetchUserMetaData(uuid)
-                                        messageData.sender = userMetadataCache[uuid]
-                                        withContext(Dispatchers.Main) {
-                                            callback?.onMessageReceived(messageData)
-                                        }
-                                    }
-                                } else {
-                                    callback?.onMessageReceived(messageData)
-                                }
-                            } else {
-                                Logging.print(ChatProvider::class.java, "messageData is null")
-                            }
-                        }
-
-                        eventsChannel -> {
-                            println("Received message on events channel: ${pnMessageResult.message}")
-                            if (pnMessageResult.message.asJsonObject.get("key").asString == "message_deleted") {
-                                val messageId =
-                                    pnMessageResult.message.asJsonObject.get("payload").asLong
-                                callback?.onMessageDeleted(messageId)
-                            }
-                        }
-
-                        else -> {
-                            println("Received message on other channel: ${pnMessageResult.message}")
-                        }
-                    }
-                }
-
-                override fun status(pubnub: PubNub, pnStatus: PNStatus) {
-                    println("PubNub status: ${pnStatus.category}, error code: ${pnStatus.statusCode}")
-                    if (pnStatus.category == PNStatusCategory.PNUnexpectedDisconnectCategory) {
-                        if (!triedToReconnectBefore) {
-                            triedToReconnectBefore = true
-                            pubnub.reconnect()
-                        }
-                    } else if (pnStatus.category == PNStatusCategory.PNConnectionError && triedToReconnectBefore) {
-                        callback?.onStatusChange(CHAT_CONNECTION_ERROR.from(ChatProvider::class.java.name))
-                    } else if (pnStatus.category == PNStatusCategory.PNConnectedCategory || pnStatus.category == PNStatusCategory.PNReconnectedCategory) {
-                        triedToReconnectBefore = false
-                    } else if (pnStatus.category == PNStatusCategory.PNTimeoutCategory) {
-                        callback?.onStatusChange(APIClientError.CHAT_TIMEOUT)
-                    } else if (pnStatus.category == PNStatusCategory.PNAccessDeniedCategory) {
-                        callback?.onStatusChange(PERMISSION_DENIED.from(ChatProvider::class.java.name))
-                    }
-                }
-
-                override fun presence(
-                    pubnub: PubNub,
-                    pnPresenceEventResult: PNPresenceEventResult
-                ) {
-                    println("Presence event: ${pnPresenceEventResult.event} on channel: ${pnPresenceEventResult.channel}")
-                }
-
-                override fun signal(pubnub: PubNub, pnSignalResult: PNSignalResult) {
-                    println("Signal received on channel: ${pnSignalResult.channel} with content: ${pnSignalResult.message}")
-                }
-
-                override fun messageAction(
-                    pubnub: PubNub,
-                    pnMessageActionResult: PNMessageActionResult
-                ) {
-                    println("Message action type: ${pnMessageActionResult.messageAction.type} on message: ${pnMessageActionResult.messageAction.value}")
-                }
-
-                override fun file(pubnub: PubNub, pnFileEventResult: PNFileEventResult) {
-                    println("File event received on channel: ${pnFileEventResult.channel}, file name: ${pnFileEventResult.file.name}")
-                }
-
-                override fun objects(pubnub: PubNub, objectEvent: PNObjectEventResult) {
-                    when (objectEvent.extractedMessage) {
-                        is PNSetChannelMetadataEventMessage -> {
-                            val message =
-                                objectEvent.extractedMessage as PNSetChannelMetadataEventMessage
-                            println("Channel metadata set event received, channel: ${message.data.name}")
-                        }
-
-                        is PNSetUUIDMetadataEventMessage -> {
-                            val message =
-                                objectEvent.extractedMessage as PNSetUUIDMetadataEventMessage
-                            println("UUID metadata set event received, UUID: ${message.data.id}")
-                        }
-
-                        is PNSetMembershipEventMessage -> {
-                            val message =
-                                objectEvent.extractedMessage as PNSetMembershipEventMessage
-                            println("Membership set event received, channel: ${message.data.channel}, UUID: ${message.data.uuid}")
-                        }
-
-                        is PNDeleteChannelMetadataEventMessage -> {
-                            val message =
-                                objectEvent.extractedMessage as PNDeleteChannelMetadataEventMessage
-                            println("Channel metadata delete event received, channel: ${message.channel}")
-                        }
-
-                        is PNDeleteUUIDMetadataEventMessage -> {
-                            val message =
-                                objectEvent.extractedMessage as PNDeleteUUIDMetadataEventMessage
-                            println("UUID metadata delete event received, UUID: ${message.uuid}")
-                        }
-
-                        is PNDeleteMembershipEventMessage -> {
-                            val message =
-                                objectEvent.extractedMessage as PNDeleteMembershipEventMessage
-                            println("Membership delete event received, channel: ${message.data.channelId}, UUID: ${message.data.uuid}")
-                        }
-
-                        else -> println("Other object event received")
-                    }
-                }
-            }
-            pubnub?.addListener(listener)
-            pubnub!!.subscribe(channels, withPresence = true)
-            isSubscribed = true
-        }
+        val pubNubListeners = PubNubListeners(
+            callback,
+            userMetadataCache,
+            publishChannel,
+            eventsChannel
+        )
+        pubnub?.addListener(pubNubListeners.TSLSubscribeCallback())
+        pubnub!!.subscribe(channels, withPresence = true)
     }
 
     /**
@@ -396,19 +177,26 @@ class ChatProvider {
      * @param message The message to be published.
      * @param callback An optional callback invoked with the result of the publish operation.
      */
-    internal suspend fun publish(
+    suspend fun publish(
         message: String,
+        type: String? = null,
+        aspectRatio: Long? = null,
         callback: ((APIClientError?, String?) -> Unit)? = null
     ) {
         if (!isAuthenticated) {
-            callback?.invoke(AUTHENTICATION_FAILED.from(ChatProvider::class.java.name), null)
+            callback?.invoke(getError(APIClientError.AUTHENTICATION_FAILED), null)
+            return
+        }
+
+        if (type == Constants.MESSAGE_TYPE_GIPHY && aspectRatio == null) {
+            callback?.invoke(getError(APIClientError.MESSAGE_SENDING_GIPHY_DATA_NOT_FOUND), null)
             return
         }
         try {
             handleShowKeyChange()
             if (message.length > 200) {
                 callback?.invoke(
-                    APIClientError.MESSAGE_ERROR_MESSAGE_MAX_LENGTH,
+                    getError(APIClientError.MESSAGE_ERROR_MESSAGE_MAX_LENGTH),
                     null
                 )
                 return
@@ -416,9 +204,9 @@ class ChatProvider {
 
             val messageType = when {
                 message.trim().contains("?") -> Constants.MESSAGE_TYPE_QUESTION
+                type == Constants.MESSAGE_TYPE_GIPHY -> Constants.MESSAGE_TYPE_GIPHY
                 else -> Constants.MESSAGE_TYPE_COMMENT
             }
-
 
             val messageObject = MessageModel(
                 id = System.currentTimeMillis(),
@@ -426,27 +214,33 @@ class ChatProvider {
                 sender = SenderModel(id = userTokenModel.userId, name = userTokenModel.name),
                 text = message,
                 type = messageType,
-                platform = PLATFORM_TYPE
+                platform = Constants.PLATFORM_TYPE
             )
+
+            if (type == Constants.MESSAGE_TYPE_GIPHY) {
+                messageObject.aspectRatio = aspectRatio
+            }
 
             pubnub?.publish(publishChannel, messageObject)?.async { result, status ->
                 if (!status.error) {
                     callback?.invoke(null, result!!.timetoken.toString())
                 } else {
-                    Logging.print(ChatProvider::class.java, MESSAGE_SENDING_FAILED)
-                    callback?.invoke(
-                        MESSAGE_SENDING_FAILED.from(ChatProvider::class.java.name),
-                        null
-                    )
+                    callback?.invoke(getError(APIClientError.MESSAGE_SENDING_FAILED), null)
                 }
             }
         } catch (error: Exception) {
             if ((error as? PubNubException)?.statusCode == 403) {
-                Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
-                callback?.invoke(PERMISSION_DENIED.from(ChatProvider::class.java.name), null)
+                if (error.message?.contains("expired") == true) {
+                    callback?.invoke(
+                        getError(APIClientError.CHAT_TOKEN_EXPIRED),
+                        null
+                    )
+                } else {
+                    callback?.invoke(getError(APIClientError.PERMISSION_DENIED), null)
+                }
             } else {
-                Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION, error)
-                callback?.invoke(UNKNOWN_EXCEPTION.from(ChatProvider::class.java.name), null)
+                log(APIClientError.UNKNOWN_EXCEPTION, error)
+                callback?.invoke(getError(APIClientError.UNKNOWN_EXCEPTION), null)
             }
         }
     }
@@ -459,14 +253,14 @@ class ChatProvider {
      * @param includeMeta Whether to include message metadata.
      * @param callback Callback to return the result or error.
      */
-    internal suspend fun fetchPastMessages(
+    suspend fun fetchPastMessages(
         count: Int = 25,
         start: Long? = System.currentTimeMillis(),
         includeMeta: Boolean = true,
         callback: (List<MessageModel>?, Long?, APIClientError?) -> Unit
     ) {
         if (!isAuthenticated) {
-            callback(null, null, AUTHENTICATION_FAILED.from(ChatProvider::class.java.name))
+            callback(null, null, getError(APIClientError.AUTHENTICATION_FAILED))
             return
         }
 
@@ -493,7 +287,9 @@ class ChatProvider {
                                             this.sender = userMetadataCache[uuid]
                                         } else {
                                             deferredMetadataUpdates.add(async {
-                                                fetchUserMetaData(uuid)
+                                                APICalls.getUserMeta(uuid).onResult {
+                                                    userMetadataCache[uuid] = it
+                                                }
                                                 sender = userMetadataCache[uuid]
                                             })
                                         }
@@ -515,42 +311,21 @@ class ChatProvider {
                         }
                     }
                 } else {
-                    status.exception?.message?.let {
-                        Logging.print(
-                            ChatProvider::class.java,
-                            MESSAGE_LIST_FAILED
-                        )
-                    }
-                    callback(
-                        null,
-                        null,
-                        MESSAGE_LIST_FAILED.from(ChatProvider::class.java.name)
-                    )
+                    callback(null, null, getError(APIClientError.MESSAGE_LIST_FAILED))
                 }
             }
         } catch (error: Exception) {
             when (error) {
                 is PubNubException -> {
                     if (error.statusCode == 403) {
-                        Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
-                        callback.invoke(
-                            null,
-                            null,
-                            PERMISSION_DENIED.from(ChatProvider::class.java.name)
-                        )
+                        callback.invoke(null, null, getError(APIClientError.PERMISSION_DENIED))
                     } else {
-                        Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION)
-                        callback(
-                            null,
-                            null,
-                            UNKNOWN_EXCEPTION.from(ChatProvider::class.java.name)
-                        )
+                        callback(null, null, getError(APIClientError.UNKNOWN_EXCEPTION))
                     }
                 }
 
                 else -> {
-                    Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION)
-                    callback(null, null, UNKNOWN_EXCEPTION.from(ChatProvider::class.java.name))
+                    callback(null, null, getError(APIClientError.UNKNOWN_EXCEPTION))
                 }
             }
         }
@@ -564,7 +339,7 @@ class ChatProvider {
      * @param callback A callback to be invoked after the update attempt with any resulting message
      * and the updated UserTokenModel.
      */
-    internal suspend fun editUser(
+    suspend fun editUser(
         newJwt: String,
         isGuest: Boolean,
         callback: ((APIClientError?, UserTokenModel?) -> Unit)?
@@ -573,22 +348,18 @@ class ChatProvider {
             clearConnection()
             initiateChat(currentShowKey, newJwt, isGuest, callback)
         } else {
-            Logging.print(ChatProvider::class.java, USER_ALREADY_AUTHENTICATED)
-            callback?.invoke(
-                USER_ALREADY_AUTHENTICATED.from(ChatProvider::class.java.name),
-                null
-            )
+            callback?.invoke(getError(APIClientError.USER_ALREADY_AUTHENTICATED), null)
         }
     }
 
     /**
      * Cleans up the current PubNub instance and prepares for re-initialization or shutdown.
      */
-    internal fun clearConnection() {
+    fun clearConnection() {
         pubnub?.unsubscribeAll()
         pubnub?.destroy()
         pubnub = null
-        isSubscribed = false
+        callback = null
     }
 
     /**
@@ -599,7 +370,7 @@ class ChatProvider {
             currentShowKey = globalShowKey
             clearConnection()
             initializePubNub()
-            isSubscribed = false
+            callback = null
         }
     }
 
@@ -609,7 +380,7 @@ class ChatProvider {
      * @param callback Callback to return the count of unread messages based on the
      * name of the channel
      */
-    internal fun countUnreadMessages(callback: (Map<String, Long>?) -> Unit) {
+    fun countUnreadMessages(callback: (Map<String, Long>?) -> Unit) {
         val lastHourTimeToken =
             (Calendar.getInstance().timeInMillis - TimeUnit.HOURS.toMillis(1)) * 10000L
         pubnub?.messageCounts(channels, listOf(lastHourTimeToken))?.async { result, status ->
@@ -619,9 +390,9 @@ class ChatProvider {
                 val error = status.exception
                 error?.statusCode?.let {
                     if (it == 403) {
-                        Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
+                        log(APIClientError.PERMISSION_DENIED)
                     } else {
-                        Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION, error)
+                        log(APIClientError.UNKNOWN_EXCEPTION, error)
                     }
                 }
                 callback(null)
@@ -629,70 +400,61 @@ class ChatProvider {
         }
     }
 
-    internal suspend fun unPublishMessage(
+    /**
+     * Unpublishes a message with the given time token.
+     *
+     * @param timeToken The time token of the message to unpublish.
+     * @param callback  Callback with the result: true if successful, false with an error message otherwise.
+     */
+    suspend fun unPublishMessage(
         timeToken: String,
         callback: ((Boolean, String?) -> Unit)?
     ) {
+        APICalls.deleteMessage(eventId, timeToken, currentJwt).onError {
+            callback?.let { it(false, it.toString()) }
+        }.onResult {
+            callback?.let { it(true, null) }
+        }
+    }
 
-        val headers = mutableMapOf(
-            Constants.SDK_KEY to storedClientKey,
-            Constants.AUTH_KEY to "${Constants.BEARER_KEY} $currentJwt"
-        )
-
-        try {
-            val response = APIHandler.makeRequest(
-                requestUrl = getMessagesUrl(eventId, timeToken),
-                requestMethod = HTTPMethod.DELETE,
-                headers = headers
-            )
-
-            when (response.statusCode) {
-                403 -> {
-                    Logging.print(ChatProvider::class.java, PERMISSION_DENIED)
-                    callback?.invoke(
-                        false,
-                        PERMISSION_DENIED.from(ChatProvider::class.java.name).toString()
-                    )
-                }
-
-                in 200..299 -> {
+    fun likeComment(
+        timeToken: Long,
+        callback: ((Boolean, APIClientError?) -> Unit)? = null
+    ) {
+        pubnub?.let {
+            it.addMessageAction(
+                publishChannel, PNMessageAction("reaction", "like", timeToken)
+            ).async { _, status ->
+                if (!status.error) {
+                    callback?.let { it(false, getError(APIClientError.LIKE_COMMENT_FAILED)) }
+                } else {
                     callback?.let { it(true, null) }
                 }
-
-                else -> {
-                    callback?.let { it(false, response.body) }
-                    println(response.body)
-                    Logging.print(ChatProvider::class.java, response.body)
-                }
-            }
-        } catch (e: Exception) {
-            Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION, e)
-            callback?.let {
-                it(
-                    false,
-                    UNKNOWN_EXCEPTION.from(ChatProvider::class.java.name).toString()
-                )
             }
         }
     }
 
-    private suspend fun fetchUserMetaData(uuid: String) {
-        try {
-            val response = APIHandler.makeRequest(getUserMetaUrl(uuid), HTTPMethod.GET)
-            if (response.statusCode in 200..299) {
-                val jsonObject = JSONObject(response.body)
-                val sender = jsonObject.getJSONObject(KEY_SENDER)
-                val senderModel = SenderModel(
-                    id = sender.getString(KEY_ID),
-                    name = sender.getString(KEY_NAME),
-                    profileUrl = sender.getString(KEY_PROFILE_URL)
-                )
-                userMetadataCache[uuid] = senderModel
-            } else {
-                Logging.print(ChatProvider::class.java, "$UNKNOWN_EXCEPTION: ${response.body}")
+    suspend fun unlikeComment(
+        timeToken: Long,
+        actionTimeToken: Long,
+        callback: ((Boolean, APIClientError?) -> Unit)? = null
+    ) {
+        APICalls.deleteAction(eventId, timeToken.toString(), actionTimeToken.toString(), currentJwt)
+            .onError { error ->
+                callback?.let { it(false, getError(error)) }
+            }.onResult {
+                callback?.let { it(true, null) }
             }
-        } catch (e: Exception) {
-            Logging.print(ChatProvider::class.java, UNKNOWN_EXCEPTION, e)
-        }
+    }
+
+    private fun getError(error: APIClientError): APIClientError {
+        return error.from(ChatProvider::class.java.name)
+    }
+
+    private fun log(code: APIClientError? = null, error: Exception? = null) {
+        if (code != null && error != null)
+            Logging.print(ChatProvider::class.java, code, error)
+        else if (code != null)
+            Logging.print(ChatProvider::class.java, code)
     }
 }

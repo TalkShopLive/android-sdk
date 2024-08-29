@@ -18,6 +18,7 @@ import live.talkshop.sdk.resources.Keys.KEY_HLS_PLAYBACK_URL
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_IMAGE
 import live.talkshop.sdk.resources.Keys.KEY_IMAGES
+import live.talkshop.sdk.resources.Keys.KEY_IN_SHOW_PRODUCT_IDS
 import live.talkshop.sdk.resources.Keys.KEY_LARGE
 import live.talkshop.sdk.resources.Keys.KEY_MASTER
 import live.talkshop.sdk.resources.Keys.KEY_NAME
@@ -30,7 +31,7 @@ import live.talkshop.sdk.resources.Keys.KEY_TRAILERS
 import live.talkshop.sdk.resources.Keys.KEY_VIDEO
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.helpers.HelperFunctions
-import live.talkshop.sdk.utils.networking.URLs
+import live.talkshop.sdk.resources.URLs
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -70,7 +71,17 @@ internal object ShowParser {
             HelperFunctions.parseInt(parseTrailerUrl(streamContentJson, KEY_DURATION)),
             parseVideoThumbnailUrl(productJson),
             parseChannelLogo(productJson),
-            productJson.optString(KEY_BRAND_NAME, "")
+            productJson.optString(KEY_BRAND_NAME, ""),
+            streamContentJson.optJSONArray(KEY_IN_SHOW_PRODUCT_IDS)?.let {
+                val intList = mutableListOf<Int>()
+
+                for (i in 0 until it.length()) {
+                    val value = it.optInt(i)
+                    intList.add(value)
+                }
+
+                intList
+            }
         )
     }
 

@@ -1,6 +1,6 @@
 package live.talkshop.sdk.resources
 
-object Keys {
+internal object Keys {
     const val KEY_PRODUCT = "product"
     const val KEY_STREAMING_CONTENT = "streaming_content"
     const val KEY_PRODUCT_KEY = "product_key"
@@ -31,6 +31,7 @@ object Keys {
     const val KEY_TEXT = "text"
     const val KEY_TYPE = "type"
     const val KEY_PLATFORM = "platform"
+    const val KEY_ASPECT_RATIO = "aspectRatio"
     const val KEY_TIME_TOKEN = "timetoken"
     const val KEY_TIME_ORIGINAL = "original"
     const val KEY_TIME_MESSAGE = "message"
@@ -39,11 +40,12 @@ object Keys {
     const val KEY_IMAGE = "image"
     const val KEY_ATTACHMENT = "attachment"
     const val KEY_LARGE = "large"
-    const val KEY_OWNING_STORE = "owningStore"
+    const val KEY_OWNING_STORE = "owning_store"
     const val KEY_BRAND_NAME = "brand_name"
     const val KEY_STREAM_IN_CLOUD = "stream_in_cloud"
     const val KEY_PROFILE_URL = "profileUrl"
     const val KEY_CHANNEL_CODE = "channelCode"
     const val KEY_IS_VERIFIED = "isVerified"
     const val KEY_TOTAL_VIEWS = "total_views"
+    const val KEY_IN_SHOW_PRODUCT_IDS = "in_show_product_ids"
 }

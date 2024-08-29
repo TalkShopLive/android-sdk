@@ -1,6 +1,6 @@
 package live.talkshop.sdk.resources
 
-object Constants {
+internal object Constants {
     const val CC_FILENAME_END = ".transcript.vtt"
     const val DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss"
     const val SDK_KEY = "x-tsl-sdk-key"
@@ -25,6 +25,8 @@ object Constants {
     const val COLLECTOR_ACTION_SELECT_VIEW_CHAT = "SELECT_VIEW_CHAT"
     const val COLLECTOR_ACTION_UPDATE_USER = "UPDATE_USER"
     const val COLLECTOR_ACTION_VIEW_COUNT = "INCREMENT_VIEW_COUNT"
+    const val COLLECTOR_ACTION_SELECT_SHOW_PRODUCTS = "SELECT_SHOW_PRODUCTS"
 
     const val COLLECTOR_CAT_INTERACTION = "INTERACTION"
+    const val COLLECTOR_CAT_PROCESS = "PROCESS"
 }

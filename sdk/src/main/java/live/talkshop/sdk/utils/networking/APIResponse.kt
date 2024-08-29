@@ -1,6 +1,6 @@
 package live.talkshop.sdk.utils.networking
 
-data class ApiResponse(
+internal data class APIResponse(
     val body: String,
     val statusCode: Int
 )

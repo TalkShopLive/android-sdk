@@ -12,7 +12,7 @@ import live.talkshop.sdk.resources.Keys.KEY_STREAM_KEY
 import live.talkshop.sdk.resources.Keys.KEY_TOTAL_VIEWS
 import live.talkshop.sdk.resources.Keys.KEY_TRAILERS_URL
 import live.talkshop.sdk.utils.helpers.HelperFunctions
-import live.talkshop.sdk.utils.networking.URLs
+import live.talkshop.sdk.resources.URLs
 import org.json.JSONObject
 
 internal object ShowStatusParser {

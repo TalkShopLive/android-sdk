@@ -1,6 +1,6 @@
 package live.talkshop.sdk.utils.helpers
 
-object HelperFunctions {
+internal object HelperFunctions {
     fun parseInt(duration: String?): Int? {
         return if (isNotEmptyOrNull(duration)) {
             duration!!.toInt()
@@ -10,6 +10,6 @@ object HelperFunctions {
     }
 
     fun isNotEmptyOrNull(string: String?): Boolean {
-        return !string.isNullOrEmpty() && !string.equals("null")
+        return !string.isNullOrEmpty() && string != "null"
     }
 }
