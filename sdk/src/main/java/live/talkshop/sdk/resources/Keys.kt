@@ -1,6 +1,6 @@
 package live.talkshop.sdk.resources
 
-object Keys {
+internal object Keys {
     const val KEY_PRODUCT = "product"
     const val KEY_STREAMING_CONTENT = "streaming_content"
     const val KEY_PRODUCT_KEY = "product_key"
@@ -31,6 +31,7 @@ object Keys {
     const val KEY_TEXT = "text"
     const val KEY_TYPE = "type"
     const val KEY_PLATFORM = "platform"
+    const val KEY_ASPECT_RATIO = "aspectRatio"
     const val KEY_TIME_TOKEN = "timetoken"
     const val KEY_TIME_ORIGINAL = "original"
     const val KEY_TIME_MESSAGE = "message"

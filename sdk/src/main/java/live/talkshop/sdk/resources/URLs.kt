@@ -4,7 +4,7 @@ import live.talkshop.sdk.core.authentication.isTestMode
 import live.talkshop.sdk.resources.Constants.CC_FILENAME_END
 import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 
-object URLs {
+internal object URLs {
     private const val URL_BASE_STAGING = "https://staging.cms.talkshop.live/"
     private const val URL_BASE_PROD = "https://cms.talkshop.live/"
     private const val URL_ASSET_BASE_STAGING = "https://assets-dev.talkshop.live/"

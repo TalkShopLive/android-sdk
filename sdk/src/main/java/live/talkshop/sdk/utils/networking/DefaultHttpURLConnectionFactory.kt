@@ -9,6 +9,6 @@ import java.net.URL
  * connection factory in production code to ensure standard behavior
  * for HTTP requests.
  */
-class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {
+internal class DefaultHttpURLConnectionFactory : HttpURLConnectionFactory {
     override fun create(url: URL): HttpURLConnection = url.openConnection() as HttpURLConnection
 }

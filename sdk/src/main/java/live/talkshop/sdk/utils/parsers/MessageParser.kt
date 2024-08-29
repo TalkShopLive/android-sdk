@@ -5,6 +5,7 @@ import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.resources.Constants.MESSAGE_TYPE_COMMENT
+import live.talkshop.sdk.resources.Keys.KEY_ASPECT_RATIO
 import live.talkshop.sdk.resources.Keys.KEY_CHANNEL_CODE
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_CREATED_AT
@@ -21,7 +22,7 @@ import live.talkshop.sdk.resources.Keys.KEY_TYPE
 import org.json.JSONException
 import org.json.JSONObject
 
-object MessageParser {
+internal object MessageParser {
     /**
      * Parses the payload of a [PNMessageResult] to a [MessageModel].
      *
@@ -37,6 +38,7 @@ object MessageParser {
                 text = message.optString(KEY_TEXT),
                 type = message.optString(KEY_TYPE) ?: MESSAGE_TYPE_COMMENT,
                 platform = message.optString(KEY_PLATFORM),
+                aspectRatio = message.optLong(KEY_ASPECT_RATIO),
                 timeToken = timeToken,
                 original = message.optJSONObject(KEY_TIME_ORIGINAL)?.let {
                     it.optJSONObject(KEY_TIME_MESSAGE)

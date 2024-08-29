@@ -24,7 +24,7 @@ internal class ShowProvider {
      * @param callback An optional callback that is invoked upon completion of the request.
      * It provides an error message if something goes wrong, or the ShowModel if successful.
      */
-    internal suspend fun fetchShow(
+    suspend fun fetchShow(
         showKey: String,
         callback: ((APIClientError?, ShowModel?) -> Unit)? = null
     ) {
@@ -49,7 +49,7 @@ internal class ShowProvider {
      * @param callback An optional callback that is invoked upon completion of the request.
      * It provides an error message if something goes wrong, or the ShowStatusModel if successful.
      */
-    internal suspend fun fetchCurrentEvent(
+    suspend fun fetchCurrentEvent(
         showKey: String,
         callback: ((APIClientError?, ShowStatusModel?) -> Unit)? = null
     ) {
@@ -79,7 +79,7 @@ internal class ShowProvider {
      * @param showKey The key of the show to fetch products for.
      * @param callback The callback to return the result: an error or a list of products.
      */
-    internal suspend fun fetchProducts(
+    suspend fun fetchProducts(
         showKey: String,
         callback: ((APIClientError?, List<ProductModel>?) -> Unit)
     ) {

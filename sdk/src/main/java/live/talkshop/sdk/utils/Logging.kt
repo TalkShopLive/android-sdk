@@ -3,7 +3,7 @@ package live.talkshop.sdk.utils
 import live.talkshop.sdk.core.authentication.isDebugMode
 import live.talkshop.sdk.resources.APIClientError
 
-class Logging {
+internal class Logging {
     companion object {
         fun print(className: Class<*>, message: String) {
             if (isDebugMode) {
