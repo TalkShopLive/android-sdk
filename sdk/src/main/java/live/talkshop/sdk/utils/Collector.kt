@@ -3,7 +3,6 @@ package live.talkshop.sdk.utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.isDNT
 import live.talkshop.sdk.resources.URLs.getCollectorUrl
 import live.talkshop.sdk.utils.networking.APIHandler
@@ -44,17 +43,16 @@ internal class Collector private constructor() {
                 put("term", "NOT_SET")
                 put("content", "NOT_SET")
             })
-            put("aspect", JSONObject().apply {
-                put("browser_resolution", "NOT_SET")
-            })
         }
 
-        if (isAuthenticated) {
+        try {
             APIHandler.makeRequest(
                 requestUrl = getCollectorUrl(),
                 requestMethod = HTTPMethod.POST,
                 payload = payload
             )
+        } catch (e: Exception) {
+            Logging.print(Collector::class.java, e)
         }
     }
 
