@@ -86,16 +86,17 @@ Get the current event of a show.
 Show.getStatus(showKey) { error, show -> }
 ```
 
-#### `getProducts(showKey: String, callback: ((APIClientError?, List<ProductModel>?) -> Unit)`
+#### `getProducts(showKey: String, preLive: Boolean, callback: ((APIClientError?, List<ProductModel>?) -> Unit)`
 
 Get the products of a specfic show.
 
 - Parameters:
     - `showKey`: The unique identifier of the show.
+    - `isEntrance`: An optional flag indicating whether the request is related to pre products. Default is false.
     - `callback`: A callback that will be called once the show products is fetched or an error is thrown.
 
 ```kotlin
-Show.getProducts(showKey) { error, show -> }
+Show.getProducts(showKey, preLive) { error, show -> }
 ```
 
 The Product object has a 'variants' of type JSONArray that is structured as such:

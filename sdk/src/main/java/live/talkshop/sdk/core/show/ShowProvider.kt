@@ -26,7 +26,7 @@ internal class ShowProvider {
      */
     suspend fun fetchShow(
         showKey: String,
-        callback: ((APIClientError?, ShowModel?) -> Unit)? = null
+        callback: ((APIClientError?, ShowModel?) -> Unit)? = null,
     ) {
         getShowDetails(showKey).onError {
             callback?.invoke(it, null)
@@ -51,7 +51,7 @@ internal class ShowProvider {
      */
     suspend fun fetchCurrentEvent(
         showKey: String,
-        callback: ((APIClientError?, ShowStatusModel?) -> Unit)? = null
+        callback: ((APIClientError?, ShowStatusModel?) -> Unit)? = null,
     ) {
         getCurrentEvent(showKey).onError {
             callback?.invoke(it, null)
@@ -77,13 +77,15 @@ internal class ShowProvider {
      * Fetches products for a given show key.
      *
      * @param showKey The key of the show to fetch products for.
+     * @property preLive A flag indicating whether the request is related to pre products.
      * @param callback The callback to return the result: an error or a list of products.
      */
     suspend fun fetchProducts(
         showKey: String,
-        callback: ((APIClientError?, List<ProductModel>?) -> Unit)
+        preLive: Boolean,
+        callback: ((APIClientError?, List<ProductModel>?) -> Unit),
     ) {
-        getShowProducts(showKey).onError {
+        getShowProducts(showKey, preLive).onError {
             callback.invoke(it, null)
         }.onResult {
             callback.invoke(null, it)
