@@ -49,7 +49,7 @@ internal object APIHandler {
         requestMethod: HTTPMethod,
         payload: JSONObject? = null,
         headers: Map<String, String> = emptyMap(),
-        body: String? = null
+        body: String? = null,
     ): APIResponse = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
@@ -104,6 +104,11 @@ internal object APIHandler {
                 Logging.print(
                     APIHandler::class.java,
                     "HTTP request failed with status code $responseCode: $responseText"
+                )
+            } else {
+                Logging.print(
+                    APIHandler::class.java,
+                    "HTTP request succeeded with status code $responseCode: $responseText"
                 )
             }
 

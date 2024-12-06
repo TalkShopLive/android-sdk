@@ -75,7 +75,7 @@ internal object APICalls {
                     Either.Result(
                         try {
                             ShowStatusParser.parseFromJson(JSONObject(response.body))
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             ShowStatusModel()
                         }
                     )
@@ -91,9 +91,13 @@ internal object APICalls {
      * Retrieves the products and their info for a show.
      *
      * @param showKey The key associated with the desired show.
+     * @property preLive A flag indicating whether the request is related to pre products.
      * @return An `Either` object containing the `ProductModel` if successful, or an `APIClientError`.
      */
-    suspend fun getShowProducts(showKey: String): Either<APIClientError, List<ProductModel>> {
+    suspend fun getShowProducts(
+        showKey: String,
+        preLive: Boolean,
+    ): Either<APIClientError, List<ProductModel>> {
         var finalResult: Either<APIClientError, List<ProductModel>> =
             Either.Error(APIClientError.UNKNOWN_EXCEPTION)
 
@@ -103,21 +107,30 @@ internal object APICalls {
             if (show.productIds.isNullOrEmpty()) {
                 finalResult = Either.Error(APIClientError.NO_PRODUCTS_FOUND)
             } else {
-                try {
-                    val response = APIHandler.makeRequest(
-                        getMultipleProducts(show.productIds),
-                        HTTPMethod.GET
-                    )
-
-                    finalResult = if (response.statusCode !in 200..299) {
-                        Either.Error(getError(APIClientError.NO_PRODUCTS_FOUND))
-                    } else {
-                        val productModel = ProductParser.parseFromJson(JSONObject(response.body))
-                        Either.Result(productModel)
+                val productIds = if (preLive && (show.entranceProductsRequired == true)) {
+                    show.entranceProductsIds
+                } else {
+                    show.productIds
+                }
+                if (productIds.isNullOrEmpty()) {
+                    finalResult = Either.Error(APIClientError.NO_PRODUCTS_FOUND)
+                } else {
+                    try {
+                        val response = APIHandler.makeRequest(
+                            getMultipleProducts(show.productIds),
+                            HTTPMethod.GET
+                        )
+                        finalResult = if (response.statusCode !in 200..299) {
+                            Either.Error(getError(APIClientError.NO_PRODUCTS_FOUND))
+                        } else {
+                            val productModel =
+                                ProductParser.parseFromJson(JSONObject(response.body))
+                            Either.Result(productModel)
+                        }
+                    } catch (e: Exception) {
+                        Logging.print(APICalls::class.java, e)
+                        finalResult = Either.Error(getError(APIClientError.SHOW_UNKNOWN_EXCEPTION))
                     }
-                } catch (e: Exception) {
-                    Logging.print(APICalls::class.java, e)
-                    finalResult = Either.Error(getError(APIClientError.SHOW_UNKNOWN_EXCEPTION))
                 }
             }
         }
@@ -134,7 +147,7 @@ internal object APICalls {
      */
     suspend fun getUserToken(
         jwt: String,
-        isGuest: Boolean
+        isGuest: Boolean,
     ): Either<APIClientError, UserTokenModel> {
         try {
             val response = APIHandler.makeRequest(
@@ -198,7 +211,7 @@ internal object APICalls {
     suspend fun deleteMessage(
         eventId: String,
         timeToken: String,
-        currentJwt: String
+        currentJwt: String,
     ): Either<APIClientError, Boolean> {
         return executeWithAuthCheck {
             try {
@@ -279,7 +292,7 @@ internal object APICalls {
         eventId: String,
         timeToken: String,
         actionTimeToken: String,
-        currentJwt: String
+        currentJwt: String,
     ): Either<APIClientError, Boolean> {
         return executeWithAuthCheck {
             try {

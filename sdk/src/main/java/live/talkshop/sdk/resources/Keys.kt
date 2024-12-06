@@ -48,4 +48,6 @@ internal object Keys {
     const val KEY_IS_VERIFIED = "isVerified"
     const val KEY_TOTAL_VIEWS = "total_views"
     const val KEY_IN_SHOW_PRODUCT_IDS = "in_show_product_ids"
+    const val KEY_ENTRANCE_PRODUCTS_REQUIRED = "entrance_products_required"
+    const val KEY_ENTRANCE_PRODUCTS_IDS = "entrance_product_ids"
 }

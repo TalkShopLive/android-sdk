@@ -11,6 +11,8 @@ import live.talkshop.sdk.resources.Keys.KEY_DATE
 import live.talkshop.sdk.resources.Keys.KEY_DESCRIPTION
 import live.talkshop.sdk.resources.Keys.KEY_DURATION
 import live.talkshop.sdk.resources.Keys.KEY_ENDED_AT
+import live.talkshop.sdk.resources.Keys.KEY_ENTRANCE_PRODUCTS_IDS
+import live.talkshop.sdk.resources.Keys.KEY_ENTRANCE_PRODUCTS_REQUIRED
 import live.talkshop.sdk.resources.Keys.KEY_EVENTS
 import live.talkshop.sdk.resources.Keys.KEY_EVENT_ID
 import live.talkshop.sdk.resources.Keys.KEY_FILENAME
@@ -73,6 +75,17 @@ internal object ShowParser {
             parseChannelLogo(productJson),
             productJson.optString(KEY_BRAND_NAME, ""),
             streamContentJson.optJSONArray(KEY_IN_SHOW_PRODUCT_IDS)?.let {
+                val intList = mutableListOf<Int>()
+
+                for (i in 0 until it.length()) {
+                    val value = it.optInt(i)
+                    intList.add(value)
+                }
+
+                intList
+            },
+            streamContentJson.optBoolean(KEY_ENTRANCE_PRODUCTS_REQUIRED),
+            streamContentJson.optJSONArray(KEY_ENTRANCE_PRODUCTS_IDS)?.let {
                 val intList = mutableListOf<Int>()
 
                 for (i in 0 until it.length()) {

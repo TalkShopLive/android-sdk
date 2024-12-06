@@ -44,14 +44,16 @@ class Show {
          * Fetches the products for a given show.
          *
          * @param showKey The product key of the show.
+         * @property preLive A flag indicating whether the request is related to pre products. Default is false.
          * @param callback An callback that is invoked upon completion of the request.
          * It provides an error message if something goes wrong, or a list of Products if successful.
          */
         suspend fun getProducts(
             showKey: String,
+            preLive: Boolean = false,
             callback: ((APIClientError?, List<ProductModel>?) -> Unit)
         ) {
-            showProvider.fetchProducts(showKey, callback)
+            showProvider.fetchProducts(showKey, preLive, callback)
         }
     }
 }
