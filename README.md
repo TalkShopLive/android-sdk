@@ -282,7 +282,38 @@ Called when a there is an error.
 
 ```kotlin
 Chat.subscribe(object : Chat.ChatCallback { override fun onStatusChange(error: String) {})
-
 ```
+
+
+## Collect
+
+### Overview
+
+The TSL Android SDK provides methods for tracking user interactions within your app, allowing you to collect analytics on various user actions related to a show.
+
+### Methods
+
+#### `TalkShopLive.Collect(show: ShowModel)`
+
+Initialize the `Collect` instance for a specific show.
+
+- Parameters:
+    - `show`: The `ShowModel` object containing show details.
+
+```kotlin
+val collectInstance = TalkShopLive.Collect(show)
+```
+
+### `collect(eventName: CollectorActions)`
+
+Track a user interaction event.
+
+- Parameters:
+    - `eventName`: The event to be collected, defined in the `CollectorActions` enum.
+
+```kotlin
+collectInstance.collect(eventName = CollectorActions.VIDEO_PLAY)
+```
+
 ## Support
 If you **need help** or have a **general question**, contact <support@talkshoplive.com>.

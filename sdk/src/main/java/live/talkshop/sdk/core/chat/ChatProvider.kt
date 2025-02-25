@@ -20,7 +20,6 @@ import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
-import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 import live.talkshop.sdk.utils.networking.APICalls
@@ -56,7 +55,6 @@ internal class ChatProvider {
     private lateinit var eventId: String
     private lateinit var userId: String
     private lateinit var currentJwt: String
-    private var fromUpdateUser: Boolean = false
     private val userMetadataCache = mutableMapOf<String, SenderModel>()
 
     /**
@@ -130,25 +128,6 @@ internal class ChatProvider {
             eventsChannel = Constants.CHANNEL_EVENTS_PREFIX + it.eventId
             channels = listOfNotNull(publishChannel, eventsChannel)
             eventId = publishChannel
-
-            val action: String
-            val category: String
-            if (fromUpdateUser) {
-                action = Constants.COLLECTOR_ACTION_UPDATE_USER
-                category = Constants.COLLECTOR_CAT_PROCESS
-            } else {
-                action = Constants.COLLECTOR_ACTION_SELECT_VIEW_CHAT
-                category = Constants.COLLECTOR_CAT_INTERACTION
-                fromUpdateUser = true
-            }
-            Collector.collect(
-                action = action,
-                category = category,
-                eventID = it.eventId,
-                showKey = currentShowKey,
-                showStatus = it.status,
-                userId = userId
-            )
         }
     }
 
