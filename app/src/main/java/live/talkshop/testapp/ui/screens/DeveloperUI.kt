@@ -18,7 +18,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -42,23 +44,27 @@ import live.talkshop.sdk.core.chat.Chat
 import live.talkshop.sdk.core.chat.ChatCallback
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.show.Show
+import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.resources.APIClientError
+import live.talkshop.sdk.resources.CollectorActions
 
 @Composable
 fun DeveloperScreen(context: Context, clientKeyString: String, globalShowKey: String, jwt: String) {
     val scrollState = rememberScrollState()
     val timeTokenState = remember { mutableStateOf("17126936597253584") }
+    var showModel by remember { mutableStateOf<ShowModel?>(null) }
     Column(
         modifier = Modifier
             .padding(16.dp)
             .verticalScroll(scrollState)
     ) {
         ClientKeyInputSection(context, clientKeyString)
-        ShowIdInputSection(globalShowKey)
+        ShowIdInputSection(globalShowKey, onShowRetrieved = { showModel = it })
         InitializeChat(jwt, globalShowKey)
         PublishMessage(timeTokenState)
         ChatHistory()
         DeleteMessageSection(timeTokenState)
+        showModel?.let { CollectActionSection(it) }
     }
 }
 
@@ -110,7 +116,7 @@ fun ClientKeyInputSection(context: Context, clientKeyString: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShowIdInputSection(globalShowKey: String) {
+fun ShowIdInputSection(globalShowKey: String, onShowRetrieved: (ShowModel) -> Unit) {
     var showKey by remember { mutableStateOf(globalShowKey) }
     var showDetails by remember { mutableStateOf<String?>(null) }
     var errorText by remember { mutableStateOf<String?>(null) }
@@ -143,6 +149,7 @@ fun ShowIdInputSection(globalShowKey: String) {
                                     "\nAir Date: ${show.airDate}, " +
                                     "\nHLS Playback URL: ${show.hlsPlaybackUrl}"
                             errorText = null
+                            onShowRetrieved(show) // Pass ShowModel to DeveloperScreen
                         } else {
                             errorText = error.toString()
                             showDetails = null
@@ -452,4 +459,62 @@ fun DeleteMessageSection(timeTokenState: MutableState<String>) {
     }
 
     Spacer(modifier = Modifier.height(16.dp))
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CollectActionSection(show: ShowModel) {
+    var selectedAction by remember { mutableStateOf<CollectorActions?>(null) }
+    val collectInstance = remember { TalkShopLive.Collect(show) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        var expanded by remember { mutableStateOf(false) }
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it }
+        ) {
+            OutlinedTextField(
+                value = selectedAction?.name ?: "Select an Action",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Collector Action") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                CollectorActions.values().forEach { action ->
+                    DropdownMenuItem(
+                        text = { Text(action.name.replace("_", " ")) },
+                        onClick = {
+                            selectedAction = action
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                selectedAction?.let { action ->
+                    collectInstance.collect(eventName = action)
+                }
+            },
+            modifier = Modifier.align(Alignment.End),
+            enabled = selectedAction != null
+        ) {
+            Text("Collect")
+        }
+    }
 }
