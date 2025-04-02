@@ -1,0 +1,24 @@
+package live.talkshop.sdk.resources
+
+/**
+ * Enum representing actions tracked for user interactions.
+ */
+enum class CollectorActions {
+    ADD_TO_CART,
+    ADD_TO_CART_AFFILIATE,
+    CUSTOMIZE_PRODUCT,
+    CUSTOMIZE_PRODUCT_QUANTITY_DECREASE,
+    CUSTOMIZE_PRODUCT_QUANTITY_INCREASE,
+    EXPAND_PRODUCT_DETAILS,
+    SELECT_ADD_TO_CART_PDP_DETAILS,
+    SELECT_ADD_TO_CART_STREAM_VIEW,
+    SELECT_PRODUCT,
+    SELECT_PRODUCT_CART,
+    SELECT_VIEW_PRODUCT_DETAILS,
+    VIDEO_COMPLETE,
+    VIDEO_VIEW,
+    VIDEO_PAUSE,
+    VIDEO_PLAY,
+    VIDEO_TIME,
+    VIEW_CONTENT
+}

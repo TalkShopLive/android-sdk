@@ -9,7 +9,7 @@ internal object URLs {
     private const val URL_BASE_PROD = "https://cms.talkshop.live/"
     private const val URL_ASSET_BASE_STAGING = "https://assets-dev.talkshop.live/"
     private const val URL_ASSET_BASE_PROD = "https://assets.talkshop.live/"
-    private const val URL_BASE_COLLECTOR_STAGING = "https://staging.collector.talkshop.live/"
+    private const val URL_BASE_COLLECTOR_STAGING = "https://stg.collector.tslstg.com/"
     private const val URL_BASE_COLLECTOR_PROD = "https://collector.talkshop.live/"
 
     private const val URL_BASE_EVENTS_STAGING = "https://staging.events-api.talkshop.live/"

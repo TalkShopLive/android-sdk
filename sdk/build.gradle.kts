@@ -53,7 +53,7 @@ afterEvaluate {
         publishing.publications.create<MavenPublication>(variant.name) {
             groupId = "com.github.TalkShopLive"
             artifactId = "android-sdk"
-            version = "1.1.3"
+            version = "1.1.4"
 
             pom.withXml {
                 asNode().appendNode("dependencies").apply {

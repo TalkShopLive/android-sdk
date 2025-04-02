@@ -5,7 +5,6 @@ import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.ShowStatusModel
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
-import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APICalls.getCurrentEvent
 import live.talkshop.sdk.utils.networking.APICalls.getShowDetails
 import live.talkshop.sdk.utils.networking.APICalls.getShowProducts
@@ -32,13 +31,6 @@ internal class ShowProvider {
             callback?.invoke(it, null)
         }.onResult {
             callback?.invoke(null, it)
-            Collector.collect(
-                action = Constants.COLLECTOR_ACTION_SELECT_SHOW_METADATA,
-                category = Constants.COLLECTOR_CAT_PROCESS,
-                eventID = it.eventId,
-                showKey = showKey,
-                showStatus = it.status,
-            )
         }
     }
 
@@ -60,13 +52,6 @@ internal class ShowProvider {
                 if (!incrementViewCalledMap.containsKey(showKey) || !incrementViewCalledMap[showKey]!!) {
                     incrementView(it.eventId!!)
                     incrementViewCalledMap[showKey] = true
-                    Collector.collect(
-                        action = Constants.COLLECTOR_ACTION_VIEW_COUNT,
-                        category = Constants.COLLECTOR_CAT_PROCESS,
-                        eventID = it.eventId,
-                        showKey = showKey,
-                        showStatus = it.status,
-                    )
                 }
             }
             callback?.invoke(null, it)
@@ -89,11 +74,6 @@ internal class ShowProvider {
             callback.invoke(it, null)
         }.onResult {
             callback.invoke(null, it)
-            Collector.collect(
-                action = Constants.COLLECTOR_ACTION_SELECT_SHOW_PRODUCTS,
-                category = Constants.COLLECTOR_CAT_PROCESS,
-                showKey = showKey
-            )
         }
     }
 }

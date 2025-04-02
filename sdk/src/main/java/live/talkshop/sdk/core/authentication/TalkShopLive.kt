@@ -5,14 +5,14 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.utils.Logging
-import live.talkshop.sdk.resources.Constants.COLLECTOR_ACTION_SDK_INITIALIZED
 import live.talkshop.sdk.resources.Constants.SDK_KEY
 import live.talkshop.sdk.resources.Constants.KEY_AUTHENTICATED
 import live.talkshop.sdk.resources.Constants.SHARED_PREFS_NAME
 import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_EXCEPTION
 import live.talkshop.sdk.resources.APIClientError.AUTHENTICATION_FAILED
-import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PROCESS
+import live.talkshop.sdk.resources.CollectorActions
 import live.talkshop.sdk.resources.Keys.KEY_VALID_KEY
 import live.talkshop.sdk.utils.Collector
 import live.talkshop.sdk.utils.networking.APIHandler
@@ -55,10 +55,13 @@ class TalkShopLive private constructor(private val context: Context) {
         ) {
             Collector.initialize()
             getInstance(context).initializeInternal(clientKey, debugMode, testMode, dnt, callback)
-            Collector.collect(
-                action = COLLECTOR_ACTION_SDK_INITIALIZED,
-                category = COLLECTOR_CAT_PROCESS
-            )
+        }
+
+        /**
+         * Provides access to an instance of `Collect` for tracking events.
+         */
+        fun Collect(show: ShowModel, userId: String? = null): Collect {
+            return Collect(show, userId)
         }
 
         private fun getInstance(context: Context): TalkShopLive {
@@ -128,5 +131,24 @@ class TalkShopLive private constructor(private val context: Context) {
      */
     private fun setAuthenticated(authenticated: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_AUTHENTICATED, authenticated).apply()
+    }
+
+    /**
+     * Collect class to handle event tracking.
+     */
+    class Collect(private val show: ShowModel, private val userId: String? = null) {
+
+        /**
+         * Collects an event with the specified action.
+         *
+         * @param eventName The action to be tracked.
+         */
+        fun collect(eventName: CollectorActions) {
+            Collector.collect(
+                action = eventName,
+                show = show,
+                userId = userId
+            )
+        }
     }
 }
