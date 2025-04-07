@@ -49,7 +49,7 @@ internal object ProductParser {
             image = imageUrl,
             productSource = productJson.optString("source"),
             affiliateLink = masterJson?.optString("affiliate_link"),
-            name = masterJson?.optString("name")
+            name = productJson.optString("name")
         )
     }
 }
