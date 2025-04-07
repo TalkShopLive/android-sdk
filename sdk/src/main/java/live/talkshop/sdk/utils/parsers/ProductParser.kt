@@ -48,7 +48,8 @@ internal object ProductParser {
             variants = productJson.optJSONArray("variants"),
             image = imageUrl,
             productSource = productJson.optString("source"),
-            affiliateLink = masterJson?.optString("affiliate_link")
+            affiliateLink = masterJson?.optString("affiliate_link"),
+            name = masterJson?.optString("name")
         )
     }
 }

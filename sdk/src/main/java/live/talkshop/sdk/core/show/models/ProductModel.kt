@@ -13,6 +13,7 @@ import org.json.JSONArray
  * @property image The URL for the product's image.
  * @property productSource The source or origin of the product.
  * @property affiliateLink The affiliate link for the product.
+ * @property name The name for the product.
  */
 data class ProductModel(
     @SerializedName("id")
@@ -34,5 +35,8 @@ data class ProductModel(
     val productSource: String?,
 
     @SerializedName("affiliateLink")
-    val affiliateLink: String?
+    val affiliateLink: String?,
+
+    @SerializedName("name")
+    val name: String?,
 )
