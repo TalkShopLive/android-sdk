@@ -5,14 +5,14 @@ import live.talkshop.sdk.resources.Constants.CC_FILENAME_END
 import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 
 internal object URLs {
-    private const val URL_BASE_STAGING = "https://staging.cms.talkshop.live/"
+    private const val URL_BASE_STAGING = "https://stg.cms.tslstg.com/"
     private const val URL_BASE_PROD = "https://cms.talkshop.live/"
     private const val URL_ASSET_BASE_STAGING = "https://assets-dev.talkshop.live/"
     private const val URL_ASSET_BASE_PROD = "https://assets.talkshop.live/"
     private const val URL_BASE_COLLECTOR_STAGING = "https://stg.collector.tslstg.com/"
     private const val URL_BASE_COLLECTOR_PROD = "https://collector.talkshop.live/"
 
-    private const val URL_BASE_EVENTS_STAGING = "https://staging.events-api.talkshop.live/"
+    private const val URL_BASE_EVENTS_STAGING = "https://stg.events-api.tslstg.com/"
     private const val URL_BASE_EVENTS_PROD = "https://events-api.talkshop.live/"
 
     private const val PATH_AUTH = "api2/v1/sdk/"
