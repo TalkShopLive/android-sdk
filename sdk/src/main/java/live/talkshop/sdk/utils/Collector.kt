@@ -9,7 +9,10 @@ import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.resources.CollectorActions
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PAGE_VIEW
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PROCESS
+import live.talkshop.sdk.resources.URLs.URL_COLLECTOR_WALMART
+import live.talkshop.sdk.resources.URLs.URL_PUBLISH_PROD
 import live.talkshop.sdk.resources.URLs.getCollectorUrl
+import live.talkshop.sdk.resources.URLs.getCollectorWatchUrl
 import live.talkshop.sdk.utils.networking.APIHandler
 import live.talkshop.sdk.utils.networking.HTTPMethod
 import org.json.JSONObject
@@ -24,6 +27,7 @@ internal class Collector private constructor() {
         videoKey: String? = "NOT_SET",
         showStatus: String? = "NOT_SET",
         videoTime: String? = "NOT_SET",
+        showTitle: String? = "NOT_SET"
     ) {
         val timestamp = System.currentTimeMillis()
         val display = Resources.getSystem().displayMetrics
@@ -41,6 +45,15 @@ internal class Collector private constructor() {
                 put("video_key", videoKey)
                 put("video_status", showStatus)
                 put("video_time", videoTime)
+                put("show_id", showKey)
+            })
+            put("page_metrics", JSONObject().apply {
+                put("origin", URL_PUBLISH_PROD)
+                put("host", URL_PUBLISH_PROD.removePrefix("https://"))
+                put("referrer", URL_COLLECTOR_WALMART)
+                put("page_url", getCollectorWatchUrl(showKey))
+                put("page_url_raw", getCollectorWatchUrl(showKey))
+                put("page_title", showTitle)
             })
             put("aspect", JSONObject().apply {
                 put("browser_resolution", "NOT_SET")
@@ -93,7 +106,8 @@ internal class Collector private constructor() {
                     storeId = show?.id?.toString(),
                     videoKey = show?.eventId,
                     showStatus = show?.status,
-                    videoTime = show?.duration?.toString()
+                    videoTime = show?.duration?.toString(),
+                    showTitle = show?.name
                 )
             }
         }
