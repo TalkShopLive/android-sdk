@@ -20,6 +20,7 @@ import live.talkshop.sdk.utils.networking.HTTPMethod
 import live.talkshop.sdk.resources.URLs.getAuthUrl
 import org.json.JSONObject
 import java.lang.ref.WeakReference
+import androidx.core.content.edit
 
 /**
  * Class responsible for managing TalkShopLive authentication and initialization.
@@ -51,7 +52,7 @@ class TalkShopLive private constructor(private val context: Context) {
             debugMode: Boolean = false,
             testMode: Boolean = false,
             dnt: Boolean = false,
-            callback: ((Boolean) -> Unit)? = null
+            callback: ((Boolean) -> Unit)? = null,
         ) {
             Collector.initialize()
             getInstance(context).initializeInternal(clientKey, debugMode, testMode, dnt, callback)
@@ -82,7 +83,7 @@ class TalkShopLive private constructor(private val context: Context) {
         debugMode: Boolean,
         testMode: Boolean,
         dnt: Boolean,
-        callback: ((Boolean) -> Unit)?
+        callback: ((Boolean) -> Unit)?,
     ) {
         isDebugMode = debugMode
         isTestMode = testMode
@@ -130,13 +131,13 @@ class TalkShopLive private constructor(private val context: Context) {
      * @param authenticated The authentication status to be set.
      */
     private fun setAuthenticated(authenticated: Boolean) {
-        sharedPreferences.edit().putBoolean(KEY_AUTHENTICATED, authenticated).apply()
+        sharedPreferences.edit { putBoolean(KEY_AUTHENTICATED, authenticated) }
     }
 
     /**
      * Collect class to handle event tracking.
      */
-    class Collect(private val show: ShowModel, private val userId: String? = null) {
+    class Collect(private val show: ShowModel, private val userId: String) {
 
         /**
          * Collects an event with the specified action.

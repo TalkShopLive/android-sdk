@@ -293,12 +293,13 @@ The TSL Android SDK provides methods for tracking user interactions within your 
 
 ### Methods
 
-#### `TalkShopLive.Collect(show: ShowModel)`
+#### `TalkShopLive.Collect(show: ShowModel, userId: String)`
 
 Initialize the `Collect` instance for a specific show.
 
 - Parameters:
     - `show`: The `ShowModel` object containing show details.
+    - `userId`: The `userId` string.
 
 ```kotlin
 val collectInstance = TalkShopLive.Collect(show)
