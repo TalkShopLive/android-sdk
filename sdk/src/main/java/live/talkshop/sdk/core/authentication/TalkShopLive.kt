@@ -21,6 +21,7 @@ import live.talkshop.sdk.resources.URLs.getAuthUrl
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 import androidx.core.content.edit
+import live.talkshop.sdk.core.show.models.EventModel
 
 /**
  * Class responsible for managing TalkShopLive authentication and initialization.
@@ -137,18 +138,19 @@ class TalkShopLive private constructor(private val context: Context) {
     /**
      * Collect class to handle event tracking.
      */
-    class Collect(private val show: ShowModel, private val userId: String) {
+    class Collect(private val event: EventModel, private val userId: String) {
 
         /**
          * Collects an event with the specified action.
          *
          * @param eventName The action to be tracked.
          */
-        fun collect(eventName: CollectorActions) {
+        fun collect(eventName: CollectorActions, videoTime: Int) {
             Collector.collect(
                 action = eventName,
-                show = show,
-                userId = userId
+                event = event,
+                userId = userId,
+                videoTime = videoTime.toString()
             )
         }
     }

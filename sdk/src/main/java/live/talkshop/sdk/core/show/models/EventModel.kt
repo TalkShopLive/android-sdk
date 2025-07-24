@@ -13,7 +13,7 @@ import com.google.gson.annotations.SerializedName
  * @property eventId The unique identifier for the event. It can be null if the event ID is not available.
  * @property duration The duration of the show in seconds. It can be null if the duration is not specified.
  */
-data class ShowStatusModel(
+data class EventModel(
     @SerializedName("showKey")
     val showKey: String? = null,
 

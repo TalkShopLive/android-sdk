@@ -293,27 +293,28 @@ The TSL Android SDK provides methods for tracking user interactions within your 
 
 ### Methods
 
-#### `TalkShopLive.Collect(show: ShowModel, userId: String)`
+#### `TalkShopLive.Collect(event: EventModel, userId: String)`
 
 Initialize the `Collect` instance for a specific show.
 
 - Parameters:
-    - `show`: The `ShowModel` object containing show details.
+    - `event`: The `EventModel` object containing current show details.
     - `userId`: The `userId` string.
 
 ```kotlin
-val collectInstance = TalkShopLive.Collect(show)
+val collectInstance = TalkShopLive.Collect(event, userId)
 ```
 
-### `collect(eventName: CollectorActions)`
+### `collect(eventName: CollectorActions, videoTime: Int)`
 
 Track a user interaction event.
 
 - Parameters:
     - `eventName`: The event to be collected, defined in the `CollectorActions` enum.
+    - `videoTime`: The video time of the current show.
 
 ```kotlin
-collectInstance.collect(eventName = CollectorActions.VIDEO_PLAY)
+collectInstance.collect(eventName = CollectorActions.VIDEO_PLAY, currentShow.videoTime)
 ```
 
 ## Support

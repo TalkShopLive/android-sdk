@@ -1,12 +1,13 @@
 package live.talkshop.sdk.utils.networking
 
+import live.talkshop.sdk.core.authentication.currentShow
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.storedClientKey
 import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.core.show.models.ProductModel
 import live.talkshop.sdk.core.show.models.ShowModel
-import live.talkshop.sdk.core.show.models.ShowStatusModel
+import live.talkshop.sdk.core.show.models.EventModel
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Keys
@@ -47,6 +48,7 @@ internal object APICalls {
                     Either.Error(getError(APIClientError.SHOW_NOT_FOUND))
                 } else {
                     val showModel = ShowParser.parseFromJson(JSONObject(response.body))
+                    currentShow = showModel
                     Either.Result(showModel)
                 }
             } catch (e: Exception) {
@@ -62,7 +64,7 @@ internal object APICalls {
      * @param showKey The key associated with the desired show.
      * @return An `Either` object containing the `ShowStatusModel` if successful, or an `APIClientError`.
      */
-    suspend fun getCurrentEvent(showKey: String): Either<APIClientError, ShowStatusModel> {
+    suspend fun getCurrentEvent(showKey: String): Either<APIClientError, EventModel> {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(
@@ -76,7 +78,7 @@ internal object APICalls {
                         try {
                             ShowStatusParser.parseFromJson(JSONObject(response.body))
                         } catch (_: Exception) {
-                            ShowStatusModel()
+                            EventModel()
                         }
                     )
                 }
@@ -179,7 +181,7 @@ internal object APICalls {
      * @param currentShowKey The key associated with the current show.
      * @return An `Either` object containing the `ShowStatusModel` if successful, or an `APIClientError`.
      */
-    suspend fun getCurrentStream(currentShowKey: String): Either<APIClientError, ShowStatusModel> {
+    suspend fun getCurrentStream(currentShowKey: String): Either<APIClientError, EventModel> {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(

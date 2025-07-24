@@ -4,8 +4,9 @@ import android.content.res.Resources
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import live.talkshop.sdk.core.authentication.currentShow
 import live.talkshop.sdk.core.authentication.isDNT
-import live.talkshop.sdk.core.show.models.ShowModel
+import live.talkshop.sdk.core.show.models.EventModel
 import live.talkshop.sdk.resources.CollectorActions
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PAGE_VIEW
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PROCESS
@@ -91,8 +92,9 @@ internal class Collector private constructor() {
 
         fun collect(
             action: CollectorActions,
-            show: ShowModel? = null,
+            event: EventModel? = null,
             userId: String? = null,
+            videoTime: String? = null
         ) {
             if (isDNT) {
                 return
@@ -102,12 +104,12 @@ internal class Collector private constructor() {
                     action = action,
                     category = if (action == CollectorActions.VIEW_CONTENT) COLLECTOR_CAT_PAGE_VIEW else COLLECTOR_CAT_PROCESS,
                     userId = userId,
-                    showKey = show?.showKey,
-                    storeId = show?.id?.toString(),
-                    videoKey = show?.eventId,
-                    showStatus = show?.status,
-                    videoTime = show?.duration?.toString(),
-                    showTitle = show?.name
+                    showKey = currentShow?.showKey,
+                    storeId = currentShow?.id?.toString(),
+                    videoKey = currentShow?.eventId,
+                    showStatus = event?.status,
+                    videoTime = videoTime,
+                    showTitle = currentShow?.name
                 )
             }
         }
