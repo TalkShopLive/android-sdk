@@ -305,15 +305,13 @@ Initialize the `Collect` instance for a specific show.
 val collectInstance = TalkShopLive.Collect(event, userId)
 ```
 
-### `collect(eventName: CollectorActions, videoTime: Int, productKey: String?, variantId: Int?)`
+### `collect(eventName: CollectorActions, videoTime: Int)`
 
 Track a user interaction event.
 
 - Parameters:
     - `eventName`: The event to be collected, defined in the `CollectorActions` enum.
     - `videoTime`: The video time of the current show.
-    - `productKey`: An optional field for the product key of the show.
-    - `variantId`: An optional field for the variant ID of the product.
 
 ```kotlin
 collectInstance.collect(eventName = CollectorActions.VIDEO_PLAY, currentShow.videoTime)
