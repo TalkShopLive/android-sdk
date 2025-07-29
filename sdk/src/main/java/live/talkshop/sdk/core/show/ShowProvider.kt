@@ -2,7 +2,7 @@ package live.talkshop.sdk.core.show
 
 import live.talkshop.sdk.core.show.models.ProductModel
 import live.talkshop.sdk.core.show.models.ShowModel
-import live.talkshop.sdk.core.show.models.ShowStatusModel
+import live.talkshop.sdk.core.show.models.EventModel
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.utils.networking.APICalls.getCurrentEvent
@@ -43,7 +43,7 @@ internal class ShowProvider {
      */
     suspend fun fetchCurrentEvent(
         showKey: String,
-        callback: ((APIClientError?, ShowStatusModel?) -> Unit)? = null,
+        callback: ((APIClientError?, EventModel?) -> Unit)? = null,
     ) {
         getCurrentEvent(showKey).onError {
             callback?.invoke(it, null)

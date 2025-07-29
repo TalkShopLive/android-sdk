@@ -508,7 +508,7 @@ fun CollectActionSection(show: ShowModel) {
         Button(
             onClick = {
                 selectedAction?.let { action ->
-                    collectInstance.collect(eventName = action)
+                    collectInstance.collect(eventName = action, videoTime = 1)
                 }
             },
             modifier = Modifier.align(Alignment.End),
