@@ -34,6 +34,7 @@ internal object ProductParser {
                 ?.optString("original")
         }
 
+        //Parses the product key from the master JSON object
         val productKey = productJson.optString("product_key")
         val hasVariants = variantsArray?.length()?.let { it > 0 } ?: false
         val variantId = if (!hasVariants) {
@@ -56,5 +57,4 @@ internal object ProductParser {
             variantId = variantId
         )
     }
-
 }

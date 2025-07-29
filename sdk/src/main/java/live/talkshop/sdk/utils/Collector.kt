@@ -30,7 +30,7 @@ internal class Collector private constructor() {
         videoTime: Int? = 0,
         showTitle: String? = "NOT_SET",
         productKey: String? = "NOT_SET",
-        variantId: Int? = 0
+        variantId: Int? = 0,
     ) {
         val timestamp = System.currentTimeMillis()
         val display = Resources.getSystem().displayMetrics
@@ -101,7 +101,7 @@ internal class Collector private constructor() {
             userId: String? = null,
             videoTime: Int? = 0,
             productKey: String? = null,
-            variantId: Int? = 0
+            variantId: Int? = 0,
         ) {
             if (isDNT) {
                 return

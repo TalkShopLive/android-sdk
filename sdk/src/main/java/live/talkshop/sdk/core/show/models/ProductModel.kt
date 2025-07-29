@@ -48,5 +48,5 @@ data class ProductModel(
 
     val hasVariants: Boolean,
 
-    val variantId: Int?
+    val variantId: Int?,
 )
