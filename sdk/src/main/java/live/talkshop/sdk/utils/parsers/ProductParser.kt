@@ -56,4 +56,5 @@ internal object ProductParser {
             variantId = variantId
         )
     }
+
 }
