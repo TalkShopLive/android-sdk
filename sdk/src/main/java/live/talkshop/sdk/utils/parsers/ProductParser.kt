@@ -12,14 +12,9 @@ internal object ProductParser {
      */
     fun parseFromJson(json: JSONObject): List<ProductModel> {
         val productsArray = json.getJSONArray("products")
-        val productList = mutableListOf<ProductModel>()
-
-        for (i in 0 until productsArray.length()) {
-            val productJson = productsArray.getJSONObject(i)
-            productList.add(parseSingleProduct(productJson))
+        return List(productsArray.length()) { i ->
+            parseSingleProduct(productsArray.getJSONObject(i))
         }
-
-        return productList
     }
 
     /**
@@ -31,25 +26,34 @@ internal object ProductParser {
     private fun parseSingleProduct(productJson: JSONObject): ProductModel {
         val masterJson = productJson.optJSONObject("master")
         val imagesArray = productJson.optJSONArray("images")
+        val variantsArray = productJson.optJSONArray("variants")
 
-        val imageUrl = imagesArray?.let {
-            if (it.length() > 0) {
-                val firstImage = it.getJSONObject(0)
-                firstImage.optJSONObject("attachment")?.optString("original")
-            } else {
-                null
-            }
+        val imageUrl = imagesArray?.takeIf { it.length() > 0 }?.run {
+            getJSONObject(0)
+                .optJSONObject("attachment")
+                ?.optString("original")
+        }
+
+        val productKey = productJson.optString("product_key")
+        val hasVariants = variantsArray?.length()?.let { it > 0 } ?: false
+        val variantId = if (!hasVariants) {
+            masterJson?.optInt("id", -1)?.takeIf { it >= 0 }
+        } else {
+            null
         }
 
         return ProductModel(
             id = productJson.optInt("id", 0),
+            productKey = productKey,
             sku = masterJson?.optString("sku"),
             description = productJson.optString("description"),
-            variants = productJson.optJSONArray("variants"),
+            variants = variantsArray,
             image = imageUrl,
             productSource = productJson.optString("source"),
             affiliateLink = masterJson?.optString("affiliate_link"),
-            name = productJson.optString("name")
+            name = productJson.optString("name"),
+            hasVariants = hasVariants,
+            variantId = variantId
         )
     }
 }
