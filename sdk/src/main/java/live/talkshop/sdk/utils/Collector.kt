@@ -27,8 +27,10 @@ internal class Collector private constructor() {
         storeId: String? = "NOT_SET",
         videoKey: String? = "NOT_SET",
         showStatus: String? = "NOT_SET",
-        videoTime: String? = "NOT_SET",
-        showTitle: String? = "NOT_SET"
+        videoTime: Int? = 0,
+        showTitle: String? = "NOT_SET",
+        productKey: String? = "NOT_SET",
+        variantId: Int? = 0,
     ) {
         val timestamp = System.currentTimeMillis()
         val display = Resources.getSystem().displayMetrics
@@ -47,6 +49,9 @@ internal class Collector private constructor() {
                 put("video_status", showStatus)
                 put("video_time", videoTime)
                 put("show_id", showKey)
+                put("productKey", productKey)
+                put("variantId", variantId)
+
             })
             put("page_metrics", JSONObject().apply {
                 put("origin", URL_PUBLISH_PROD)
@@ -94,7 +99,9 @@ internal class Collector private constructor() {
             action: CollectorActions,
             event: EventModel? = null,
             userId: String? = null,
-            videoTime: String? = null
+            videoTime: Int? = 0,
+            productKey: String? = null,
+            variantId: Int? = 0,
         ) {
             if (isDNT) {
                 return
@@ -109,7 +116,9 @@ internal class Collector private constructor() {
                     videoKey = currentShow?.eventId,
                     showStatus = event?.status,
                     videoTime = videoTime,
-                    showTitle = currentShow?.name
+                    showTitle = currentShow?.name,
+                    productKey = productKey,
+                    variantId = variantId
                 )
             }
         }
