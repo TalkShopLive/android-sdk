@@ -1,7 +1,7 @@
 package live.talkshop.sdk.utils.parsers
 
 import live.talkshop.sdk.core.authentication.globalShowId
-import live.talkshop.sdk.core.show.models.ShowStatusModel
+import live.talkshop.sdk.core.show.models.EventModel
 import live.talkshop.sdk.resources.Keys.KEY_DURATION
 import live.talkshop.sdk.resources.Keys.KEY_FILENAME
 import live.talkshop.sdk.resources.Keys.KEY_HLS_PLAYBACK_URL
@@ -24,9 +24,9 @@ internal object ShowStatusParser {
      * @param statusJson The JSONObject containing show status information.
      * @return A ShowStatusModel instance populated with data from the provided JSON object.
      */
-    fun parseFromJson(statusJson: JSONObject): ShowStatusModel {
+    fun parseFromJson(statusJson: JSONObject): EventModel {
         globalShowId = statusJson.getString(KEY_ID)
-        return ShowStatusModel(
+        return EventModel(
             statusJson.optString(KEY_STREAM_KEY, ""),
             statusJson.optString(KEY_STATUS, ""),
             statusJson.optString(KEY_HLS_PLAYBACK_URL, ""),

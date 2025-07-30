@@ -5,15 +5,21 @@ import live.talkshop.sdk.resources.Constants.CC_FILENAME_END
 import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 
 internal object URLs {
-    private const val URL_BASE_STAGING = "https://staging.cms.talkshop.live/"
+    private const val URL_BASE_STAGING = "https://stg.cms.tslstg.com/"
     private const val URL_BASE_PROD = "https://cms.talkshop.live/"
     private const val URL_ASSET_BASE_STAGING = "https://assets-dev.talkshop.live/"
     private const val URL_ASSET_BASE_PROD = "https://assets.talkshop.live/"
     private const val URL_BASE_COLLECTOR_STAGING = "https://stg.collector.tslstg.com/"
     private const val URL_BASE_COLLECTOR_PROD = "https://collector.talkshop.live/"
 
-    private const val URL_BASE_EVENTS_STAGING = "https://staging.events-api.talkshop.live/"
+    private const val URL_BASE_EVENTS_STAGING = "https://stg.events-api.tslstg.com/"
     private const val URL_BASE_EVENTS_PROD = "https://events-api.talkshop.live/"
+
+    internal const val URL_PUBLISH_PROD = "https://publish.talkshop.live"
+
+    internal const val URL_COLLECTOR_WALMART = "https://www.walmart.com/"
+    internal const val URL_COLLECTOR_WATCH_STAGING = "https://stg.frontend.tslstg.com/"
+    internal const val URL_COLLECTOR_WATCH_PROD = "https://talkshop.live/"
 
     private const val PATH_AUTH = "api2/v1/sdk/"
     private const val PATH_SHOW_DETAILS = "api/products/digital/streaming_content/"
@@ -22,6 +28,7 @@ internal object URLs {
     private const val PATH_STREAMS_CURRENT = "streams/current/"
     private const val PATH_EVENTS = "events/"
     private const val PATH_EVENT = "event/"
+    private const val PATH_WATCH = "watch/"
     private const val PATH_INCREMENT = "increment/"
     private const val PATH_GUEST_TOKEN = "chat/guest_token/"
     private const val PATH_FED_TOKEN = "chat/federated_user_token/"
@@ -98,7 +105,7 @@ internal object URLs {
     fun getMessagesUrl(
         eventId: String,
         timeToken: String,
-        actionTimeToken: String? = null
+        actionTimeToken: String? = null,
     ): String {
         return if (actionTimeToken == null) {
             if (isTestMode) {
@@ -144,6 +151,14 @@ internal object URLs {
             "$URL_BASE_STAGING$PATH_SENDERS_META$uuid"
         } else {
             "$URL_BASE_PROD$PATH_SENDERS_META$uuid"
+        }
+    }
+
+    fun getCollectorWatchUrl(showKey: String?): String {
+        return if (isTestMode) {
+            "$URL_COLLECTOR_WATCH_STAGING$PATH_WATCH$showKey"
+        } else {
+            "$URL_COLLECTOR_WATCH_PROD$PATH_WATCH$showKey"
         }
     }
 }
