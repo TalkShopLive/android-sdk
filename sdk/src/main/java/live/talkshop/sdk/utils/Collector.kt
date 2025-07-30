@@ -36,7 +36,7 @@ internal class Collector private constructor() {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.1.6")
+            put("version", "1.1.7")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
