@@ -63,7 +63,16 @@ class TalkShopLive private constructor(private val context: Context) {
          * Provides access to an instance of `Collect` for tracking events.
          */
         fun Collect(show: ShowModel, userId: String? = null): Collect {
-            return Collect(show, userId)
+            val event = EventModel(
+                showKey = show.showKey,
+                status = show.status,
+                hlsPlaybackUrl = show.hlsPlaybackUrl,
+                hlsUrl = show.hlsUrl,
+                trailerUrl = show.trailerUrl,
+                eventId = show.eventId,
+                duration = show.duration
+            )
+            return Collect(event, userId ?: "NOT_SET")
         }
 
         private fun getInstance(context: Context): TalkShopLive {
@@ -150,7 +159,7 @@ class TalkShopLive private constructor(private val context: Context) {
                 action = eventName,
                 event = event,
                 userId = userId,
-                videoTime = videoTime.toString()
+                videoTime = videoTime
             )
         }
     }
