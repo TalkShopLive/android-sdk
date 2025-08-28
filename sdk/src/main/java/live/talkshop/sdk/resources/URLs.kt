@@ -23,9 +23,9 @@ internal object URLs {
 
     private const val PATH_AUTH = "api2/v1/sdk/"
     private const val PATH_SHOW_DETAILS = "api/products/digital/streaming_content/"
-    private const val PATH_SHOWS = "api/shows/"
+    private const val PATH_SHOWS_V1 = "api/v1/shows/"
+    private const val PATH_STATUS = "status"
     private const val PATH_PRODUCTS = "api/fetch_multiple_products?per_page=50&"
-    private const val PATH_STREAMS_CURRENT = "streams/current/"
     private const val PATH_EVENTS = "events/"
     private const val PATH_EVENT = "event/"
     private const val PATH_WATCH = "watch/"
@@ -69,14 +69,6 @@ internal object URLs {
             }
         } else {
             null
-        }
-    }
-
-    fun getCurrentStreamUrl(showKey: String): String {
-        return if (isTestMode) {
-            "$URL_BASE_STAGING$PATH_SHOWS$showKey/$PATH_STREAMS_CURRENT"
-        } else {
-            "$URL_BASE_PROD$PATH_SHOWS$showKey/$PATH_STREAMS_CURRENT"
         }
     }
 
@@ -159,6 +151,14 @@ internal object URLs {
             "$URL_COLLECTOR_WATCH_STAGING$PATH_WATCH$showKey"
         } else {
             "$URL_COLLECTOR_WATCH_PROD$PATH_WATCH$showKey"
+        }
+    }
+
+    fun getShowStatusUrl(showKey: String): String {
+        return if (isTestMode) {
+            "$URL_BASE_STAGING$PATH_SHOWS_V1$showKey/$PATH_STATUS"
+        } else {
+            "$URL_BASE_PROD$PATH_SHOWS_V1$showKey/$PATH_STATUS"
         }
     }
 }

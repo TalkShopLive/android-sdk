@@ -13,10 +13,10 @@ import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Keys
 import live.talkshop.sdk.resources.Keys.KEY_SENDER
 import live.talkshop.sdk.resources.URLs
-import live.talkshop.sdk.resources.URLs.getCurrentStreamUrl
 import live.talkshop.sdk.resources.URLs.getMessagesUrl
 import live.talkshop.sdk.resources.URLs.getMultipleProducts
 import live.talkshop.sdk.resources.URLs.getShowDetailsUrl
+import live.talkshop.sdk.resources.URLs.getShowStatusUrl
 import live.talkshop.sdk.resources.URLs.getUserMetaUrl
 import live.talkshop.sdk.utils.helpers.Either
 import live.talkshop.sdk.utils.Logging
@@ -68,7 +68,7 @@ internal object APICalls {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(
-                    getCurrentStreamUrl(showKey),
+                    getShowStatusUrl(showKey),
                     HTTPMethod.GET
                 )
                 if (response.statusCode !in 200..299) {
@@ -185,7 +185,7 @@ internal object APICalls {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(
-                    getCurrentStreamUrl(currentShowKey),
+                    getShowStatusUrl(currentShowKey),
                     HTTPMethod.GET
                 )
 
