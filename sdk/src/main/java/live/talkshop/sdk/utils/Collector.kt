@@ -31,6 +31,8 @@ internal class Collector private constructor() {
         showTitle: String? = "NOT_SET",
         productKey: String? = "NOT_SET",
         variantId: Int? = 0,
+        productId: String? = "NOT_SET",
+        productOwningChannelId : String? = "NOT_SET"
     ) {
         val timestamp = System.currentTimeMillis()
         val display = Resources.getSystem().displayMetrics
@@ -51,7 +53,8 @@ internal class Collector private constructor() {
                 put("show_id", showKey)
                 put("productKey", productKey)
                 put("variantId", variantId)
-
+                put("productId", productId)
+                put("product_owning_channel_id ", productOwningChannelId)
             })
             put("page_metrics", JSONObject().apply {
                 put("origin", URL_PUBLISH_PROD)
@@ -102,6 +105,8 @@ internal class Collector private constructor() {
             videoTime: Int? = 0,
             productKey: String? = null,
             variantId: Int? = 0,
+            productId: String? = null,
+            productOwningChannelId: String? = null
         ) {
             if (isDNT) {
                 return
@@ -118,7 +123,9 @@ internal class Collector private constructor() {
                     videoTime = videoTime,
                     showTitle = currentShow?.name,
                     productKey = productKey,
-                    variantId = variantId
+                    variantId = variantId,
+                    productId = productId,
+                    productOwningChannelId = productOwningChannelId
                 )
             }
         }
