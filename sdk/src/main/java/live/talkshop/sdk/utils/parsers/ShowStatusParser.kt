@@ -4,12 +4,10 @@ import live.talkshop.sdk.core.authentication.globalShowId
 import live.talkshop.sdk.core.show.models.EventModel
 import live.talkshop.sdk.resources.Keys.KEY_DATA
 import live.talkshop.sdk.resources.Keys.KEY_DURATION
-import live.talkshop.sdk.resources.Keys.KEY_HLS_PLAYBACK_URL
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_STATE
 import live.talkshop.sdk.resources.Keys.KEY_STREAM_KEY
 import live.talkshop.sdk.resources.Keys.KEY_TOTAL_VIEWS
-import live.talkshop.sdk.resources.Keys.KEY_TRAILERS_URL
 import live.talkshop.sdk.resources.Keys.KEY_URL
 import org.json.JSONObject
 
