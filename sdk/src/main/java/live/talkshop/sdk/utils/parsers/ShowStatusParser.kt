@@ -6,7 +6,6 @@ import live.talkshop.sdk.resources.Keys.KEY_DATA
 import live.talkshop.sdk.resources.Keys.KEY_DURATION
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_STATE
-import live.talkshop.sdk.resources.Keys.KEY_STREAM_KEY
 import live.talkshop.sdk.resources.Keys.KEY_TOTAL_VIEWS
 import live.talkshop.sdk.resources.Keys.KEY_URL
 import org.json.JSONObject
@@ -20,11 +19,11 @@ internal object ShowStatusParser {
      * @param statusJson The JSONObject containing show status information.
      * @return A ShowStatusModel instance populated with data from the provided JSON object.
      */
-    fun parseFromJson(statusJson: JSONObject, showKey: String? = null): EventModel {
+    fun parseFromJson(statusJson: JSONObject, showKey: String): EventModel {
         globalShowId = showKey
         val json = statusJson.getJSONObject(KEY_DATA)
         return EventModel(
-            json.optString(KEY_STREAM_KEY, ""),
+            showKey,
             json.optString(KEY_STATE, ""),
             json.optString(KEY_URL, ""),
             json.optString(KEY_URL, ""),

@@ -76,7 +76,7 @@ internal object APICalls {
                 } else {
                     Either.Result(
                         try {
-                            ShowStatusParser.parseFromJson(JSONObject(response.body))
+                            ShowStatusParser.parseFromJson(JSONObject(response.body), showKey)
                         } catch (_: Exception) {
                             EventModel()
                         }
@@ -193,7 +193,12 @@ internal object APICalls {
                     Either.Error(getError(APIClientError.CHANNEL_SUBSCRIPTION_FAILED))
                 } else {
                     Logging.print(APICalls::class.java, "Channels subscribe success")
-                    Either.Result(ShowStatusParser.parseFromJson(JSONObject(response.body)))
+                    Either.Result(
+                        ShowStatusParser.parseFromJson(
+                            JSONObject(response.body),
+                            currentShowKey
+                        )
+                    )
                 }
             } catch (e: Exception) {
                 Logging.print(APICalls::class.java, e)

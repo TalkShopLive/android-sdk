@@ -22,8 +22,6 @@ internal object Keys {
     const val KEY_VIDEO = "video"
     const val KEY_EVENTS = "events"
     const val KEY_CURRENT_EVENT = "current_event"
-    const val KEY_STREAM_KEY = "stream_key"
-    const val KEY_TRAILERS_URL = "trailer_url"
     const val KEY_PUBLISH_KEY = "publish_key"
     const val KEY_SUBSCRIBE_KEY = "subscribe_key"
     const val KEY_TOKEN = "token"
