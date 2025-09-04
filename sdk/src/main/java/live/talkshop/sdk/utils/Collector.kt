@@ -25,7 +25,7 @@ internal class Collector private constructor() {
         userId: String? = "NOT_SET",
         showKey: String? = "NOT_SET",
         storeId: String? = "NOT_SET",
-        videoKey: String? = "NOT_SET",
+        videoKey: Int? = 0,
         showStatus: String? = "NOT_SET",
         videoTime: Int? = 0,
         showTitle: String? = "NOT_SET",
@@ -40,7 +40,7 @@ internal class Collector private constructor() {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.1.8")
+            put("version", "2.0.0")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {

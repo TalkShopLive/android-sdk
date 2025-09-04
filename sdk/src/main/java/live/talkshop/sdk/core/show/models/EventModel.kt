@@ -30,7 +30,7 @@ data class EventModel(
     val trailerUrl: String? = null,
 
     @SerializedName("eventId")
-    val eventId: String? = null,
+    val eventId: Int? = 0,
 
     @SerializedName("duration")
     val duration: Int? = 0,

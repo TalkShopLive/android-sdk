@@ -9,7 +9,7 @@ import java.util.Date
  * @property id The unique identifier of the show.
  * @property showKey The key associated with the show.
  * @property name The name of the show.
- * @property description A description of the show.
+ * @property showDescription A description of the show.
  * @property status The current status of the show.
  * @property hlsPlaybackUrl The HLS playback URL for the show.
  * @property hlsUrl The HLS URL for the show.
@@ -36,10 +36,13 @@ data class ShowModel(
     val name: String?,
 
     @SerializedName("description")
-    val description: String?,
+    val showDescription: String?,
 
     @SerializedName("status")
     val status: String?,
+
+    @SerializedName("trailerUrl")
+    val trailerUrl: String?,
 
     @SerializedName("hlsPlaybackUrl")
     val hlsPlaybackUrl: String?,
@@ -47,26 +50,23 @@ data class ShowModel(
     @SerializedName("hlsUrl")
     val hlsUrl: String?,
 
-    @SerializedName("trailerUrl")
-    val trailerUrl: String?,
-
     @SerializedName("airDate")
     val airDate: String?,
 
-    @SerializedName("endedAt")
-    val endedAt: Date?,
-
     @SerializedName("eventId")
-    val eventId: String?,
+    val eventId: Int?,
+
+    @SerializedName("storeId")
+    val storeId: String,
 
     @SerializedName("cc")
     val cc: String?,
 
+    @SerializedName("endedAt")
+    val endedAt: Date?,
+
     @SerializedName("duration")
     val duration: Int?,
-
-    @SerializedName("trailerDuration")
-    val trailerDuration: Int?,
 
     @SerializedName("videoThumbnailUrl")
     val videoThumbnailUrl: String,
@@ -77,11 +77,11 @@ data class ShowModel(
     @SerializedName("channelName")
     val channelName: String,
 
+    @SerializedName("trailerDuration")
+    val trailerDuration: Int?,
+
     @SerializedName("productIds")
     val productIds: List<Int>? = null,
-
-    @SerializedName("entranceProductsRequired")
-    val entranceProductsRequired: Boolean?,
 
     @SerializedName("entranceProductsIds")
     val entranceProductsIds: List<Int>? = null

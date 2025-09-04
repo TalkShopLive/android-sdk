@@ -142,7 +142,7 @@ fun ShowIdInputSection(globalShowKey: String, onShowRetrieved: (ShowModel) -> Un
                         if (error == null && show != null) {
                             showDetails = "ID: ${show.id}, " +
                                     "\nName: ${show.name}, " +
-                                    "\nDescription: ${show.description}, " +
+                                    "\nDescription: ${show.showDescription}, " +
                                     "\nStatus: ${show.status}, " +
                                     "\nTrailer URL: ${show.trailerUrl}, " +
                                     "\nHLS URL: ${show.hlsUrl}, " +

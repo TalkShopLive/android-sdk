@@ -28,7 +28,7 @@ internal object ShowStatusParser {
             json.optString(KEY_URL, ""),
             json.optString(KEY_URL, ""),
             json.optString(KEY_URL, ""),
-            json.optString(KEY_ID, ""),
+            json.optInt(KEY_ID, 0),
             json.optInt(KEY_DURATION, 0),
             json.optInt(KEY_TOTAL_VIEWS, 0)
         )

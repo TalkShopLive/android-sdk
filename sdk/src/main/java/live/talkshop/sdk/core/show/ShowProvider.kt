@@ -50,7 +50,7 @@ internal class ShowProvider {
         }.onResult {
             if (it.status == Constants.STATUS_LIVE) {
                 if (!incrementViewCalledMap.containsKey(showKey) || !incrementViewCalledMap[showKey]!!) {
-                    incrementView(it.eventId!!)
+                    incrementView(it.eventId.toString())
                     incrementViewCalledMap[showKey] = true
                 }
             }
