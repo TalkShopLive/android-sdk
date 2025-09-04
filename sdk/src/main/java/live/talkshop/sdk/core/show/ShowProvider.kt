@@ -48,9 +48,9 @@ internal class ShowProvider {
         getCurrentEvent(showKey).onError {
             callback?.invoke(it, null)
         }.onResult {
-            if (it.streamInCloud == true && it.status == Constants.STATUS_LIVE) {
+            if (it.status == Constants.STATUS_LIVE) {
                 if (!incrementViewCalledMap.containsKey(showKey) || !incrementViewCalledMap[showKey]!!) {
-                    incrementView(it.eventId!!)
+                    incrementView(it.eventId.toString())
                     incrementViewCalledMap[showKey] = true
                 }
             }

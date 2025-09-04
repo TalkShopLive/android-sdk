@@ -13,10 +13,10 @@ import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Keys
 import live.talkshop.sdk.resources.Keys.KEY_SENDER
 import live.talkshop.sdk.resources.URLs
-import live.talkshop.sdk.resources.URLs.getCurrentStreamUrl
 import live.talkshop.sdk.resources.URLs.getMessagesUrl
 import live.talkshop.sdk.resources.URLs.getMultipleProducts
 import live.talkshop.sdk.resources.URLs.getShowDetailsUrl
+import live.talkshop.sdk.resources.URLs.getShowStatusUrl
 import live.talkshop.sdk.resources.URLs.getUserMetaUrl
 import live.talkshop.sdk.utils.helpers.Either
 import live.talkshop.sdk.utils.Logging
@@ -68,7 +68,7 @@ internal object APICalls {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(
-                    getCurrentStreamUrl(showKey),
+                    getShowStatusUrl(showKey),
                     HTTPMethod.GET
                 )
                 if (response.statusCode !in 200..299) {
@@ -76,7 +76,7 @@ internal object APICalls {
                 } else {
                     Either.Result(
                         try {
-                            ShowStatusParser.parseFromJson(JSONObject(response.body))
+                            ShowStatusParser.parseFromJson(JSONObject(response.body), showKey)
                         } catch (_: Exception) {
                             EventModel()
                         }
@@ -109,7 +109,7 @@ internal object APICalls {
             if (show.productIds.isNullOrEmpty()) {
                 finalResult = Either.Error(APIClientError.NO_PRODUCTS_FOUND)
             } else {
-                val productIds = if (preLive && (show.entranceProductsRequired == true)) {
+                val productIds = if (preLive) {
                     show.entranceProductsIds
                 } else {
                     show.productIds
@@ -185,7 +185,7 @@ internal object APICalls {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(
-                    getCurrentStreamUrl(currentShowKey),
+                    getShowStatusUrl(currentShowKey),
                     HTTPMethod.GET
                 )
 
@@ -193,7 +193,12 @@ internal object APICalls {
                     Either.Error(getError(APIClientError.CHANNEL_SUBSCRIPTION_FAILED))
                 } else {
                     Logging.print(APICalls::class.java, "Channels subscribe success")
-                    Either.Result(ShowStatusParser.parseFromJson(JSONObject(response.body)))
+                    Either.Result(
+                        ShowStatusParser.parseFromJson(
+                            JSONObject(response.body),
+                            currentShowKey
+                        )
+                    )
                 }
             } catch (e: Exception) {
                 Logging.print(APICalls::class.java, e)

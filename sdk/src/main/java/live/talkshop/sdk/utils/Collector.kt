@@ -25,12 +25,14 @@ internal class Collector private constructor() {
         userId: String? = "NOT_SET",
         showKey: String? = "NOT_SET",
         storeId: String? = "NOT_SET",
-        videoKey: String? = "NOT_SET",
+        videoKey: Int? = 0,
         showStatus: String? = "NOT_SET",
         videoTime: Int? = 0,
         showTitle: String? = "NOT_SET",
         productKey: String? = "NOT_SET",
         variantId: Int? = 0,
+        productId: String? = "NOT_SET",
+        productOwningChannelId : String? = "NOT_SET"
     ) {
         val timestamp = System.currentTimeMillis()
         val display = Resources.getSystem().displayMetrics
@@ -38,7 +40,7 @@ internal class Collector private constructor() {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "1.1.8")
+            put("version", "2.0.0")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
@@ -51,7 +53,8 @@ internal class Collector private constructor() {
                 put("show_id", showKey)
                 put("productKey", productKey)
                 put("variantId", variantId)
-
+                put("productId", productId)
+                put("product_owning_channel_id ", productOwningChannelId)
             })
             put("page_metrics", JSONObject().apply {
                 put("origin", URL_PUBLISH_PROD)
@@ -102,6 +105,8 @@ internal class Collector private constructor() {
             videoTime: Int? = 0,
             productKey: String? = null,
             variantId: Int? = 0,
+            productId: String? = null,
+            productOwningChannelId: String? = null
         ) {
             if (isDNT) {
                 return
@@ -118,7 +123,9 @@ internal class Collector private constructor() {
                     videoTime = videoTime,
                     showTitle = currentShow?.name,
                     productKey = productKey,
-                    variantId = variantId
+                    variantId = variantId,
+                    productId = productId,
+                    productOwningChannelId = productOwningChannelId
                 )
             }
         }

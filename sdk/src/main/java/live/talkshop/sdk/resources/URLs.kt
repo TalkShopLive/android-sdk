@@ -1,14 +1,10 @@
 package live.talkshop.sdk.resources
 
 import live.talkshop.sdk.core.authentication.isTestMode
-import live.talkshop.sdk.resources.Constants.CC_FILENAME_END
-import live.talkshop.sdk.utils.helpers.HelperFunctions.isNotEmptyOrNull
 
 internal object URLs {
     private const val URL_BASE_STAGING = "https://stg.cms.tslstg.com/"
     private const val URL_BASE_PROD = "https://cms.talkshop.live/"
-    private const val URL_ASSET_BASE_STAGING = "https://assets-dev.talkshop.live/"
-    private const val URL_ASSET_BASE_PROD = "https://assets.talkshop.live/"
     private const val URL_BASE_COLLECTOR_STAGING = "https://stg.collector.tslstg.com/"
     private const val URL_BASE_COLLECTOR_PROD = "https://collector.talkshop.live/"
 
@@ -22,11 +18,11 @@ internal object URLs {
     internal const val URL_COLLECTOR_WATCH_PROD = "https://talkshop.live/"
 
     private const val PATH_AUTH = "api2/v1/sdk/"
-    private const val PATH_SHOW_DETAILS = "api/products/digital/streaming_content/"
-    private const val PATH_SHOWS = "api/shows/"
+    private const val PATH_SHOW_DETAILS = "api/v1/shows/"
+    private const val PATH_SHOW_DETAILS_EXPAND = "?expand=channel,fundraiser,assets,show_products"
+    private const val PATH_SHOWS_V1 = "api/v1/shows/"
+    private const val PATH_STATUS = "status"
     private const val PATH_PRODUCTS = "api/fetch_multiple_products?per_page=50&"
-    private const val PATH_STREAMS_CURRENT = "streams/current/"
-    private const val PATH_EVENTS = "events/"
     private const val PATH_EVENT = "event/"
     private const val PATH_WATCH = "watch/"
     private const val PATH_INCREMENT = "increment/"
@@ -36,55 +32,11 @@ internal object URLs {
     private const val PATH_COLLECT = "collect"
     private const val PATH_SENDERS_META = "api/messaging/senders/"
 
-    fun createHSLUrl(videoFilename: String): String? {
-        return if (isNotEmptyOrNull(videoFilename)) {
-            return if (isTestMode) {
-                "$URL_ASSET_BASE_STAGING$PATH_EVENTS${videoFilename}"
-            } else {
-                "$URL_ASSET_BASE_PROD$PATH_EVENTS${videoFilename}"
-            }
-        } else {
-            null
-        }
-    }
-
-    fun createCCUrl(videoFilename: String): String? {
-        return if (isNotEmptyOrNull(videoFilename)) {
-            return if (isTestMode) {
-                "$URL_ASSET_BASE_STAGING$PATH_EVENTS${
-                    videoFilename.replace(
-                        Constants.KEY_MP4_EXTENSION,
-                        CC_FILENAME_END,
-                        true
-                    )
-                }"
-            } else {
-                "$URL_ASSET_BASE_PROD$PATH_EVENTS${
-                    videoFilename.replace(
-                        Constants.KEY_MP4_EXTENSION,
-                        CC_FILENAME_END,
-                        true
-                    )
-                }"
-            }
-        } else {
-            null
-        }
-    }
-
-    fun getCurrentStreamUrl(showKey: String): String {
-        return if (isTestMode) {
-            "$URL_BASE_STAGING$PATH_SHOWS$showKey/$PATH_STREAMS_CURRENT"
-        } else {
-            "$URL_BASE_PROD$PATH_SHOWS$showKey/$PATH_STREAMS_CURRENT"
-        }
-    }
-
     fun getShowDetailsUrl(showKey: String): String {
         return if (isTestMode) {
-            "$URL_BASE_STAGING$PATH_SHOW_DETAILS$showKey"
+            "$URL_BASE_STAGING$PATH_SHOW_DETAILS$showKey$PATH_SHOW_DETAILS_EXPAND"
         } else {
-            "$URL_BASE_PROD$PATH_SHOW_DETAILS$showKey"
+            "$URL_BASE_PROD$PATH_SHOW_DETAILS$showKey$PATH_SHOW_DETAILS_EXPAND"
         }
     }
 
@@ -159,6 +111,14 @@ internal object URLs {
             "$URL_COLLECTOR_WATCH_STAGING$PATH_WATCH$showKey"
         } else {
             "$URL_COLLECTOR_WATCH_PROD$PATH_WATCH$showKey"
+        }
+    }
+
+    fun getShowStatusUrl(showKey: String): String {
+        return if (isTestMode) {
+            "$URL_BASE_STAGING$PATH_SHOWS_V1$showKey/$PATH_STATUS"
+        } else {
+            "$URL_BASE_PROD$PATH_SHOWS_V1$showKey/$PATH_STATUS"
         }
     }
 }
