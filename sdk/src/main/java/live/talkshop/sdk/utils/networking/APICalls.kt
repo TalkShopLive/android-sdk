@@ -109,7 +109,7 @@ internal object APICalls {
             if (show.productIds.isNullOrEmpty()) {
                 finalResult = Either.Error(APIClientError.NO_PRODUCTS_FOUND)
             } else {
-                val productIds = if (preLive && (show.entranceProductsRequired == true)) {
+                val productIds = if (preLive) {
                     show.entranceProductsIds
                 } else {
                     show.productIds
