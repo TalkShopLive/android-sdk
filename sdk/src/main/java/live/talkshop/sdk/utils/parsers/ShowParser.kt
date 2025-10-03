@@ -26,6 +26,7 @@ import live.talkshop.sdk.resources.Keys.KEY_TITLE
 import live.talkshop.sdk.resources.Keys.KEY_TRAILER
 import live.talkshop.sdk.resources.Keys.KEY_TYPE
 import live.talkshop.sdk.resources.Keys.KEY_URL
+import live.talkshop.sdk.utils.Logging
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -89,8 +90,29 @@ internal object ShowParser {
      * @param dateString The date string to parse.
      * @return A Date object or null if the dateString is empty or parsing fails.
      */
-    private fun parseDate(dateString: String): Date? {
-        return if (dateString.isNotEmpty()) dateFormatter.parse(dateString) else null
+    private fun parseDate(dateString: String?): Date? {
+        val raw = dateString?.trim()
+        if (raw.isNullOrEmpty() || raw.equals("null", ignoreCase = true)) return null
+
+        val patterns = listOf(
+            Constants.DATE_FORMAT,
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+        )
+        for (p in patterns) {
+            try {
+                val fmt = SimpleDateFormat(p, Locale.getDefault())
+                fmt.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                return fmt.parse(raw)
+            } catch (_: Exception) { }
+        }
+        Logging.print(
+            ShowParser::class.java,
+            java.lang.IllegalArgumentException("Unparseable date: $raw")
+        )
+        return null
     }
 
     /**
