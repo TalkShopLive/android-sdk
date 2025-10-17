@@ -34,7 +34,4 @@ data class EventModel(
 
     @SerializedName("duration")
     val duration: Int? = 0,
-
-    @SerializedName("totalViews")
-    val totalViews: Int? = 0
 )

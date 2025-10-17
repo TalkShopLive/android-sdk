@@ -11,6 +11,7 @@ import live.talkshop.sdk.resources.Keys.KEY_DESCRIPTION
 import live.talkshop.sdk.resources.Keys.KEY_DURATION
 import live.talkshop.sdk.resources.Keys.KEY_ENDED_AT
 import live.talkshop.sdk.resources.Keys.KEY_ENTRANCE
+import live.talkshop.sdk.resources.Keys.KEY_FILE_EXTENSION
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_KEY
 import live.talkshop.sdk.resources.Keys.KEY_KIND
@@ -24,6 +25,7 @@ import live.talkshop.sdk.resources.Keys.KEY_THUMBNAIL_IMAGE
 import live.talkshop.sdk.resources.Keys.KEY_THUMBNAIL_IMAGE_URL
 import live.talkshop.sdk.resources.Keys.KEY_TITLE
 import live.talkshop.sdk.resources.Keys.KEY_TRAILER
+import live.talkshop.sdk.resources.Keys.KEY_TRANSCRIPTION_URL
 import live.talkshop.sdk.resources.Keys.KEY_TYPE
 import live.talkshop.sdk.resources.Keys.KEY_URL
 import live.talkshop.sdk.utils.Logging
@@ -58,14 +60,20 @@ internal object ShowParser {
             status = showDataJson.optString(KEY_STATE, "created"),
             trailerUrl = parseAssetUrlByType(showDataJson, KEY_TRAILER),
             hlsPlaybackUrl = parseAssetUrlByType(showDataJson, "live"),
-            hlsUrl = parseAssetUrlByType(showDataJson, "vod"),
+            hlsUrl = parseVodPlaybackUrl(showDataJson),
             airDate = showDataJson.optString(KEY_SCHEDULED_LIVE_AT, ""),
             eventId = assets.getJSONObject(0).optInt(KEY_ID, 0),
             storeId = showDataJson.optString(KEY_CHANNEL_ID, ""),
-            cc = parseAssetUrlByType(showDataJson, "vod").replace("mp4", "transcript.vtt"),
+            cc = parseTranscriptionUrlByType(showDataJson, "vod")
+                .ifEmpty {
+                    parseAssetUrlByType(showDataJson, "vod").replace(
+                        "mp4",
+                        "transcript.vtt"
+                    )
+                },
             endedAt = parseDate(showDataJson.optString(KEY_ENDED_AT, "")),
             duration = assets.getJSONObject(0).optInt(KEY_DURATION, 0),
-            videoThumbnailUrl = showDataJson.optString(KEY_THUMBNAIL_IMAGE_URL,""),
+            videoThumbnailUrl = showDataJson.optString(KEY_THUMBNAIL_IMAGE_URL, ""),
             channelLogo = channelDataJson.optString(KEY_THUMBNAIL_IMAGE, ""),
             channelName = channelDataJson.optString(KEY_NAME, ""),
             trailerDuration = parseAssetDurationByType(showDataJson),
@@ -106,7 +114,8 @@ internal object ShowParser {
                 val fmt = SimpleDateFormat(p, Locale.getDefault())
                 fmt.timeZone = java.util.TimeZone.getTimeZone("UTC")
                 return fmt.parse(raw)
-            } catch (_: Exception) { }
+            } catch (_: Exception) {
+            }
         }
         Logging.print(
             ShowParser::class.java,
@@ -168,4 +177,59 @@ internal object ShowParser {
         }
         return entranceIds
     }
+
+    /**
+     * Returns the server-provided closed-caption/transcription URL for the first asset
+     * matching the given `type` (e.g., "vod", "live", "trailer") in `data.assets`.
+     *
+     * This reads the `transcription_url` field directly from the asset instead of
+     * deriving it from the media URL.
+     *
+     * @param showDataJson The `data` object of the show payload (must contain `assets`).
+     * @param type The asset type to match ("vod", "live", etc.).
+     * @return The `transcription_url` if present and non-empty, otherwise an empty string.
+     */
+    private fun parseTranscriptionUrlByType(showDataJson: JSONObject, type: String): String {
+        val assetsArray = showDataJson.optJSONArray(KEY_ASSETS) ?: return ""
+        for (i in 0 until assetsArray.length()) {
+            val asset = assetsArray.optJSONObject(i) ?: continue
+            if (asset.optString(KEY_TYPE) == type) {
+                val url = asset.optString(KEY_TRANSCRIPTION_URL, "")
+                if (url.isNotBlank() && !url.equals("null", ignoreCase = true)) return url
+            }
+        }
+        return ""
+    }
+
+    /**
+     * Picks the best playback URL for VOD assets.
+     *
+     * Preference order:
+     *  1) Asset with file_extension == "m3u8"
+     *  2) Asset with file_extension == "mp4"
+     *  3) First URL among assets with type == "vod"
+     *
+     * @param showDataJson The show-level `data` JSON object that contains the `assets` array.
+     * @return A VOD playback URL following the preference order, or an empty string if none found.
+     */
+    private fun parseVodPlaybackUrl(showDataJson: JSONObject): String {
+        val assets = showDataJson.optJSONArray(KEY_ASSETS) ?: return ""
+        var firstVodUrl: String? = null
+        var mp4Fallback: String? = null
+
+        for (i in 0 until assets.length()) {
+            val a = assets.optJSONObject(i) ?: continue
+            if (a.optString(KEY_TYPE) != "vod") continue
+
+            val url = a.optString(KEY_URL, "")
+            if (firstVodUrl == null && url.isNotBlank()) firstVodUrl = url
+
+            when (a.optString(KEY_FILE_EXTENSION, "").lowercase(Locale.getDefault())) {
+                "m3u8" -> if (url.isNotBlank()) return url
+                "mp4" -> if (url.isNotBlank() && mp4Fallback == null) mp4Fallback = url
+            }
+        }
+        return mp4Fallback ?: firstVodUrl.orEmpty()
+    }
+
 }

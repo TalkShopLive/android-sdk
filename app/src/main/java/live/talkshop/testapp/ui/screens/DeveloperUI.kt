@@ -147,7 +147,8 @@ fun ShowIdInputSection(globalShowKey: String, onShowRetrieved: (ShowModel) -> Un
                                     "\nTrailer URL: ${show.trailerUrl}, " +
                                     "\nHLS URL: ${show.hlsUrl}, " +
                                     "\nAir Date: ${show.airDate}, " +
-                                    "\nHLS Playback URL: ${show.hlsPlaybackUrl}"
+                                    "\nHLS Playback URL: ${show.hlsPlaybackUrl}" +
+                                    "\nCC URL: ${show.cc}"
                             errorText = null
                             onShowRetrieved(show) // Pass ShowModel to DeveloperScreen
                         } else {

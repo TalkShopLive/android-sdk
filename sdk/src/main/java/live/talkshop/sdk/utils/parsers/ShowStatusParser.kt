@@ -6,7 +6,6 @@ import live.talkshop.sdk.resources.Keys.KEY_DATA
 import live.talkshop.sdk.resources.Keys.KEY_DURATION
 import live.talkshop.sdk.resources.Keys.KEY_ID
 import live.talkshop.sdk.resources.Keys.KEY_STATE
-import live.talkshop.sdk.resources.Keys.KEY_TOTAL_VIEWS
 import live.talkshop.sdk.resources.Keys.KEY_URL
 import org.json.JSONObject
 
@@ -22,15 +21,24 @@ internal object ShowStatusParser {
     fun parseFromJson(statusJson: JSONObject, showKey: String): EventModel {
         globalShowId = showKey
         val json = statusJson.getJSONObject(KEY_DATA)
+
+        val status = json.optString(KEY_STATE, "")
+        val url: String? = json.optString(KEY_URL, "").takeIf { it.isNotBlank() }
+
+        val (hlsPlaybackUrl, hlsUrl) = when (status.lowercase()) {
+            "live" -> url to null
+            "vod" -> null to url
+            else -> null to null
+        }
+
         return EventModel(
             showKey,
-            json.optString(KEY_STATE, ""),
-            json.optString(KEY_URL, ""),
-            json.optString(KEY_URL, ""),
-            json.optString(KEY_URL, ""),
-            json.optInt(KEY_ID, 0),
-            json.optInt(KEY_DURATION, 0),
-            json.optInt(KEY_TOTAL_VIEWS, 0)
+            status = status,
+            hlsPlaybackUrl = hlsPlaybackUrl,
+            hlsUrl = hlsUrl,
+            trailerUrl = null,
+            eventId = json.optInt(KEY_ID, 0),
+            duration = json.optInt(KEY_DURATION, 0),
         )
     }
 }
