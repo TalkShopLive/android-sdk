@@ -8,6 +8,7 @@ import live.talkshop.sdk.core.authentication.currentShow
 import live.talkshop.sdk.core.authentication.isDNT
 import live.talkshop.sdk.core.show.models.EventModel
 import live.talkshop.sdk.resources.CollectorActions
+import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_INTERACTION
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PAGE_VIEW
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PROCESS
 import live.talkshop.sdk.resources.URLs.URL_COLLECTOR_WALMART
@@ -24,15 +25,15 @@ internal class Collector private constructor() {
         category: String,
         userId: String? = "NOT_SET",
         showKey: String? = "NOT_SET",
+        showId: Int? = null,
         storeId: String? = "NOT_SET",
-        videoKey: Int? = 0,
         showStatus: String? = "NOT_SET",
-        videoTime: Int? = 0,
+        videoTime: Int? = null,
         showTitle: String? = "NOT_SET",
         productKey: String? = "NOT_SET",
-        variantId: Int? = 0,
-        productId: String? = "NOT_SET",
-        productOwningChannelId : String? = "NOT_SET"
+        variantId: Int? = null,
+        productId: Int? = null,
+        productOwningChannelId: String? = "NOT_SET",
     ) {
         val timestamp = System.currentTimeMillis()
         val display = Resources.getSystem().displayMetrics
@@ -40,20 +41,19 @@ internal class Collector private constructor() {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "2.0.2")
+            put("version", "2.0.3")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
                 put("external", true)
                 put("streaming_content_key", showKey)
                 put("store_id", storeId)
-                put("video_key", videoKey)
                 put("video_status", showStatus)
                 put("video_time", videoTime)
-                put("show_id", showKey)
-                put("productKey", productKey)
-                put("variantId", variantId)
-                put("productId", productId)
+                put("show_id", showId)
+                put("variant_id", variantId)
+                put("product_key", productKey)
+                put("product_id", productId)
                 put("product_owning_channel_id ", productOwningChannelId)
             })
             put("page_metrics", JSONObject().apply {
@@ -65,7 +65,6 @@ internal class Collector private constructor() {
                 put("page_title", showTitle)
             })
             put("aspect", JSONObject().apply {
-                put("browser_resolution", "NOT_SET")
                 put("screen_resolution", "${display.heightPixels} x ${display.widthPixels}")
             })
         }
@@ -102,11 +101,10 @@ internal class Collector private constructor() {
             action: CollectorActions,
             event: EventModel? = null,
             userId: String? = null,
-            videoTime: Int? = 0,
+            videoTime: Int? = null,
             productKey: String? = null,
-            variantId: Int? = 0,
-            productId: String? = null,
-            productOwningChannelId: String? = null
+            variantId: Int? = null,
+            productId: Int? = null,
         ) {
             if (isDNT) {
                 return
@@ -114,18 +112,36 @@ internal class Collector private constructor() {
             CoroutineScope(Dispatchers.IO).launch {
                 getInstance().collect(
                     action = action,
-                    category = if (action == CollectorActions.VIEW_CONTENT) COLLECTOR_CAT_PAGE_VIEW else COLLECTOR_CAT_PROCESS,
+                    category = when (action) {
+                        CollectorActions.VIEW_CONTENT -> {
+                            COLLECTOR_CAT_PAGE_VIEW
+                        }
+
+                        CollectorActions.VIDEO_PLAY,
+                        CollectorActions.CUSTOMIZE_PRODUCT_QUANTITY_DECREASE,
+                        CollectorActions.ADD_TO_CART,
+                        CollectorActions.CUSTOMIZE_PRODUCT_QUANTITY_INCREASE,
+                        CollectorActions.VIDEO_PAUSE,
+                        CollectorActions.SELECT_PRODUCT,
+                            -> {
+                            COLLECTOR_CAT_INTERACTION
+                        }
+
+                        else -> {
+                            COLLECTOR_CAT_PROCESS
+                        }
+                    },
                     userId = userId,
                     showKey = currentShow?.showKey,
-                    storeId = currentShow?.id?.toString(),
-                    videoKey = currentShow?.eventId,
+                    showId = currentShow?.id,
+                    storeId = currentShow?.storeId,
                     showStatus = event?.status,
                     videoTime = videoTime,
                     showTitle = currentShow?.name,
                     productKey = productKey,
                     variantId = variantId,
                     productId = productId,
-                    productOwningChannelId = productOwningChannelId
+                    productOwningChannelId = currentShow?.storeId
                 )
             }
         }

@@ -21,5 +21,6 @@ internal object Constants {
     const val STATUS_LIVE = "live"
 
     const val COLLECTOR_CAT_PROCESS = "PROCESS"
+    const val COLLECTOR_CAT_INTERACTION = "INTERACTION"
     const val COLLECTOR_CAT_PAGE_VIEW = "PAGE_VIEW"
 }
