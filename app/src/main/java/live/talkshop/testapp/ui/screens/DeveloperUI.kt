@@ -151,7 +151,6 @@ fun ShowIdInputSection(globalShowKey: String, onShowRetrieved: (ShowModel) -> Un
                                     "\nCC URL: ${show.cc}"
                             errorText = null
                             onShowRetrieved(show) // Pass ShowModel to DeveloperScreen
-                        } else {
                             errorText = error.toString()
                             showDetails = null
                         }

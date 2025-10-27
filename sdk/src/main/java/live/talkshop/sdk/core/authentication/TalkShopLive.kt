@@ -154,12 +154,21 @@ class TalkShopLive private constructor(private val context: Context) {
          *
          * @param eventName The action to be tracked.
          */
-        fun collect(eventName: CollectorActions, videoTime: Int) {
+        fun collect(
+            eventName: CollectorActions,
+            videoTime: Int,
+            productId: Int? = null,
+            variantId: Int? = null,
+            productKey: String? = null,
+        ) {
             Collector.collect(
                 action = eventName,
                 event = event,
                 userId = userId,
-                videoTime = videoTime
+                videoTime = videoTime,
+                variantId = variantId,
+                productId = productId,
+                productKey = productKey,
             )
         }
     }
