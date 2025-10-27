@@ -38,7 +38,8 @@ enum class APIClientError(
     SHOW_NOT_LIVE("TSL", "SHOW_NOT_LIVE", "The show is not live."),
     NO_PRODUCTS_FOUND("TSL", "NO_PRODUCTS_FOUND", "The show does not contain any products."),
     LIKE_COMMENT_FAILED("TSL", "LIKE_COMMENT_FAILED", "The comment could not be liked."),
-    MESSAGE_SENDING_GIPHY_DATA_NOT_FOUND("TSL", "MESSAGE_SENDING_GIPHY_DATA_NOT_FOUND", "The Giphy data is missing (such as aspect ratio)");
+    MESSAGE_SENDING_GIPHY_DATA_NOT_FOUND("TSL", "MESSAGE_SENDING_GIPHY_DATA_NOT_FOUND", "The Giphy data is missing (such as aspect ratio)"),
+    COLLECTOR_EXCEPTION("TSL", "COLLECTOR_EXCEPTION", "The collector failed to collect the event");
     fun from(originatingClass: String): APIClientError {
         this.className = originatingClass
         return this
