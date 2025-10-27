@@ -7,6 +7,7 @@ import kotlinx.coroutines.launch
 import live.talkshop.sdk.core.authentication.currentShow
 import live.talkshop.sdk.core.authentication.isDNT
 import live.talkshop.sdk.core.show.models.EventModel
+import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.CollectorActions
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_INTERACTION
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PAGE_VIEW
@@ -41,7 +42,7 @@ internal class Collector private constructor() {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "2.0.3")
+            put("version", "2.0.4")
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
@@ -73,8 +74,9 @@ internal class Collector private constructor() {
             APIHandler.makeRequest(
                 requestUrl = getCollectorUrl(), requestMethod = HTTPMethod.POST, payload = payload
             )
+            Logging.print(Collector::class.java, "Collector Success: $payload")
         } catch (e: Exception) {
-            Logging.print(Collector::class.java, e)
+            Logging.print(Collector::class.java, APIClientError.COLLECTOR_EXCEPTION, e)
         }
     }
 
