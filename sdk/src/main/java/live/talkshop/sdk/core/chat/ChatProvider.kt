@@ -57,6 +57,7 @@ internal class ChatProvider {
     private lateinit var userId: String
     private lateinit var currentJwt: String
     private val userMetadataCache = mutableMapOf<String, SenderModel>()
+    private lateinit var chatVersion: ChatVersion
 
     /**
      * Sets the callback for handling chat events and messages.
@@ -94,6 +95,7 @@ internal class ChatProvider {
             val show = resolveShow(showKey)
             val showType = show?.type ?: ShowType.LEGACY
             val showId = show?.id
+            chatVersion = ChatVersionProvider.getVersion(showType, isGuest)
 
             APICalls.getUserToken(
                 jwt = jwt,
@@ -133,20 +135,32 @@ internal class ChatProvider {
      * Subscribes to the chat and events channels.
      */
     private suspend fun subscribeChannels() {
-        val returnedChatChannel = userTokenModel.chatChannel
-        val returnedEventsChannel = userTokenModel.eventsChannel
+        when (chatVersion) {
+            ChatVersion.V2 -> {
+                val resolvedChannels = userTokenModel.channels
+                val chatChannel = resolvedChannels?.chat
+                val events = resolvedChannels?.events
 
-        if (!returnedChatChannel.isNullOrBlank()) {
-            publishChannel = returnedChatChannel
-            eventsChannel = returnedEventsChannel
-            channels = listOfNotNull(publishChannel, eventsChannel)
-            return
-        }
+                if (chatChannel.isNullOrBlank()) {
+                    Logging.print(
+                        ChatProvider::class.java,
+                        APIClientError.CHANNEL_SUBSCRIPTION_FAILED
+                    )
+                    return
+                }
 
-        APICalls.getCurrentStream(currentShowKey).onResult {
-            publishChannel = Constants.CHANNEL_CHAT_PREFIX + it.eventId
-            eventsChannel = Constants.CHANNEL_EVENTS_PREFIX + it.eventId
-            channels = listOfNotNull(publishChannel, eventsChannel)
+                publishChannel = chatChannel
+                eventsChannel = events
+                channels = listOfNotNull(publishChannel, eventsChannel)
+            }
+
+            ChatVersion.V1 -> {
+                APICalls.getCurrentStream(currentShowKey).onResult {
+                    publishChannel = Constants.CHANNEL_CHAT_PREFIX + it.eventId
+                    eventsChannel = Constants.CHANNEL_EVENTS_PREFIX + it.eventId
+                    channels = listOfNotNull(publishChannel, eventsChannel)
+                }
+            }
         }
     }
 

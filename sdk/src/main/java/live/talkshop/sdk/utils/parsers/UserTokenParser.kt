@@ -1,5 +1,6 @@
 package live.talkshop.sdk.utils.parsers
 
+import live.talkshop.sdk.core.chat.models.SubscribableChannel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.resources.Keys.KEY_CHANNELS
 import live.talkshop.sdk.resources.Keys.KEY_CHAT
@@ -25,6 +26,12 @@ internal object UserTokenParser {
             }
 
             val channelsJson = jsonResponse.optJSONObject(KEY_CHANNELS)
+            val channels = channelsJson?.let {
+                SubscribableChannel(
+                    chat = it.optString(KEY_CHAT).takeIf { value -> value.isNotBlank() },
+                    events = it.optString(KEY_EVENTS).takeIf { value -> value.isNotBlank() }
+                )
+            }
 
             UserTokenModel(
                 publishKey = jsonResponse.optString(KEY_PUBLISH_KEY),
@@ -32,8 +39,7 @@ internal object UserTokenParser {
                 token = jsonResponse.optString(KEY_TOKEN),
                 userId = userId,
                 name = jsonResponse.optString(KEY_NAME).ifBlank { userId },
-                chatChannel = channelsJson?.optString(KEY_CHAT)?.takeIf { it.isNotBlank() },
-                eventsChannel = channelsJson?.optString(KEY_EVENTS)?.takeIf { it.isNotBlank() },
+                channels = channels,
                 chatId = if (jsonResponse.has(KEY_CHAT_ID)) jsonResponse.optInt(KEY_CHAT_ID) else null
             )
         } catch (e: Exception) {
