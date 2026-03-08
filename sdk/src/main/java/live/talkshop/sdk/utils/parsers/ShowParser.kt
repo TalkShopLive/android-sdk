@@ -2,6 +2,7 @@ package live.talkshop.sdk.utils.parsers
 
 import android.annotation.SuppressLint
 import live.talkshop.sdk.core.show.models.ShowModel
+import live.talkshop.sdk.core.show.models.ShowType
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Keys.KEY_ASSETS
 import live.talkshop.sdk.resources.Keys.KEY_CHANNEL
@@ -85,7 +86,8 @@ internal object ShowParser {
                 }
                 intList
             },
-            entranceProductsIds = parseEntranceProductIds(showDataJson)
+            entranceProductsIds = parseEntranceProductIds(showDataJson),
+            type = ShowType.from(showDataJson.optString(KEY_TYPE))
         )
     }
 

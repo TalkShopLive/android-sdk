@@ -3,16 +3,22 @@ package live.talkshop.sdk.utils.networking
 import live.talkshop.sdk.core.authentication.currentShow
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.authentication.storedClientKey
+import live.talkshop.sdk.core.chat.ChatVersion
+import live.talkshop.sdk.core.chat.ChatVersionProvider
 import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
 import live.talkshop.sdk.core.show.models.ProductModel
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.EventModel
+import live.talkshop.sdk.core.show.models.ShowType
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.resources.Keys
 import live.talkshop.sdk.resources.Keys.KEY_SENDER
+import live.talkshop.sdk.resources.Keys.KEY_SHOW_ID
 import live.talkshop.sdk.resources.URLs
+import live.talkshop.sdk.resources.URLs.getDeleteActionUrl
+import live.talkshop.sdk.resources.URLs.getDeleteMessageUrl
 import live.talkshop.sdk.resources.URLs.getMessagesUrl
 import live.talkshop.sdk.resources.URLs.getMultipleProducts
 import live.talkshop.sdk.resources.URLs.getShowDetailsUrl
@@ -150,11 +156,31 @@ internal object APICalls {
     suspend fun getUserToken(
         jwt: String,
         isGuest: Boolean,
+        showId: Int?,
+        showType: ShowType,
     ): Either<APIClientError, UserTokenModel> {
         try {
+            val chatVersion = ChatVersionProvider.getVersion(showType, isGuest)
+            val useV2FederatedEndpoint = chatVersion == ChatVersion.V2
+
+            if (useV2FederatedEndpoint && showId == null) {
+                Logging.print(APICalls::class.java, "Missing showId for v2 federated chat token request")
+                return Either.Error(getError(APIClientError.UNKNOWN_EXCEPTION))
+            }
+
+            val payload = if (useV2FederatedEndpoint) {
+                JSONObject().put(KEY_SHOW_ID, showId)
+            } else {
+                null
+            }
+
             val response = APIHandler.makeRequest(
-                URLs.getUserTokenUrl(isGuest),
-                HTTPMethod.POST,
+                requestUrl = URLs.getUserTokenUrl(
+                    isGuest = isGuest,
+                    useV2FederatedEndpoint = useV2FederatedEndpoint
+                ),
+                requestMethod = HTTPMethod.POST,
+                payload = payload,
                 headers = mutableMapOf(
                     Constants.SDK_KEY to storedClientKey,
                     Constants.AUTH_KEY to "${Constants.BEARER_KEY} $jwt"
@@ -216,14 +242,14 @@ internal object APICalls {
      * @return An `Either` object containing `true` if successful, or an `APIClientError`.
      */
     suspend fun deleteMessage(
-        eventId: String,
         timeToken: String,
+        channelName: String,
         currentJwt: String,
     ): Either<APIClientError, Boolean> {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(
-                    requestUrl = getMessagesUrl(eventId, timeToken),
+                    requestUrl = getDeleteMessageUrl(timeToken, channelName),
                     requestMethod = HTTPMethod.DELETE,
                     headers = mutableMapOf(
                         Constants.SDK_KEY to storedClientKey,
@@ -232,14 +258,8 @@ internal object APICalls {
                 )
 
                 when (response.statusCode) {
-                    in 200..299 -> {
-                        Either.Result(true)
-                    }
-
-                    403 -> {
-                        Either.Error(getError(APIClientError.PERMISSION_DENIED))
-                    }
-
+                    in 200..299 -> Either.Result(true)
+                    403 -> Either.Error(getError(APIClientError.PERMISSION_DENIED))
                     else -> {
                         Logging.print(APICalls::class.java, response.body)
                         Either.Error(getError(APIClientError.UNKNOWN_EXCEPTION))
@@ -296,15 +316,15 @@ internal object APICalls {
      * @return An `Either` object containing `true` if successful, or an `APIClientError`.
      */
     suspend fun deleteAction(
-        eventId: String,
         timeToken: String,
         actionTimeToken: String,
+        channelName: String,
         currentJwt: String,
     ): Either<APIClientError, Boolean> {
         return executeWithAuthCheck {
             try {
                 val response = APIHandler.makeRequest(
-                    requestUrl = getMessagesUrl(eventId, timeToken, actionTimeToken),
+                    requestUrl = getDeleteActionUrl(timeToken, actionTimeToken, channelName),
                     requestMethod = HTTPMethod.DELETE,
                     headers = mutableMapOf(
                         Constants.SDK_KEY to storedClientKey,
@@ -313,14 +333,8 @@ internal object APICalls {
                 )
 
                 when (response.statusCode) {
-                    in 200..299 -> {
-                        Either.Result(true)
-                    }
-
-                    403 -> {
-                        Either.Error(getError(APIClientError.PERMISSION_DENIED))
-                    }
-
+                    in 200..299 -> Either.Result(true)
+                    403 -> Either.Error(getError(APIClientError.PERMISSION_DENIED))
                     else -> {
                         Logging.print(APICalls::class.java, response.body)
                         Either.Error(getError(APIClientError.UNKNOWN_EXCEPTION))

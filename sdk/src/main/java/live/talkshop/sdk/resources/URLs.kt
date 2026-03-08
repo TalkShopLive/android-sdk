@@ -1,12 +1,16 @@
 package live.talkshop.sdk.resources
 
 import live.talkshop.sdk.core.authentication.isTestMode
+import java.net.URLEncoder
 
 internal object URLs {
     private const val URL_BASE_STAGING = "https://stg.cms.tslstg.com/"
     private const val URL_BASE_PROD = "https://cms.talkshop.live/"
     private const val URL_BASE_COLLECTOR_STAGING = "https://stg.collector.tslstg.com/"
     private const val URL_BASE_COLLECTOR_PROD = "https://collector.talkshop.live/"
+
+    private const val URL_BASE_CHAT_STAGING = "https://stg.chat-api.tslstg.com/"
+    private const val URL_BASE_CHAT_PROD = "https://chat-api.talkshop.live/"
 
     private const val URL_BASE_EVENTS_STAGING = "https://stg.events-api.tslstg.com/"
     private const val URL_BASE_EVENTS_PROD = "https://events-api.talkshop.live/"
@@ -31,6 +35,8 @@ internal object URLs {
     private const val PATH_MESSAGES = "chat/messages/"
     private const val PATH_COLLECT = "collect"
     private const val PATH_SENDERS_META = "api/messaging/senders/"
+    private const val PATH_V2_FED_TOKEN = "api/v1/tokens/federated-user"
+    private const val PATH_V2_MESSAGES = "api/v1/messages/"
 
     fun getShowDetailsUrl(showKey: String): String {
         return if (isTestMode) {
@@ -74,11 +80,30 @@ internal object URLs {
         }
     }
 
-    fun getUserTokenUrl(isGuest: Boolean): String {
-        return if (isTestMode) {
-            if (isGuest) "$URL_BASE_STAGING$PATH_AUTH$PATH_GUEST_TOKEN" else "$URL_BASE_STAGING$PATH_AUTH$PATH_FED_TOKEN"
+    fun getUserTokenUrl(
+        isGuest: Boolean,
+        useV2FederatedEndpoint: Boolean = false,
+    ): String {
+        return if (useV2FederatedEndpoint && !isGuest) {
+            if (isTestMode) {
+                "$URL_BASE_CHAT_STAGING$PATH_V2_FED_TOKEN"
+            } else {
+                "$URL_BASE_CHAT_PROD$PATH_V2_FED_TOKEN"
+            }
         } else {
-            if (isGuest) "$URL_BASE_PROD$PATH_AUTH$PATH_GUEST_TOKEN" else "$URL_BASE_PROD$PATH_AUTH$PATH_FED_TOKEN"
+            if (isTestMode) {
+                if (isGuest) {
+                    "$URL_BASE_STAGING$PATH_AUTH$PATH_GUEST_TOKEN"
+                } else {
+                    "$URL_BASE_STAGING$PATH_AUTH$PATH_FED_TOKEN"
+                }
+            } else {
+                if (isGuest) {
+                    "$URL_BASE_PROD$PATH_AUTH$PATH_GUEST_TOKEN"
+                } else {
+                    "$URL_BASE_PROD$PATH_AUTH$PATH_FED_TOKEN"
+                }
+            }
         }
     }
 
@@ -120,5 +145,24 @@ internal object URLs {
         } else {
             "$URL_BASE_PROD$PATH_SHOWS_V1$showKey/$PATH_STATUS"
         }
+    }
+
+    fun getDeleteMessageUrl(
+        timeToken: String,
+        channelName: String,
+    ): String {
+        val baseUrl = if (isTestMode) URL_BASE_CHAT_STAGING else URL_BASE_CHAT_PROD
+        val encodedChannelName = URLEncoder.encode(channelName, Charsets.UTF_8.name())
+        return "$baseUrl$PATH_V2_MESSAGES$timeToken?channel-name=$encodedChannelName"
+    }
+
+    fun getDeleteActionUrl(
+        timeToken: String,
+        actionTimeToken: String,
+        channelName: String,
+    ): String {
+        val baseUrl = if (isTestMode) URL_BASE_CHAT_STAGING else URL_BASE_CHAT_PROD
+        val encodedChannelName = URLEncoder.encode(channelName, Charsets.UTF_8.name())
+        return "$baseUrl$PATH_V2_MESSAGES$timeToken/actions/$actionTimeToken?channel-name=$encodedChannelName"
     }
 }

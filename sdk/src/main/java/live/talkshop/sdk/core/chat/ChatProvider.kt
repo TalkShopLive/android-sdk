@@ -12,12 +12,15 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import live.talkshop.sdk.core.authentication.currentShow
 import live.talkshop.sdk.core.authentication.globalShowId
 import live.talkshop.sdk.core.authentication.globalShowKey
 import live.talkshop.sdk.core.authentication.isAuthenticated
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.SenderModel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
+import live.talkshop.sdk.core.show.models.ShowModel
+import live.talkshop.sdk.core.show.models.ShowType
 import live.talkshop.sdk.resources.APIClientError
 import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.utils.Logging
@@ -42,7 +45,6 @@ import java.util.concurrent.TimeUnit
  * @property eventsChannel The channel used for subscribing to events.
  * @property callback An optional callback for handling received messages.
  * @property currentShowKey The current show's key.
- * @property eventId The id of the current event..
  */
 internal class ChatProvider {
     private lateinit var userTokenModel: UserTokenModel
@@ -52,7 +54,6 @@ internal class ChatProvider {
     private var eventsChannel: String? = null
     private var callback: ChatCallback? = null
     private lateinit var currentShowKey: String
-    private lateinit var eventId: String
     private lateinit var userId: String
     private lateinit var currentJwt: String
     private val userMetadataCache = mutableMapOf<String, SenderModel>()
@@ -79,7 +80,7 @@ internal class ChatProvider {
         showKey: String,
         jwt: String,
         isGuest: Boolean,
-        callback: ((APIClientError?, UserTokenModel?) -> Unit)?
+        callback: ((APIClientError?, UserTokenModel?) -> Unit)?,
     ) {
         if (isAuthenticated) {
             if (!isNotEmptyOrNull(globalShowId)) {
@@ -90,7 +91,16 @@ internal class ChatProvider {
             currentShowKey = showKey
             globalShowKey = showKey
 
-            APICalls.getUserToken(jwt, isGuest).onError {
+            val show = resolveShow(showKey)
+            val showType = show?.type ?: ShowType.LEGACY
+            val showId = show?.id
+
+            APICalls.getUserToken(
+                jwt = jwt,
+                isGuest = isGuest,
+                showId = showId,
+                showType = showType
+            ).onError {
                 callback?.invoke(it, null)
             }.onResult {
                 userTokenModel = it
@@ -123,11 +133,20 @@ internal class ChatProvider {
      * Subscribes to the chat and events channels.
      */
     private suspend fun subscribeChannels() {
+        val returnedChatChannel = userTokenModel.chatChannel
+        val returnedEventsChannel = userTokenModel.eventsChannel
+
+        if (!returnedChatChannel.isNullOrBlank()) {
+            publishChannel = returnedChatChannel
+            eventsChannel = returnedEventsChannel
+            channels = listOfNotNull(publishChannel, eventsChannel)
+            return
+        }
+
         APICalls.getCurrentStream(currentShowKey).onResult {
             publishChannel = Constants.CHANNEL_CHAT_PREFIX + it.eventId
             eventsChannel = Constants.CHANNEL_EVENTS_PREFIX + it.eventId
             channels = listOfNotNull(publishChannel, eventsChannel)
-            eventId = publishChannel
         }
     }
 
@@ -160,7 +179,7 @@ internal class ChatProvider {
         message: String,
         type: String? = null,
         aspectRatio: Long? = null,
-        callback: ((APIClientError?, String?) -> Unit)? = null
+        callback: ((APIClientError?, String?) -> Unit)? = null,
     ) {
         if (!isAuthenticated) {
             callback?.invoke(getError(APIClientError.AUTHENTICATION_FAILED), null)
@@ -236,7 +255,7 @@ internal class ChatProvider {
         count: Int = 25,
         start: Long? = System.currentTimeMillis(),
         includeMeta: Boolean = true,
-        callback: (List<MessageModel>?, Long?, APIClientError?) -> Unit
+        callback: (List<MessageModel>?, Long?, APIClientError?) -> Unit,
     ) {
         if (!isAuthenticated) {
             callback(null, null, getError(APIClientError.AUTHENTICATION_FAILED))
@@ -321,7 +340,7 @@ internal class ChatProvider {
     suspend fun editUser(
         newJwt: String,
         isGuest: Boolean,
-        callback: ((APIClientError?, UserTokenModel?) -> Unit)?
+        callback: ((APIClientError?, UserTokenModel?) -> Unit)?,
     ) {
         if (userTokenModel.token != newJwt) {
             clearConnection()
@@ -387,18 +406,22 @@ internal class ChatProvider {
      */
     suspend fun unPublishMessage(
         timeToken: String,
-        callback: ((Boolean, String?) -> Unit)?
+        callback: ((Boolean, String?) -> Unit)?,
     ) {
-        APICalls.deleteMessage(eventId, timeToken, currentJwt).onError {
-            callback?.let { it(false, it.toString()) }
+        APICalls.deleteMessage(
+            timeToken = timeToken,
+            channelName = publishChannel,
+            currentJwt = currentJwt
+        ).onError {
+            callback?.let { cb -> cb(false, it.toString()) }
         }.onResult {
-            callback?.let { it(true, null) }
+            callback?.let { cb -> cb(true, null) }
         }
     }
 
     fun likeComment(
         timeToken: Long,
-        callback: ((Boolean, APIClientError?) -> Unit)? = null
+        callback: ((Boolean, APIClientError?) -> Unit)? = null,
     ) {
         pubnub?.let {
             it.addMessageAction(
@@ -416,14 +439,18 @@ internal class ChatProvider {
     suspend fun unlikeComment(
         timeToken: Long,
         actionTimeToken: Long,
-        callback: ((Boolean, APIClientError?) -> Unit)? = null
+        callback: ((Boolean, APIClientError?) -> Unit)? = null,
     ) {
-        APICalls.deleteAction(eventId, timeToken.toString(), actionTimeToken.toString(), currentJwt)
-            .onError { error ->
-                callback?.let { it(false, getError(error)) }
-            }.onResult {
-                callback?.let { it(true, null) }
-            }
+        APICalls.deleteAction(
+            timeToken = timeToken.toString(),
+            actionTimeToken = actionTimeToken.toString(),
+            channelName = publishChannel,
+            currentJwt = currentJwt
+        ).onError { error ->
+            callback?.let { it(false, getError(error)) }
+        }.onResult {
+            callback?.let { it(true, null) }
+        }
     }
 
     private fun getError(error: APIClientError): APIClientError {
@@ -435,5 +462,18 @@ internal class ChatProvider {
             Logging.print(ChatProvider::class.java, code, error)
         else if (code != null)
             Logging.print(ChatProvider::class.java, code)
+    }
+
+    private suspend fun resolveShow(showKey: String): ShowModel? {
+        val cachedShow = currentShow
+        if (cachedShow?.showKey == showKey && cachedShow.id != null) {
+            return cachedShow
+        }
+
+        var resolvedShow: ShowModel? = null
+        APICalls.getShowDetails(showKey).onResult {
+            resolvedShow = it
+        }
+        return resolvedShow
     }
 }

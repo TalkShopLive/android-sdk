@@ -14,5 +14,8 @@ data class UserTokenModel(
     val subscribeKey: String,
     val token: String,
     val userId: String,
-    val name: String
+    val name: String,
+    val chatChannel: String? = null,
+    val eventsChannel: String? = null,
+    val chatId: Int? = null,
 )
