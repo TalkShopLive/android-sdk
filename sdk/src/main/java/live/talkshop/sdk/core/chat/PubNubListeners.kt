@@ -18,7 +18,9 @@ import com.pubnub.api.models.consumer.pubsub.objects.PNSetMembershipEventMessage
 import com.pubnub.api.models.consumer.pubsub.objects.PNSetUUIDMetadataEventMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import live.talkshop.sdk.core.chat.models.MessageModel
 import live.talkshop.sdk.core.chat.models.SenderModel
@@ -27,15 +29,19 @@ import live.talkshop.sdk.utils.Logging
 import live.talkshop.sdk.utils.networking.APICalls
 import live.talkshop.sdk.utils.parsers.MessageParser
 import org.json.JSONObject
+import kotlin.coroutines.resume
 
 internal class PubNubListeners(
     var callback: ChatCallback?,
     val userMetadataCache: MutableMap<String, SenderModel>,
     var publishChannel: String,
     var eventsChannel: String?,
+    private val chatVersion: ChatVersion,
 ) {
     inner class TSLSubscribeCallback : SubscribeCallback() {
         private var triedToReconnectBefore: Boolean = false
+
+        @OptIn(ExperimentalCoroutinesApi::class)
         override fun message(pubnub: PubNub, pnMessageResult: PNMessageResult) {
             when (pnMessageResult.channel) {
                 publishChannel -> {
@@ -44,17 +50,59 @@ internal class PubNubListeners(
                             JSONObject(pnMessageResult.message.asJsonObject.toString()),
                             pnMessageResult.timetoken
                         )
+
                     if (messageData != null) {
                         val uuid = messageData.sender?.id
+
                         if (uuid != null && userMetadataCache.containsKey(uuid)) {
                             messageData.sender = userMetadataCache[uuid]
                             callback?.onMessageReceived(messageData)
                         } else if (uuid != null) {
                             CoroutineScope(Dispatchers.IO).launch {
-                                APICalls.getUserMeta(uuid).onResult {
-                                    userMetadataCache[uuid] = it
+                                val senderModel = when (chatVersion) {
+                                    ChatVersion.V1 -> {
+                                        var sender: SenderModel? = null
+                                        APICalls.getUserMeta(uuid).onResult {
+                                            userMetadataCache[uuid] = it
+                                            sender = it
+                                        }
+                                        sender
+                                    }
+
+                                    ChatVersion.V2 -> {
+                                        suspendCancellableCoroutine { continuation ->
+                                            pubnub.getUUIDMetadata(
+                                                uuid = uuid,
+                                                includeCustom = false
+                                            ).async { result, status ->
+                                                if (status.error || result == null) {
+                                                    continuation.resume(null)
+                                                    return@async
+                                                }
+
+                                                val metadata = result.data
+                                                val sender = metadata?.let {
+                                                    SenderModel(
+                                                        id = it.id,
+                                                        name = it.name,
+                                                        profileUrl = it.profileUrl
+                                                    )
+                                                }
+
+                                                if (sender != null) {
+                                                    userMetadataCache[uuid] = sender
+                                                }
+
+                                                continuation.resume(sender)
+                                            }
+                                        }
+                                    }
                                 }
-                                messageData.sender = userMetadataCache[uuid]
+
+                                if (senderModel != null) {
+                                    messageData.sender = senderModel
+                                }
+
                                 withContext(Dispatchers.Main) {
                                     callback?.onMessageReceived(messageData)
                                 }
@@ -106,7 +154,7 @@ internal class PubNubListeners(
 
         override fun presence(
             pubnub: PubNub,
-            pnPresenceEventResult: PNPresenceEventResult
+            pnPresenceEventResult: PNPresenceEventResult,
         ) {
             log("Presence event: ${pnPresenceEventResult.event} on channel: ${pnPresenceEventResult.channel}")
         }
@@ -117,7 +165,7 @@ internal class PubNubListeners(
 
         override fun messageAction(
             pubnub: PubNub,
-            pnMessageActionResult: PNMessageActionResult
+            pnMessageActionResult: PNMessageActionResult,
         ) {
             log("Message action type: ${pnMessageActionResult.messageAction.type} on message: ${pnMessageActionResult.messageAction.value}")
             if (pnMessageActionResult.messageAction.type == "reaction" && pnMessageActionResult.messageAction.value == "like") {
