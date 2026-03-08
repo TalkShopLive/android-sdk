@@ -444,8 +444,8 @@ internal class ChatProvider {
         timeToken: Long,
         callback: ((Boolean, APIClientError?) -> Unit)? = null,
     ) {
-        pubnub?.let {
-            it.addMessageAction(
+        pubnub?.let { result ->
+            result.addMessageAction(
                 publishChannel, PNMessageAction("reaction", "like", timeToken)
             ).async { _, status ->
                 if (!status.error) {

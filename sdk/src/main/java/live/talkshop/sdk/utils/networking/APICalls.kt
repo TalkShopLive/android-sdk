@@ -236,7 +236,6 @@ internal object APICalls {
     /**
      * Deletes a message for a specific event based on the event ID and message timestamp.
      *
-     * @param eventId The unique identifier for the event.
      * @param timeToken The timestamp of the message to be deleted.
      * @param currentJwt The current JWT for authentication.
      * @return An `Either` object containing `true` if successful, or an `APIClientError`.
@@ -339,7 +338,6 @@ internal object APICalls {
     /**
      * Deletes an action for a specific message based on the event ID and message timestamp.
      *
-     * @param eventId The unique identifier for the event.
      * @param timeToken The timestamp of the message.
      * @param actionTimeToken The timestamp of the action to be deleted.
      * @param currentJwt The current JWT for authentication.
