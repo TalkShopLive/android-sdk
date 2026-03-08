@@ -6,11 +6,11 @@ import com.pubnub.api.PubNubException
 import com.pubnub.api.UserId
 import com.pubnub.api.models.consumer.message_actions.PNMessageAction
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import live.talkshop.sdk.core.authentication.currentShow
 import live.talkshop.sdk.core.authentication.globalShowId
@@ -31,6 +31,7 @@ import org.json.JSONObject
 import java.util.Calendar
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
 
 /**
  * The ChatProvider class is responsible for handling chat functionalities,
@@ -174,10 +175,11 @@ internal class ChatProvider {
         }
         handleShowKeyChange()
         val pubNubListeners = PubNubListeners(
-            callback,
-            userMetadataCache,
-            publishChannel,
-            eventsChannel
+            callback = callback,
+            userMetadataCache = userMetadataCache,
+            publishChannel = publishChannel,
+            eventsChannel = eventsChannel,
+            chatVersion = chatVersion
         )
         pubnub?.addListener(pubNubListeners.TSLSubscribeCallback())
         pubnub!!.subscribe(channels, withPresence = true)
@@ -287,39 +289,32 @@ internal class ChatProvider {
             )?.async { result, status ->
                 if (!status.error && result != null) {
                     CoroutineScope(Dispatchers.IO).launch {
-                        val deferredMetadataUpdates = mutableListOf<Deferred<Unit>>()
                         val messages = result.messages.mapNotNull { messageDetail ->
                             if (messageDetail.entry.isJsonObject) {
                                 MessageParser.parse(
                                     JSONObject(messageDetail.entry.asJsonObject.toString()),
                                     messageDetail.timetoken
-                                )?.apply {
-                                    this.sender?.id?.let { uuid ->
-                                        if (userMetadataCache.containsKey(uuid)) {
-                                            this.sender = userMetadataCache[uuid]
-                                        } else {
-                                            deferredMetadataUpdates.add(async {
-                                                APICalls.getUserMeta(uuid).onResult {
-                                                    userMetadataCache[uuid] = it
-                                                }
-                                                sender = userMetadataCache[uuid]
-                                            })
-                                        }
-                                    }
-                                }
+                                )
                             } else {
                                 null
                             }
                         }
 
-                        deferredMetadataUpdates.awaitAll()
-                        withContext(Dispatchers.Main) {
-                            val nextStart = result.messages.firstOrNull()
-                            if (nextStart != null) {
-                                callback(messages, nextStart.timetoken, null)
-                            } else {
-                                callback(messages, null, null)
+                        val deferredMetadataUpdates = messages.mapNotNull { message ->
+                            val senderId = message.sender?.id ?: return@mapNotNull null
+                            async {
+                                val senderMetadata = fetchSenderMetadata(senderId)
+                                if (senderMetadata != null) {
+                                    message.sender = senderMetadata
+                                }
                             }
+                        }
+
+                        deferredMetadataUpdates.awaitAll()
+
+                        withContext(Dispatchers.Main) {
+                            val nextStart = result.messages.firstOrNull()?.timetoken
+                            callback(messages, nextStart, null)
                         }
                     }
                 } else {
@@ -330,7 +325,7 @@ internal class ChatProvider {
             when (error) {
                 is PubNubException -> {
                     if (error.statusCode == 403) {
-                        callback.invoke(null, null, getError(APIClientError.PERMISSION_DENIED))
+                        callback(null, null, getError(APIClientError.PERMISSION_DENIED))
                     } else {
                         callback(null, null, getError(APIClientError.UNKNOWN_EXCEPTION))
                     }
@@ -422,10 +417,22 @@ internal class ChatProvider {
         timeToken: String,
         callback: ((Boolean, String?) -> Unit)?,
     ) {
+        val deleteTarget = when (chatVersion) {
+            ChatVersion.V1 -> publishChannel.removePrefix(Constants.CHANNEL_CHAT_PREFIX)
+            ChatVersion.V2 -> publishChannel
+        }
+
+        val showId = when (chatVersion) {
+            ChatVersion.V1 -> null
+            ChatVersion.V2 -> resolveShow(currentShowKey)?.id
+        }
+
         APICalls.deleteMessage(
+            target = deleteTarget,
             timeToken = timeToken,
-            channelName = publishChannel,
-            currentJwt = currentJwt
+            currentJwt = currentJwt,
+            chatVersion = chatVersion,
+            showId = showId
         ).onError {
             callback?.let { cb -> cb(false, it.toString()) }
         }.onResult {
@@ -455,11 +462,23 @@ internal class ChatProvider {
         actionTimeToken: Long,
         callback: ((Boolean, APIClientError?) -> Unit)? = null,
     ) {
+        val deleteTarget = when (chatVersion) {
+            ChatVersion.V1 -> publishChannel.removePrefix(Constants.CHANNEL_CHAT_PREFIX)
+            ChatVersion.V2 -> publishChannel
+        }
+
+        val showId = when (chatVersion) {
+            ChatVersion.V1 -> null
+            ChatVersion.V2 -> resolveShow(currentShowKey)?.id
+        }
+
         APICalls.deleteAction(
+            target = deleteTarget,
             timeToken = timeToken.toString(),
             actionTimeToken = actionTimeToken.toString(),
-            channelName = publishChannel,
-            currentJwt = currentJwt
+            currentJwt = currentJwt,
+            chatVersion = chatVersion,
+            showId = showId
         ).onError { error ->
             callback?.let { it(false, getError(error)) }
         }.onResult {
@@ -490,4 +509,57 @@ internal class ChatProvider {
         }
         return resolvedShow
     }
+
+    private suspend fun fetchSenderMetadata(uuid: String): SenderModel? {
+        userMetadataCache[uuid]?.let { return it }
+
+        return when (chatVersion) {
+            ChatVersion.V1 -> {
+                var senderModel: SenderModel? = null
+                APICalls.getUserMeta(uuid).onResult {
+                    userMetadataCache[uuid] = it
+                    senderModel = it
+                }
+                senderModel
+            }
+
+            ChatVersion.V2 -> {
+                fetchPubNubUserMetadata(uuid)
+            }
+        }
+    }
+
+    private suspend fun fetchPubNubUserMetadata(uuid: String): SenderModel? =
+        suspendCancellableCoroutine { continuation ->
+            val pubNubClient = pubnub
+            if (pubNubClient == null) {
+                continuation.resume(null)
+                return@suspendCancellableCoroutine
+            }
+
+            pubNubClient.getUUIDMetadata(
+                uuid = uuid,
+                includeCustom = false
+            ).async { result, status ->
+                if (status.error || result == null) {
+                    continuation.resume(null)
+                    return@async
+                }
+
+                val metadata = result.data
+                val senderModel = metadata?.let {
+                    SenderModel(
+                        id = it.id,
+                        name = it.name,
+                        profileUrl = it.profileUrl
+                    )
+                }
+
+                if (senderModel != null) {
+                    userMetadataCache[uuid] = senderModel
+                }
+
+                continuation.resume(senderModel)
+            }
+        }
 }

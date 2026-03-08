@@ -5,10 +5,10 @@ enum class ShowType(val rawValue: String) {
     V2("v2");
 
     companion object {
-        @OptIn(ExperimentalStdlibApi::class)
         fun from(rawValue: String?): ShowType {
-            return entries.firstOrNull { it.rawValue.equals(rawValue, ignoreCase = true) }
-                ?: LEGACY
+            return values().firstOrNull { showType ->
+                showType.rawValue.equals(rawValue, ignoreCase = true)
+            } ?: LEGACY
         }
     }
 }

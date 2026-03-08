@@ -242,15 +242,45 @@ internal object APICalls {
      * @return An `Either` object containing `true` if successful, or an `APIClientError`.
      */
     suspend fun deleteMessage(
+        target: String,
         timeToken: String,
-        channelName: String,
         currentJwt: String,
+        chatVersion: ChatVersion,
+        showId: Int?,
     ): Either<APIClientError, Boolean> {
         return executeWithAuthCheck {
             try {
+                val requestUrl: String
+                val requestBody: String?
+
+                when (chatVersion) {
+                    ChatVersion.V1 -> {
+                        requestUrl = getMessagesUrl(
+                            eventId = target,
+                            timeToken = timeToken
+                        )
+                        requestBody = null
+                    }
+
+                    ChatVersion.V2 -> {
+                        if (showId == null) {
+                            return@executeWithAuthCheck Either.Error(getError(APIClientError.UNKNOWN_EXCEPTION))
+                        }
+
+                        requestUrl = getDeleteMessageUrl(
+                            timeToken = timeToken,
+                            channelName = target
+                        )
+                        requestBody = JSONObject()
+                            .put(KEY_SHOW_ID, showId)
+                            .toString()
+                    }
+                }
+
                 val response = APIHandler.makeRequest(
-                    requestUrl = getDeleteMessageUrl(timeToken, channelName),
+                    requestUrl = requestUrl,
                     requestMethod = HTTPMethod.DELETE,
+                    body = requestBody,
                     headers = mutableMapOf(
                         Constants.SDK_KEY to storedClientKey,
                         Constants.AUTH_KEY to "${Constants.BEARER_KEY} $currentJwt"
@@ -316,16 +346,48 @@ internal object APICalls {
      * @return An `Either` object containing `true` if successful, or an `APIClientError`.
      */
     suspend fun deleteAction(
+        target: String,
         timeToken: String,
         actionTimeToken: String,
-        channelName: String,
         currentJwt: String,
+        chatVersion: ChatVersion,
+        showId: Int?,
     ): Either<APIClientError, Boolean> {
         return executeWithAuthCheck {
             try {
+                val requestUrl: String
+                val requestBody: String?
+
+                when (chatVersion) {
+                    ChatVersion.V1 -> {
+                        requestUrl = getMessagesUrl(
+                            eventId = target,
+                            timeToken = timeToken,
+                            actionTimeToken = actionTimeToken
+                        )
+                        requestBody = null
+                    }
+
+                    ChatVersion.V2 -> {
+                        if (showId == null) {
+                            return@executeWithAuthCheck Either.Error(getError(APIClientError.UNKNOWN_EXCEPTION))
+                        }
+
+                        requestUrl = getDeleteActionUrl(
+                            timeToken = timeToken,
+                            actionTimeToken = actionTimeToken,
+                            channelName = target
+                        )
+                        requestBody = JSONObject()
+                            .put(KEY_SHOW_ID, showId)
+                            .toString()
+                    }
+                }
+
                 val response = APIHandler.makeRequest(
-                    requestUrl = getDeleteActionUrl(timeToken, actionTimeToken, channelName),
+                    requestUrl = requestUrl,
                     requestMethod = HTTPMethod.DELETE,
+                    body = requestBody,
                     headers = mutableMapOf(
                         Constants.SDK_KEY to storedClientKey,
                         Constants.AUTH_KEY to "${Constants.BEARER_KEY} $currentJwt"
