@@ -1,33 +1,46 @@
 package live.talkshop.sdk.utils.parsers
 
-import live.talkshop.sdk.utils.Logging
+import live.talkshop.sdk.core.chat.models.SubscribableChannel
 import live.talkshop.sdk.core.chat.models.UserTokenModel
+import live.talkshop.sdk.resources.Keys.KEY_CHANNELS
+import live.talkshop.sdk.resources.Keys.KEY_CHAT
+import live.talkshop.sdk.resources.Keys.KEY_CHAT_ID
+import live.talkshop.sdk.resources.Keys.KEY_EVENTS
 import live.talkshop.sdk.resources.Keys.KEY_NAME
 import live.talkshop.sdk.resources.Keys.KEY_PUBLISH_KEY
 import live.talkshop.sdk.resources.Keys.KEY_SUBSCRIBE_KEY
 import live.talkshop.sdk.resources.Keys.KEY_TOKEN
 import live.talkshop.sdk.resources.Keys.KEY_USER_ID
+import live.talkshop.sdk.resources.Keys.KEY_USER_ID_CAMEL
+import live.talkshop.sdk.utils.Logging
 import org.json.JSONObject
 
 internal object UserTokenParser {
-    /**
-     * Parses a JSON string into a UserTokenModel.
-     * @param jsonString The JSON response string from the API.
-     * @return A UserTokenModel instance or null if parsing fails.
-     */
+
     fun fromJsonString(jsonString: String): UserTokenModel? {
         return try {
             val jsonResponse = JSONObject(jsonString)
+
+            val userId = jsonResponse.optString(KEY_USER_ID).ifBlank {
+                jsonResponse.optString(KEY_USER_ID_CAMEL)
+            }
+
+            val channelsJson = jsonResponse.optJSONObject(KEY_CHANNELS)
+            val channels = channelsJson?.let {
+                SubscribableChannel(
+                    chat = it.optString(KEY_CHAT).takeIf { value -> value.isNotBlank() },
+                    events = it.optString(KEY_EVENTS).takeIf { value -> value.isNotBlank() }
+                )
+            }
+
             UserTokenModel(
-                publishKey = jsonResponse.getString(KEY_PUBLISH_KEY),
-                subscribeKey = jsonResponse.getString(KEY_SUBSCRIBE_KEY),
-                token = jsonResponse.getString(KEY_TOKEN),
-                userId = jsonResponse.getString(KEY_USER_ID),
-                name = if (jsonResponse.has(KEY_NAME)) {
-                    jsonResponse.getString(KEY_NAME)
-                } else {
-                    jsonResponse.getString(KEY_USER_ID)
-                }
+                publishKey = jsonResponse.optString(KEY_PUBLISH_KEY),
+                subscribeKey = jsonResponse.optString(KEY_SUBSCRIBE_KEY),
+                token = jsonResponse.optString(KEY_TOKEN),
+                userId = userId,
+                name = jsonResponse.optString(KEY_NAME).ifBlank { userId },
+                channels = channels,
+                chatId = if (jsonResponse.has(KEY_CHAT_ID)) jsonResponse.optInt(KEY_CHAT_ID) else null
             )
         } catch (e: Exception) {
             Logging.print(UserTokenParser::class.java, e)

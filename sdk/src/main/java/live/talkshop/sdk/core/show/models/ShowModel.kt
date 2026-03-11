@@ -23,8 +23,9 @@ import java.util.Date
  * @property videoThumbnailUrl The url of the show's thumbnail.
  * @property channelLogo The logo of the channel.
  * @property channelName The name of the channel.
- * @property entranceProductsRequired If entrance products are required for this product.
+ * @property entranceProductsIds If entrance products are required for this product.
  */
+
 data class ShowModel(
     @SerializedName("id")
     val id: Int?,
@@ -84,5 +85,8 @@ data class ShowModel(
     val productIds: List<Int>? = null,
 
     @SerializedName("entranceProductsIds")
-    val entranceProductsIds: List<Int>? = null
+    val entranceProductsIds: List<Int>? = null,
+
+    @SerializedName("type")
+    val type: ShowType = ShowType.LEGACY
 )

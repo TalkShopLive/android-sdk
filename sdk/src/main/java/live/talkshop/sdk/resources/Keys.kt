@@ -42,4 +42,10 @@ internal object Keys {
     const val KEY_KIND = "kind"
     const val KEY_ENTRANCE = "entrance"
     const val KEY_PRODUCT_ID = "product_id"
+    const val KEY_CHANNELS = "channels"
+    const val KEY_CHAT = "chat"
+    const val KEY_EVENTS = "events"
+    const val KEY_CHAT_ID = "chatId"
+    const val KEY_USER_ID_CAMEL = "userId"
+    const val KEY_SHOW_ID = "showId"
 }
