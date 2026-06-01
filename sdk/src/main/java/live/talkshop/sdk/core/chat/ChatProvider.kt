@@ -170,7 +170,7 @@ internal class ChatProvider {
      */
     suspend fun subscribe() {
         if (!isAuthenticated) {
-            println(APIClientError.AUTHENTICATION_FAILED)
+            Logging.print(ChatProvider::class.java, APIClientError.AUTHENTICATION_FAILED)
             return
         }
         handleShowKeyChange()

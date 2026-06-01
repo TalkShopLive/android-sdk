@@ -194,7 +194,9 @@ internal object APICalls {
                 }
             }
 
-            return Either.Result(UserTokenParser.fromJsonString(response.body)!!)
+            val parsed = UserTokenParser.fromJsonString(response.body)
+                ?: return Either.Error(getError(APIClientError.USER_TOKEN_EXCEPTION))
+            return Either.Result(parsed)
         } catch (e: Exception) {
             Logging.print(APICalls::class.java, e)
             return Either.Error(getError(APIClientError.USER_TOKEN_EXCEPTION))
@@ -262,17 +264,11 @@ internal object APICalls {
                     }
 
                     ChatVersion.V2 -> {
-                        if (showId == null) {
-                            return@executeWithAuthCheck Either.Error(getError(APIClientError.UNKNOWN_EXCEPTION))
-                        }
-
                         requestUrl = getDeleteMessageUrl(
                             timeToken = timeToken,
                             channelName = target
                         )
-                        requestBody = JSONObject()
-                            .put(KEY_SHOW_ID, showId)
-                            .toString()
+                        requestBody = null
                     }
                 }
 
@@ -367,18 +363,12 @@ internal object APICalls {
                     }
 
                     ChatVersion.V2 -> {
-                        if (showId == null) {
-                            return@executeWithAuthCheck Either.Error(getError(APIClientError.UNKNOWN_EXCEPTION))
-                        }
-
                         requestUrl = getDeleteActionUrl(
                             timeToken = timeToken,
                             actionTimeToken = actionTimeToken,
                             channelName = target
                         )
-                        requestBody = JSONObject()
-                            .put(KEY_SHOW_ID, showId)
-                            .toString()
+                        requestBody = null
                     }
                 }
 

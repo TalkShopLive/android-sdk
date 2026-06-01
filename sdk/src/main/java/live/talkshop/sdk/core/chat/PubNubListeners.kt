@@ -76,6 +76,7 @@ internal class PubNubListeners(
                                                 includeCustom = false
                                             ).async { result, status ->
                                                 if (status.error || result == null) {
+                                                    Logging.print(PubNubListeners::class.java, "v2 fetchUserMetadata failed for $uuid — delivering message without sender metadata")
                                                     continuation.resume(null)
                                                     return@async
                                                 }
@@ -116,7 +117,7 @@ internal class PubNubListeners(
                 }
 
                 eventsChannel -> {
-                    println("Received message on events channel: ${pnMessageResult.message}")
+                    Logging.print(PubNubListeners::class.java, "Received message on events channel: ${pnMessageResult.message}")
                     if (pnMessageResult.message.asJsonObject.get("key").asString == "message_deleted") {
                         val messageId =
                             pnMessageResult.message.asJsonObject.get("payload").asLong
@@ -129,13 +130,13 @@ internal class PubNubListeners(
                 }
 
                 else -> {
-                    println("Received message on other channel: ${pnMessageResult.message}")
+                    Logging.print(PubNubListeners::class.java, "Received message on other channel: ${pnMessageResult.message}")
                 }
             }
         }
 
         override fun status(pubnub: PubNub, pnStatus: PNStatus) {
-            println("PubNub status: ${pnStatus.category}, error code: ${pnStatus.statusCode}")
+            Logging.print(PubNubListeners::class.java, "PubNub status: ${pnStatus.category}, error code: ${pnStatus.statusCode}")
             if (pnStatus.category == PNStatusCategory.PNUnexpectedDisconnectCategory) {
                 if (!triedToReconnectBefore) {
                     triedToReconnectBefore = true
