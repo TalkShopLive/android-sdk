@@ -48,9 +48,12 @@ class ChatPreliveGateTests {
         trailerDuration = null
     )
 
-    private fun initiateChat(status: String?): Pair<APIClientError?, UserTokenModel?> {
+    private fun initiateChat(
+        status: String?,
+        showId: String? = SHOW_KEY
+    ): Pair<APIClientError?, UserTokenModel?> {
         isAuthenticated = true
-        globalShowId = SHOW_KEY
+        globalShowId = showId
         currentShow = cachedShow(status)
 
         var error: APIClientError? = null
@@ -76,6 +79,24 @@ class ChatPreliveGateTests {
         val (error, token) = initiateChat("PreLive")
         assertEquals(APIClientError.SHOW_IS_PRELIVE, error)
         assertNull(token)
+    }
+
+    @Test
+    fun initiateChat_preliveShow_winsOverMissingGlobalShowId() {
+        val (error, token) = initiateChat("prelive", showId = null)
+        assertEquals(APIClientError.SHOW_IS_PRELIVE, error)
+        assertNull(token)
+    }
+
+    @Test
+    fun initiateChat_blankShowKey_returnsShowNotFound() {
+        isAuthenticated = true
+        globalShowId = SHOW_KEY
+        var error: APIClientError? = null
+        runTest {
+            ChatProvider().initiateChat("", "jwt", true) { e, _ -> error = e }
+        }
+        assertEquals(APIClientError.SHOW_NOT_FOUND, error)
     }
 
     private companion object {
