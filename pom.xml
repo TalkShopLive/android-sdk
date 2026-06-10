@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.TalkShopLive</groupId>
     <artifactId>android-sdk</artifactId>
-    <version>2.1.0</version>
-    <packaging>pom</packaging>
+    <version>2.1.1</version>
+    <packaging>aar</packaging>
     <dependencies>
         <dependency>
             <groupId>com.pubnub</groupId>

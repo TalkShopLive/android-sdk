@@ -94,6 +94,11 @@ internal class ChatProvider {
             globalShowKey = showKey
 
             val show = resolveShow(showKey)
+            if (show?.status.equals(Constants.STATUS_PRELIVE, ignoreCase = true)) {
+                callback?.invoke(getError(APIClientError.SHOW_IS_PRELIVE), null)
+                return
+            }
+
             val showType = show?.type ?: ShowType.LEGACY
             val showId = show?.id
             chatVersion = ChatVersionProvider.getVersion(showType, isGuest)
