@@ -53,14 +53,20 @@ fun DeveloperScreen(context: Context, clientKeyString: String, globalShowKey: St
     val scrollState = rememberScrollState()
     val timeTokenState = remember { mutableStateOf("17126936597253584") }
     var showModel by remember { mutableStateOf<ShowModel?>(null) }
+    // Shared so InitializeChat uses the key typed in the Show ID field.
+    var showKey by remember { mutableStateOf(globalShowKey) }
     Column(
         modifier = Modifier
             .padding(16.dp)
             .verticalScroll(scrollState)
     ) {
         ClientKeyInputSection(context, clientKeyString)
-        ShowIdInputSection(globalShowKey, onShowRetrieved = { showModel = it })
-        InitializeChat(jwt, globalShowKey)
+        ShowIdInputSection(
+            showKey = showKey,
+            onShowKeyChange = { showKey = it },
+            onShowRetrieved = { showModel = it }
+        )
+        InitializeChat(jwt, showKey)
         PublishMessage(timeTokenState)
         ChatHistory()
         DeleteMessageSection(timeTokenState)
@@ -116,15 +122,18 @@ fun ClientKeyInputSection(context: Context, clientKeyString: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShowIdInputSection(globalShowKey: String, onShowRetrieved: (ShowModel) -> Unit) {
-    var showKey by remember { mutableStateOf(globalShowKey) }
+fun ShowIdInputSection(
+    showKey: String,
+    onShowKeyChange: (String) -> Unit,
+    onShowRetrieved: (ShowModel) -> Unit
+) {
     var showDetails by remember { mutableStateOf<String?>(null) }
     var errorText by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
     OutlinedTextField(
         value = showKey,
-        onValueChange = { showKey = it },
+        onValueChange = onShowKeyChange,
         label = { Text("Show ID") },
         modifier = Modifier.fillMaxWidth()
     )
