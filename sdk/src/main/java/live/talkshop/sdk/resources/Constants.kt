@@ -19,6 +19,7 @@ internal object Constants {
 
     const val PLATFORM_TYPE = "mobile"
     const val STATUS_LIVE = "live"
+    const val STATUS_PRELIVE = "prelive"
 
     const val COLLECTOR_CAT_PROCESS = "PROCESS"
     const val COLLECTOR_CAT_INTERACTION = "INTERACTION"

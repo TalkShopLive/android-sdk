@@ -85,15 +85,35 @@ internal class ChatProvider {
         callback: ((APIClientError?, UserTokenModel?) -> Unit)?,
     ) {
         if (isAuthenticated) {
-            if (!isNotEmptyOrNull(globalShowId)) {
-                callback?.invoke(getError(APIClientError.SHOW_NOT_LIVE), null)
+            if (!isNotEmptyOrNull(showKey)) {
+                callback?.invoke(getError(APIClientError.SHOW_NOT_FOUND), null)
                 return
             }
 
             currentShowKey = showKey
             globalShowKey = showKey
 
+            // Prelive is checked before the globalShowId guard: it is the more specific
+            // error and must fire even when Show.getStatus was never called or failed.
+            // The show-details payload does not always carry the prelive state (e.g.
+            // Walmart events), so the current-event status is checked as well.
             val show = resolveShow(showKey)
+            var isPrelive = show?.status.equals(Constants.STATUS_PRELIVE, ignoreCase = true)
+            if (!isPrelive) {
+                APICalls.getCurrentEvent(showKey).onResult { event ->
+                    isPrelive = event.status.equals(Constants.STATUS_PRELIVE, ignoreCase = true)
+                }
+            }
+            if (isPrelive) {
+                callback?.invoke(getError(APIClientError.SHOW_IS_PRELIVE), null)
+                return
+            }
+
+            if (!isNotEmptyOrNull(globalShowId)) {
+                callback?.invoke(getError(APIClientError.SHOW_NOT_LIVE), null)
+                return
+            }
+
             val showType = show?.type ?: ShowType.LEGACY
             val showId = show?.id
             chatVersion = ChatVersionProvider.getVersion(showType, isGuest)
