@@ -37,7 +37,7 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
-    api("com.pubnub:pubnub-kotlin:8.0.0")
+    implementation("com.pubnub:pubnub-kotlin:8.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 
