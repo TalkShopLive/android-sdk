@@ -24,6 +24,9 @@ import java.util.Date
  * @property channelLogo The logo of the channel.
  * @property channelName The name of the channel.
  * @property entranceProductsIds If entrance products are required for this product.
+ * @property type The show type.
+ * @property liveAssetId The id of the show's live asset, sent as `meta.event_id` on video view events.
+ * Null when the show has no live asset (e.g. prelive).
  */
 
 data class ShowModel(
@@ -88,5 +91,8 @@ data class ShowModel(
     val entranceProductsIds: List<Int>? = null,
 
     @SerializedName("type")
-    val type: ShowType = ShowType.LEGACY
+    val type: ShowType = ShowType.LEGACY,
+
+    @SerializedName("liveAssetId")
+    val liveAssetId: Int? = null
 )

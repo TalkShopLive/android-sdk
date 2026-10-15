@@ -10,6 +10,7 @@ enum class CollectorActions {
     SELECT_PRODUCT,
     VIDEO_COMPLETE,
     VIDEO_VIEW,
+    VIDEO_ENGAGED_VIEW,
     VIDEO_PAUSE,
     VIDEO_PLAY,
     VIDEO_TIME,

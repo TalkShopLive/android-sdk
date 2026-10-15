@@ -87,8 +87,26 @@ internal object ShowParser {
                 intList
             },
             entranceProductsIds = parseEntranceProductIds(showDataJson),
-            type = ShowType.from(showDataJson.optString(KEY_TYPE))
+            type = ShowType.from(showDataJson.optString(KEY_TYPE)),
+            liveAssetId = parseLiveAssetId(showDataJson)
         )
+    }
+
+    /**
+     * Returns the id of the first asset with type "live", or null if there is none.
+     *
+     * @param showDataJson The JSON object containing the `assets` array.
+     * @return The live asset id, or null if not found.
+     */
+    private fun parseLiveAssetId(showDataJson: JSONObject): Int? {
+        val assetsArray = showDataJson.optJSONArray(KEY_ASSETS) ?: return null
+        for (i in 0 until assetsArray.length()) {
+            val asset = assetsArray.optJSONObject(i) ?: continue
+            if (asset.optString(KEY_TYPE) == "live") {
+                return if (asset.has(KEY_ID) && !asset.isNull(KEY_ID)) asset.optInt(KEY_ID) else null
+            }
+        }
+        return null
     }
 
     /**

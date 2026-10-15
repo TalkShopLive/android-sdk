@@ -11,6 +11,7 @@ import live.talkshop.sdk.resources.CollectorActions
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_INTERACTION
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PAGE_VIEW
 import live.talkshop.sdk.resources.Constants.COLLECTOR_CAT_PROCESS
+import live.talkshop.sdk.resources.Constants.SDK_VERSION
 import live.talkshop.sdk.resources.URLs.URL_COLLECTOR_WALMART
 import live.talkshop.sdk.resources.URLs.URL_PUBLISH_PROD
 import live.talkshop.sdk.resources.URLs.getCollectorUrl
@@ -36,12 +37,11 @@ internal class Collector private constructor() {
         productOwningChannelId: String? = "NOT_SET",
     ) {
         val timestamp = System.currentTimeMillis()
-        val display = Resources.getSystem().displayMetrics
         val payload = JSONObject().apply {
             put("timestamp_utc", timestamp)
             put("user_id", userId)
             put("category", category)
-            put("version", "2.1.1")
+            put("version", SDK_VERSION)
             put("action", action)
             put("application", "android")
             put("meta", JSONObject().apply {
@@ -56,17 +56,8 @@ internal class Collector private constructor() {
                 put("product_id", productId)
                 put("product_owning_channel_id", productOwningChannelId)
             })
-            put("page_metrics", JSONObject().apply {
-                put("origin", URL_PUBLISH_PROD)
-                put("host", URL_PUBLISH_PROD.removePrefix("https://"))
-                put("referrer", URL_COLLECTOR_WALMART)
-                put("page_url", getCollectorWatchUrl(showKey))
-                put("page_url_raw", getCollectorWatchUrl(showKey))
-                put("page_title", showTitle)
-            })
-            put("aspect", JSONObject().apply {
-                put("screen_resolution", "${display.heightPixels} x ${display.widthPixels}")
-            })
+            put("page_metrics", pageMetrics(showKey, showTitle))
+            put("aspect", aspect())
         }
 
         try {
@@ -85,6 +76,96 @@ internal class Collector private constructor() {
     companion object {
         @Volatile
         private var instance: Collector? = null
+
+        private fun pageMetrics(showKey: String?, showTitle: String?) = JSONObject().apply {
+            put("origin", URL_PUBLISH_PROD)
+            put("host", URL_PUBLISH_PROD.removePrefix("https://"))
+            put("referrer", URL_COLLECTOR_WALMART)
+            put("page_url", getCollectorWatchUrl(showKey))
+            put("page_url_raw", getCollectorWatchUrl(showKey))
+            put("page_title", showTitle)
+        }
+
+        private fun aspect() = JSONObject().apply {
+            val display = Resources.getSystem().displayMetrics
+            put("screen_resolution", "${display.heightPixels} x ${display.widthPixels}")
+        }
+
+        /**
+         * Builds a VIDEO_VIEW / VIDEO_ENGAGED_VIEW payload.
+         * Anonymous (DNT): whitelisted meta only; no user_id, page_metrics or aspect.
+         * Null values are dropped by [JSONObject.put], so a missing event_id is not sent.
+         */
+        private fun videoViewPayload(
+            action: CollectorActions,
+            viewRule: String,
+            showId: Int,
+            showKey: String,
+            eventId: Int?,
+            storeId: Int?,
+            videoStatus: String,
+            showTitle: String?,
+            userId: String,
+            anonymous: Boolean,
+        ) = JSONObject().apply {
+            put("timestamp_utc", System.currentTimeMillis())
+            if (!anonymous) {
+                put("user_id", userId)
+            }
+            put("category", COLLECTOR_CAT_PROCESS)
+            put("version", SDK_VERSION)
+            put("action", action)
+            put("application", "android")
+            put("meta", JSONObject().apply {
+                put("external", true)
+                put("streaming_content_key", showKey)
+                put("store_id", storeId)
+                put("video_status", videoStatus)
+                put("show_id", showId)
+                put("event_id", eventId)
+                put("view_rule", viewRule)
+                if (anonymous) {
+                    put("anonymous", true)
+                }
+            })
+            if (!anonymous) {
+                put("page_metrics", pageMetrics(showKey, showTitle))
+                put("aspect", aspect())
+            }
+        }
+
+        /**
+         * Sends a video view event for [live.talkshop.sdk.core.videoviews.VideoViewTracker].
+         * Unlike [collect], it is not blocked by DNT: with [anonymous] the event is sent anonymously.
+         */
+        fun collectVideoView(
+            action: CollectorActions,
+            viewRule: String,
+            showId: Int,
+            showKey: String,
+            eventId: Int?,
+            storeId: Int?,
+            videoStatus: String,
+            showTitle: String?,
+            userId: String,
+            anonymous: Boolean,
+        ) {
+            if (instance == null) return
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    APIHandler.makeRequest(
+                        requestUrl = getCollectorUrl(),
+                        requestMethod = HTTPMethod.POST,
+                        payload = videoViewPayload(
+                            action, viewRule, showId, showKey, eventId, storeId,
+                            videoStatus, showTitle, userId, anonymous
+                        )
+                    )
+                } catch (e: Exception) {
+                    // A failed view event is dropped, like any other collector event.
+                }
+            }
+        }
 
         fun initialize() {
             if (instance == null) {

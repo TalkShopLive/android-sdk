@@ -29,6 +29,9 @@ class Show {
         /**
          * Fetches the status of the current event for a given show.
          *
+         * Since 2.2.0 this no longer counts a view; views are sent only by
+         * [live.talkshop.sdk.core.videoviews.VideoViewTracker].
+         *
          * @param showKey The product key of the show for which the current event status is to be fetched.
          * @param callback An optional callback that is invoked upon completion of the request.
          * It provides an error message if something goes wrong, or the ShowStatusModel if successful.
