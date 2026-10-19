@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.2.0] — Unreleased
+## [2.2.0] — 2026-10-19
 
 Parity with iOS 4.2.0: video views at the first frame, engaged views and anonymous views under DNT.
 
