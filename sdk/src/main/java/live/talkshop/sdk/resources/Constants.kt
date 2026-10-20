@@ -1,6 +1,8 @@
 package live.talkshop.sdk.resources
 
 internal object Constants {
+    const val SDK_VERSION = "2.2.0"
+
     const val CC_FILENAME_END = ".transcript.vtt"
     const val DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss"
     const val SDK_KEY = "x-tsl-sdk-key"

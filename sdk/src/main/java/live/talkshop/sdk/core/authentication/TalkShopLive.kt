@@ -22,6 +22,7 @@ import org.json.JSONObject
 import java.lang.ref.WeakReference
 import androidx.core.content.edit
 import live.talkshop.sdk.core.show.models.EventModel
+import live.talkshop.sdk.core.videoviews.AppVisibility
 
 /**
  * Class responsible for managing TalkShopLive authentication and initialization.
@@ -44,7 +45,8 @@ class TalkShopLive private constructor(private val context: Context) {
          * @param clientKey The client key for authentication.
          * @param debugMode Indicates whether debug mode is enabled.
          * @param testMode Indicates whether test mode is enabled.
-         * @param dnt Indicates whether Do Not Track (DNT) is enabled.
+         * @param dnt Indicates whether Do Not Track (DNT) is enabled. With DNT no collector events
+         * are sent, except video views (VIDEO_VIEW / VIDEO_ENGAGED_VIEW), which are sent anonymously.
          * @param callback An optional callback function to be invoked upon initialization completion.
          */
         fun initialize(
@@ -56,6 +58,7 @@ class TalkShopLive private constructor(private val context: Context) {
             callback: ((Boolean) -> Unit)? = null,
         ) {
             Collector.initialize()
+            AppVisibility.register(context)
             getInstance(context).initializeInternal(clientKey, debugMode, testMode, dnt, callback)
         }
 

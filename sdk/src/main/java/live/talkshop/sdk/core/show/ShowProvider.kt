@@ -4,17 +4,14 @@ import live.talkshop.sdk.core.show.models.ProductModel
 import live.talkshop.sdk.core.show.models.ShowModel
 import live.talkshop.sdk.core.show.models.EventModel
 import live.talkshop.sdk.resources.APIClientError
-import live.talkshop.sdk.resources.Constants
 import live.talkshop.sdk.utils.networking.APICalls.getCurrentEvent
 import live.talkshop.sdk.utils.networking.APICalls.getShowDetails
 import live.talkshop.sdk.utils.networking.APICalls.getShowProducts
-import live.talkshop.sdk.utils.networking.APICalls.incrementView
 
 /**
  * This class is responsible for fetching show details and current event status from the network.
  */
 internal class ShowProvider {
-    private val incrementViewCalledMap: MutableMap<String, Boolean> = mutableMapOf()
 
     /**
      * Fetches show details for the specified product key, handling the network request and authentication check.
@@ -48,12 +45,7 @@ internal class ShowProvider {
         getCurrentEvent(showKey).onError {
             callback?.invoke(it, null)
         }.onResult {
-            if (it.status == Constants.STATUS_LIVE) {
-                if (!incrementViewCalledMap.containsKey(showKey) || !incrementViewCalledMap[showKey]!!) {
-                    incrementView(it.eventId.toString())
-                    incrementViewCalledMap[showKey] = true
-                }
-            }
+            // Fetching the status no longer counts a view: views come only from VideoViewTracker.
             callback?.invoke(null, it)
         }
     }

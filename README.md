@@ -8,6 +8,7 @@ TSL takes care of the infrastructure and APIs needed for live streaming of diffe
 * [Get Keys](#get-keys)
 * [Set Up Your Project](#set-up-your-project)
 * [Shows](#shows)
+* [Video Views](#video-views)
 * [Support](#support)
 
 ## Requirements
@@ -48,11 +49,13 @@ implementation "com.github.TalkShopLive:android-sdk:versionTag"
        - `clientKey`: Given secured client key.
        - `debugMode`: Print console logs if true.
        - `testMode`: Switch to staging if true.
-       - `dnt`: Switch to do not track.
+       - `dnt`: Do Not Track. If true, no collector events are sent, except video views (`VIDEO_VIEW` / `VIDEO_ENGAGED_VIEW`), which are sent anonymously. Defaults to false.
        - `callback`: Optional callback when the authentication is successful or not.
 ```kotlin
  TalkShopLive.initialize(context: Context, clientKey: String, debugMode: Boolean, testMode: Boolean, dnt: Boolean)
 ```
+
+Note: every `initialize` call sets DNT again. Pass `dnt` each time you initialize the SDK, otherwise DNT is reset to false.
 
 ## Shows
 
@@ -85,6 +88,8 @@ Get the current event of a show.
 ```kotlin
 Show.getStatus(showKey) { error, show -> }
 ```
+
+Since 2.2.0 this call has no side effects: it no longer counts a view for live shows. Views are counted only by [`VideoViewTracker`](#video-views).
 
 #### `getProducts(showKey: String, preLive: Boolean, callback: ((APIClientError?, List<ProductModel>?) -> Unit)`
 
@@ -315,6 +320,33 @@ Track a user interaction event.
 
 ```kotlin
 collectInstance.collect(eventName = CollectorActions.VIDEO_PLAY, currentShow.videoTime)
+```
+
+Video views (`VIDEO_VIEW` and `VIDEO_ENGAGED_VIEW`) are sent by [`VideoViewTracker`](#video-views). Do not send `VIDEO_VIEW` through `collect` once the tracker is wired, or views will be counted twice.
+
+## Video Views
+
+### Overview
+
+The SDK counts video views the same way as TalkShopLive web and embed:
+
+- `VIDEO_VIEW` (`view_rule: first_frame`): once per play, at the first rendered video frame while playing.
+- `VIDEO_ENGAGED_VIEW` (`view_rule: engaged_3s`): once per play, after 3 seconds of watch time. The clock pauses while paused, buffering or while the app is in the background. Picture in Picture does not count as background, because the video stays on screen. The SDK detects it, there is no hook to call.
+- Pause/resume, seek, buffering, background/foreground, rotation and re-creating the player for the same stream do not send new views. Replay after the end, a different show or stream, and prelive → live start a new play.
+- With `dnt = true`, both events are sent anonymously (`meta.anonymous = true`, no `user_id`, `page_metrics` or `aspect`).
+
+The host app does not implement this rule. It forwards its player events to `VideoViewTracker`, and the SDK decides when to send each event.
+
+### Usage
+
+```kotlin
+val tracker = VideoViewTracker(userId = "UserId") // one per player screen, kept in a ViewModel
+
+tracker.onSourceChanged(VideoViewSource.from(show, event)) // on load and on every status refresh
+tracker.onFirstFrame()                                       // Media3: onRenderedFirstFrame
+tracker.onPlaybackStateChanged(VideoViewTracker.PlaybackState.PLAYING) // PLAYING / PAUSED / BUFFERING
+tracker.onPlaybackEnded()                                    // Media3: STATE_ENDED
+tracker.release()                                            // the player screen goes away (ViewModel.onCleared)
 ```
 
 ## Support
