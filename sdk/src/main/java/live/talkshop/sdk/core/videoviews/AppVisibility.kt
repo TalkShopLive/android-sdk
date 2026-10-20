@@ -4,17 +4,15 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
-import androidx.core.app.OnPictureInPictureModeChangedProvider
-import androidx.core.app.PictureInPictureModeChangedInfo
-import androidx.core.util.Consumer
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Tells video view trackers when the app goes to the background and comes back.
  *
- * Background = no started activity left (rotation does not count), or an activity
- * entered picture-in-picture. Foreground = an activity starts or resumes again.
+ * Background = no started activity left (rotation does not count). Foreground = an activity
+ * starts or resumes again. Picture-in-picture is not background: the activity stays started
+ * and the video stays on screen.
  * Registered once from `TalkShopLive.initialize`. Lifecycle callbacks run on the main thread.
  */
 internal object AppVisibility : Application.ActivityLifecycleCallbacks {
@@ -32,7 +30,6 @@ internal object AppVisibility : Application.ActivityLifecycleCallbacks {
         private set
 
     private val startedActivities = HashSet<Int>()
-    private val pipConsumers = HashMap<Int, Consumer<PictureInPictureModeChangedInfo>>()
     private val listeners = CopyOnWriteArrayList<WeakReference<Listener>>()
 
     fun register(context: Context) {
@@ -74,20 +71,11 @@ internal object AppVisibility : Application.ActivityLifecycleCallbacks {
 
     override fun onActivityStarted(activity: Activity) {
         startedActivities.add(System.identityHashCode(activity))
-        if (!activity.isInPictureInPictureMode) {
-            setBackground(false)
-        }
-    }
-
-    override fun onActivityResumed(activity: Activity) {
-        observePictureInPicture(activity)
         setBackground(false)
     }
 
-    override fun onActivityPaused(activity: Activity) {
-        if (activity.isInPictureInPictureMode) {
-            setBackground(true)
-        }
+    override fun onActivityResumed(activity: Activity) {
+        setBackground(false)
     }
 
     override fun onActivityStopped(activity: Activity) {
@@ -100,39 +88,12 @@ internal object AppVisibility : Application.ActivityLifecycleCallbacks {
     }
 
     override fun onActivityDestroyed(activity: Activity) {
-        val id = System.identityHashCode(activity)
-        startedActivities.remove(id)
-        val consumer = pipConsumers.remove(id) ?: return
-        try {
-            (activity as? OnPictureInPictureModeChangedProvider)
-                ?.removeOnPictureInPictureModeChangedListener(consumer)
-        } catch (e: LinkageError) {
-            // androidx.core without the PiP listener API: nothing was registered.
-        }
+        startedActivities.remove(System.identityHashCode(activity))
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
 
-    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+    override fun onActivityPaused(activity: Activity) {}
 
-    /**
-     * The order of onPause and the PiP flag is not guaranteed on every API level,
-     * so activities that report PiP changes are also observed directly.
-     */
-    private fun observePictureInPicture(activity: Activity) {
-        val id = System.identityHashCode(activity)
-        if (pipConsumers.containsKey(id)) return
-        try {
-            val provider = activity as? OnPictureInPictureModeChangedProvider ?: return
-            val consumer = Consumer<PictureInPictureModeChangedInfo> { info ->
-                if (info.isInPictureInPictureMode) {
-                    setBackground(true)
-                }
-            }
-            provider.addOnPictureInPictureModeChangedListener(consumer)
-            pipConsumers[id] = consumer
-        } catch (e: LinkageError) {
-            // androidx.core without the PiP listener API: the onPause check is used alone.
-        }
-    }
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
 }

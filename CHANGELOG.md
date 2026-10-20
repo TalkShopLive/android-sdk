@@ -7,7 +7,7 @@ Parity with iOS 4.2.0: video views at the first frame, engaged views and anonymo
 ### Added
 
 **Video views: `VideoViewTracker` (`core/videoviews/`)**
-Views are now counted at the first rendered frame (`VIDEO_VIEW`, `view_rule: first_frame`), and engaged views after 3 s of watch time (`VIDEO_ENGAGED_VIEW`, `view_rule: engaged_3s`), matching web and embed. The host app forwards its player events to the tracker hooks (`onSourceChanged`, `onFirstFrame`, `onPlaybackStateChanged`, `onPlaybackEnded`) and the SDK applies the rule. App background / foreground (including Picture in Picture) is detected by the SDK from `TalkShopLive.initialize`.
+Views are now counted at the first rendered frame (`VIDEO_VIEW`, `view_rule: first_frame`), and engaged views after 3 s of watch time (`VIDEO_ENGAGED_VIEW`, `view_rule: engaged_3s`), matching web and embed. The host app forwards its player events to the tracker hooks (`onSourceChanged`, `onFirstFrame`, `onPlaybackStateChanged`, `onPlaybackEnded`) and the SDK applies the rule. App background / foreground is detected by the SDK from `TalkShopLive.initialize`. Picture in Picture does not count as background (the video stays on screen) and is detected too, so unlike iOS there is no PiP hook.
 
 - New `CollectorActions.VIDEO_ENGAGED_VIEW` (category `PROCESS`). This adds an entry to a public enum: a host app with an exhaustive `when` over `CollectorActions` needs a new branch or an `else`.
 - New `meta.view_rule` on view events.
@@ -22,12 +22,16 @@ With `dnt = true`, `VIDEO_VIEW` and `VIDEO_ENGAGED_VIEW` are still sent, anonymo
 **`Show.getStatus` no longer counts a view (`ShowProvider.kt`)**
 It used to call `incrementView` the first time a live show status was fetched, without any playback. Views now come only from `VIDEO_VIEW`.
 
+### Tests added
+
+`VideoViewStateMachineTests.kt`: 21 offline JUnit tests for the video view rule (`VIDEO_VIEW`, `VIDEO_ENGAGED_VIEW`, new play / same play, background). The state machine runs on a manual clock, so the tests need no network and do not wait for real time.
+
 ### Version
 
 - SDK version defined once in `Constants.SDK_VERSION` (used for the analytics `version`) → `2.2.0`
 - `sdk/build.gradle.kts` Maven coordinate → `2.2.0`
 - `jitpack.yml` and `pom.xml` → `2.2.0`
-- `sdk-release.aar` must be rebuilt before tagging `2.2.0`: JitPack publishes the committed AAR.
+- `sdk-release.aar` rebuilt from the 2.2.0 sources (the committed one was still the 2.1.0 build). JitPack publishes the committed AAR.
 
 ---
 

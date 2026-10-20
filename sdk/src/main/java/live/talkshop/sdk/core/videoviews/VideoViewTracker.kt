@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
  * The host app forwards its player events to the hooks below and the SDK applies the view rule:
  * - VIDEO_VIEW (`view_rule: first_frame`) once per play, at the first rendered frame while playing.
  * - VIDEO_ENGAGED_VIEW (`view_rule: engaged_3s`) once per play, after 3 s of watch time.
- *   The clock pauses while paused, buffering or while the app is in the background (including PiP).
+ *   The clock pauses while paused, buffering or while the app is in the background.
  * - Pause/resume, seek, buffering, background/foreground, rotation and re-creating the player for
  *   the same source never send a new view. Replay after the end, a different show/stream and
  *   prelive -> live start a new play.

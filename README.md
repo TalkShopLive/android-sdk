@@ -331,7 +331,7 @@ Video views (`VIDEO_VIEW` and `VIDEO_ENGAGED_VIEW`) are sent by [`VideoViewTrack
 The SDK counts video views the same way as TalkShopLive web and embed:
 
 - `VIDEO_VIEW` (`view_rule: first_frame`): once per play, at the first rendered video frame while playing.
-- `VIDEO_ENGAGED_VIEW` (`view_rule: engaged_3s`): once per play, after 3 seconds of watch time. The clock pauses while paused, buffering or while the app is in the background (including Picture in Picture).
+- `VIDEO_ENGAGED_VIEW` (`view_rule: engaged_3s`): once per play, after 3 seconds of watch time. The clock pauses while paused, buffering or while the app is in the background. Picture in Picture does not count as background, because the video stays on screen. The SDK detects it, there is no hook to call.
 - Pause/resume, seek, buffering, background/foreground, rotation and re-creating the player for the same stream do not send new views. Replay after the end, a different show or stream, and prelive → live start a new play.
 - With `dnt = true`, both events are sent anonymously (`meta.anonymous = true`, no `user_id`, `page_metrics` or `aspect`).
 
